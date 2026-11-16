@@ -50,6 +50,12 @@ export interface ContrApi {
   onSidebar(listener: (sidebar: Sidebar) => void): () => void;
   /** Makes this terminal's agent the chat's agent. Returns the selected terminal. */
   select(terminal: string): Promise<string>;
+  /** The plan usage rows (helper `usage`), Claude then Codex. A plan with no data has no row. */
+  usage(): Promise<UsageRow[]>;
+  /** Listens to new plan usage (every 5 minutes). Returns a function that stops listening. */
+  onUsage(listener: (rows: UsageRow[]) => void): () => void;
+  /** hc's other machines (`hc machine ls --json`). */
+  machines(): Promise<Machine[]>;
   terminal: TerminalApi;
 }
 
@@ -71,6 +77,19 @@ export interface SidebarProject {
 export interface Sidebar {
   projects: SidebarProject[];
   selected: string;
+}
+
+/** A foot row: the plan, the most used window's percent, and its text ("41% wk · 4d"). */
+export interface UsageRow {
+  plan: string;
+  percent: number;
+  value: string;
+}
+
+/** A machine hc reaches over ssh. `state` is hc's ("connected", "unreachable", "needs-login", ...). */
+export interface Machine {
+  name: string;
+  state: string;
 }
 
 /** A worker's mark: the loader, a check, a dot or an empty ring. */
@@ -130,3 +149,6 @@ export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";
 export const SIDEBAR_EVENT = "contr:sidebar-event";
 export const SELECT_CHANNEL = "contr:select";
+export const USAGE_CHANNEL = "contr:usage";
+export const USAGE_EVENT = "contr:usage-event";
+export const MACHINES_CHANNEL = "contr:machines";
