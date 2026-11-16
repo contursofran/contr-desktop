@@ -40,8 +40,6 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   await expect(row.locator("pre [data-ref-state]")).toHaveCount(0);
   await expect(row.locator('a[href="https://example.com/x"]')).toHaveText("#12");
   await expect(row.getByText("#99 is not known")).toBeVisible();
-  // The owner's own text stays plain.
-  await expect((await chatRow(page, "u1")).locator("[data-ref-state]")).toHaveCount(0);
   // Colors come from the theme tokens.
   const color = (n: number) => chips.nth(n).evaluate((e) => getComputedStyle(e).color);
   expect([await color(0), await color(1), await color(3)]).toEqual(["rgb(163, 113, 247)", "rgb(63, 185, 80)", "rgb(248, 81, 73)"]);
@@ -67,5 +65,7 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   await page.emulateMedia({ colorScheme: "light" });
   await expect.poll(() => color(0)).toBe("rgb(130, 80, 223)");
   await row.screenshot({ path: path.join(shots, "chips-light.png") });
+  // The owner's own text stays plain.
+  await expect((await chatRow(page, "u1")).locator("[data-ref-state]")).toHaveCount(0);
   await app.close();
 });

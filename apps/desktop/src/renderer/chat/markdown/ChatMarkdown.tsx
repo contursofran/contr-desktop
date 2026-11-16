@@ -61,7 +61,31 @@ function Ref({ node, children }: { node?: Element; children?: ReactNode }) {
   return <RefChip number={Number(node?.properties.dataRef)}>{children}</RefChip>;
 }
 
-const SAFE_URL = /^(?:https?:|mailto:|#|\/)/i;
+/** Words for remark tags (docs/design/chat-blocks.md, Remarks) and GitHub's alerts. */
+const REMARK_WORDS: Record<string, string> = {
+  done: "Done",
+  decision: "Decision needed",
+  warning: "Warning",
+  unverified: "Not verified",
+  note: "Note",
+  tip: "Tip",
+  important: "Important",
+  caution: "Caution",
+};
+
+function Blockquote({ node, children, ...props }: WithNode<"blockquote">) {
+  const alert = node?.properties.dataAlert;
+  const word = typeof alert === "string" ? REMARK_WORDS[alert] : undefined;
+  if (!word) return <blockquote {...props}>{children}</blockquote>;
+  return (
+    <blockquote {...props} className="chat-remark">
+      <p className="chat-remark-word">{word}</p>
+      {children}
+    </blockquote>
+  );
+}
+
+const SAFE_URL = /^(?:https?:|mailto:|#|\/|contr-image:\/\/local\/)/i;
 
 /** Keeps web links and drops other schemes, as react-markdown's default does. */
 function urlTransform(url: string): string {
@@ -72,7 +96,7 @@ function urlTransform(url: string): string {
 const render = createMarkdownRenderer({
   remarkPlugins: CHAT_MARKDOWN_REMARK_PLUGINS,
   rehypePlugins: CHAT_MARKDOWN_REHYPE_PLUGINS,
-  components: { pre: Pre, a: Link, table: Table, "contr-ref": Ref },
+  components: { pre: Pre, a: Link, table: Table, blockquote: Blockquote, "contr-ref": Ref },
   urlTransform,
 });
 

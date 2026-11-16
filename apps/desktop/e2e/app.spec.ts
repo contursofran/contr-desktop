@@ -29,8 +29,11 @@ test("the window shows the helper's rows", async () => {
   await page.emulateMedia({ colorScheme: "dark" });
   // The list opens at the end: the last row is on screen.
   await expect(chatList(page).locator('[data-row-id="a6"]')).toBeInViewport();
+  await expect(page.getByRole("button", { name: /Running a command/ }).getByRole("status")).toBeVisible();
   await expect(await chatRow(page, "u1")).toContainText("The login form loses the email");
-  await expect((await chatRow(page, "a1-t1")).getByRole("button")).toHaveText(["Searched 2 patterns›", "Read 1 file›"]);
+  const searched = await chatRow(page, "a1-t1");
+  await expect(searched.getByRole("button")).toHaveText(["Searched 2 patterns", "Read 1 file"]);
+  await expect(searched.locator("button svg.lucide-search")).toHaveCount(1);
   await expect(await chatRow(page, "a3")).toContainText("Opened PR #14");
   await expect(await chatRow(page, "f-a3")).toHaveText("14:06 · Worked 1m 0s · 6 tools");
   await expect(await chatRow(page, "u2")).toHaveText("↳ t2 docs-worker: Done: docs for the login form are updated in #15.");
@@ -41,6 +44,7 @@ test("the window shows the helper's rows", async () => {
   await ran.click();
   await expect(ran).toHaveAttribute("aria-expanded", "true");
   await expect(tools).toContainText("12 passed");
+  await expect(tools).toContainText("failed");
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector("main")!).backgroundColor);
   expect(bg).toBe("rgb(32, 32, 32)");
   await chatRow(page, "u1");
