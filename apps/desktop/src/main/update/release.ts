@@ -2,10 +2,13 @@
 export const RELEASE_URL = "https://api.github.com/repos/contursofran/contr-desktop/releases/latest";
 /** The .dmg's name does not change between releases (docs/reference/releases.md). */
 export const DMG = "contr-mac-universal.dmg";
+/** The .zip that the Update button installs from (docs/reference/releases.md). */
+export const ZIP = "contr-mac-universal.zip";
 
 export interface Release {
   version: string;
   dmgUrl: string | null;
+  zipUrl: string | null;
 }
 
 /**
@@ -17,8 +20,11 @@ export function parseRelease(json: unknown): Release {
   const text = `${typeof r?.body === "string" ? r.body : ""} ${typeof r?.name === "string" ? r.name : ""}`;
   const version = /contr (\d+\.\d+\.\d+)/.exec(text)?.[1];
   if (!version) throw new Error("The newest release has no version.");
-  const dmg = (Array.isArray(r.assets) ? r.assets : []).find((a) => a.name === DMG);
-  return { version, dmgUrl: typeof dmg?.browser_download_url === "string" ? dmg.browser_download_url : null };
+  const url = (name: string) => {
+    const a = (Array.isArray(r.assets) ? r.assets : []).find((x) => x.name === name);
+    return typeof a?.browser_download_url === "string" ? a.browser_download_url : null;
+  };
+  return { version, dmgUrl: url(DMG), zipUrl: url(ZIP) };
 }
 
 /** True when version a is newer than b (each "x.y.z"). */

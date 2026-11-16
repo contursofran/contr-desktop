@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { fakeApp } from "./fake-app";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
@@ -17,8 +18,9 @@ const base = {
   CONTR_GIT: path.join(e2e, "fake-git.mjs"),
 };
 const DMG = Buffer.alloc(64 * 1024, 7);
+const ZIP = readFileSync(fakeApp("9.1.42").zip);
 
-/** A fake GitHub: /release (the release JSON), /dmg (a small fake .dmg), /broken (HTTP 500). */
+/** A fake GitHub: /release (the release JSON, its .zip broken), /release-zip, /release-dmg (no .zip), /dmg (a small fake .dmg), /zip (a fake app), /broken (HTTP 500). */
 async function fakeGitHub(): Promise<{ server: Server; url: string }> {
   const server = createServer((req, res) => {
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -27,6 +29,13 @@ async function fakeGitHub(): Promise<{ server: Server; url: string }> {
       res.end(JSON.stringify({ name: "build-2026-11-16-abc1234", body: "contr 9.1.42 from abc1234.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }, { name: "contr-mac-universal.zip", browser_download_url: `${url}/broken` }] }));
     } else if (req.url === "/release-bad-dmg") {
       res.end(JSON.stringify({ body: "contr 9.1.42 from abc.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/broken` }] }));
+    } else if (req.url === "/release-dmg") {
+      res.end(JSON.stringify({ body: "contr 9.1.42 from abc.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }] }));
+    } else if (req.url === "/release-zip") {
+      res.end(JSON.stringify({ body: "contr 9.1.42 from abc.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }, { name: "contr-mac-universal.zip", browser_download_url: `${url}/zip` }] }));
+    } else if (req.url === "/zip") {
+      res.setHeader("content-length", String(ZIP.length));
+      res.end(ZIP);
     } else if (req.url === "/dmg") {
       res.setHeader("content-length", String(DMG.length));
       res.end(DMG);
@@ -89,5 +98,41 @@ test("a failed check and a failed download show their message", async () => {
   await view.getByRole("button", { name: "Update" }).click();
   await expect(view.getByRole("alert")).toHaveText("Download failed: HTTP 500");
   await app.close();
+  server.close();
+});
+
+test("with a writable app folder a press installs from the .zip and shows Restart to update", async () => {
+  const { server, url } = await fakeGitHub();
+  const install = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-install-"));
+  const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/release-zip`, CONTR_INSTALL_DIR: install });
+  const page = await app.firstWindow();
+  const view = await openSettings(page);
+  await view.getByRole("button", { name: "Update" }).click();
+  const restart = view.getByRole("button", { name: "Restart to update" });
+  await expect(restart).toBeVisible();
+  await expect(view.getByRole("alert")).toHaveCount(0);
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(shots, "update-restart-dark.png") });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.screenshot({ path: path.join(shots, "update-restart-light.png") });
+  await restart.click();
+  await expect(restart).toBeVisible();
+  await app.close();
+  server.close();
+});
+
+test("a read-only app folder or a release with no .zip falls back to the .dmg", async () => {
+  const { server, url } = await fakeGitHub();
+  const install = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-install-"));
+  chmodSync(install, 0o555);
+  for (const [release, dir] of [["release-zip", install], ["release-dmg", mkdtempSync(path.join(os.tmpdir(), "contr-e2e-install-"))]]) {
+    const downloads = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-downloads-"));
+    const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/${release}`, CONTR_INSTALL_DIR: dir, CONTR_DOWNLOADS: downloads });
+    const view = await openSettings(await app.firstWindow());
+    await view.getByRole("button", { name: "Update" }).click();
+    await expect(view.getByRole("status")).toHaveText(`Opened ${path.join(downloads, "contr-mac-universal.dmg")}. Drag contr to Applications.`);
+    await app.close();
+  }
+  chmodSync(install, 0o755);
   server.close();
 });

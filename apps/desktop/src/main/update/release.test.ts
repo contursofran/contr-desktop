@@ -4,11 +4,11 @@ import { newer, parseRelease } from "./release";
 const asset = (name: string) => ({ name, browser_download_url: `https://x/${name}` });
 
 describe("parseRelease", () => {
-  it("reads the version from the notes and the .dmg url", () => {
-    expect(parseRelease({ name: "build-2026-11-16-abc1234", body: "contr 0.1.12 from abc.", assets: [asset("contr-mac-universal.zip"), asset("contr-mac-universal.dmg")] })).toEqual({ version: "0.1.12", dmgUrl: "https://x/contr-mac-universal.dmg" });
+  it("reads the version from the notes and the .dmg and .zip urls", () => {
+    expect(parseRelease({ name: "build-2026-11-16-abc1234", body: "contr 0.1.12 from abc.", assets: [asset("contr-mac-universal.zip"), asset("contr-mac-universal.dmg")] })).toEqual({ version: "0.1.12", dmgUrl: "https://x/contr-mac-universal.dmg", zipUrl: "https://x/contr-mac-universal.zip" });
   });
-  it("falls back to the name and gives no url with no .dmg", () => {
-    expect(parseRelease({ name: "contr 1.2.3", assets: [] })).toEqual({ version: "1.2.3", dmgUrl: null });
+  it("falls back to the name and gives no urls with no assets", () => {
+    expect(parseRelease({ name: "contr 1.2.3", assets: [] })).toEqual({ version: "1.2.3", dmgUrl: null, zipUrl: null });
   });
   it("throws with no version", () => expect(() => parseRelease({ body: "notes" })).toThrow("no version"));
 });

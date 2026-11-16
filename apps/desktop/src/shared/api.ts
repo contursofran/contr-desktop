@@ -99,8 +99,10 @@ export interface ContrApi {
   update(): Promise<UpdateState>;
   /** Calls the listener on each change of the update state. Returns the unsubscribe. */
   onUpdate(listener: (state: UpdateState) => void): () => void;
-  /** Downloads the newest .dmg into Downloads and opens it. */
+  /** Downloads the newest release: the .zip, unpacked and checked, else the .dmg into Downloads, opened. */
   downloadUpdate(): Promise<void>;
+  /** Quits, swaps in the checked new app and opens it. */
+  restartToUpdate(): Promise<void>;
   terminal: TerminalApi;
 }
 
@@ -276,12 +278,14 @@ export interface UpdateState {
   dev: boolean;
   /** The newest release's version, once a check passed. */
   latest: string | null;
-  /** The newest release is newer than this app and has the .dmg. */
+  /** The newest release is newer than this app and has the .zip (writable app folder) or the .dmg. */
   available: boolean;
-  /** 0 to 100 while the .dmg downloads, else null. */
+  /** 0 to 100 while the .zip or .dmg downloads, else null. */
   progress: number | null;
   /** The downloaded .dmg's path, once it is opened. */
   downloaded: string | null;
+  /** The new app is unpacked and checked: Settings shows "Restart to update". */
+  ready: boolean;
   /** The message of a failed check or download. */
   error: string | null;
 }
@@ -289,3 +293,4 @@ export interface UpdateState {
 export const UPDATE_CHANNEL = "contr:update";
 export const UPDATE_EVENT = "contr:update-event";
 export const UPDATE_DOWNLOAD_CHANNEL = "contr:update-download";
+export const UPDATE_RESTART_CHANNEL = "contr:update-restart";
