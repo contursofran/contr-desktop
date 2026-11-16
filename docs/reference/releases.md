@@ -26,7 +26,7 @@ herdr-contr and puts:
 
 `apps/desktop/electron-builder.yml` copies them into the app's
 `Resources/bin`. The packaged app finds them there (`binPath` in
-`apps/desktop/src/main/bin/path.ts`). In dev and e2e the app uses `bin/` at
+`apps/desktop/src/main/helper/binPath.ts`). In dev and e2e the app uses `bin/` at
 the repository root. `CONTR_HELPER` and `CONTR_ORCH` override both.
 
 herdr-contr releases have no Linux `herdr-contr-orch`, so the AppImage has

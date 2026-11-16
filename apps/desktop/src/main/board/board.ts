@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { binPath } from "../bin/path";
+import { binPath } from "../helper/binPath";
 import { run } from "../sidebar/agents";
 import { countLiveWorkers } from "../workers/live";
 import type { PrChecks, WorkerState } from "../../shared/api";

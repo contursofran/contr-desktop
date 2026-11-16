@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { binPath } from "../bin/path";
+import { binPath } from "./binPath";
 
 export interface HelperLine {
   type: string;
