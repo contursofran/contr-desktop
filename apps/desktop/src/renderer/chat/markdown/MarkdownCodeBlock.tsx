@@ -1,7 +1,8 @@
 // Copied in part from t3code apps/web/src/components/chat/MarkdownCodeBlock.tsx and
 // MarkdownCodeBlock.logic.ts at the commit in THIRD_PARTY_NOTICES.md (MIT).
-// Changes: no settings, wrap, run, diagram, Pierre icons, tooltip, LRU cache or
-// streaming lines; a plain button and our theme tokens.
+// Changes: no settings, wrap, run, diagram, Pierre icons, LRU cache or
+// streaming lines; a UI SDK tooltip on the copy button and our theme tokens.
+import { Tip } from "../../ui/Tip";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { use, type ReactNode } from "react";
 
@@ -39,15 +40,19 @@ export function MarkdownCodeBlock({
     >
       <div className="flex items-center justify-between gap-2 pt-1.5 pr-1.5 pb-0 pl-3 select-none">
         <span className="truncate font-mono text-xs text-muted">{language}</span>
-        <button
-          type="button"
-          onClick={() => copy(code.endsWith("\n") ? code.slice(0, -1) : code)}
-          aria-label={copyLabel}
-          title={copyLabel}
-          className="rounded p-1 text-muted hover:bg-hover hover:text-foreground"
+        <Tip
+          text={copyLabel}
+          trigger={
+            <button
+              type="button"
+              onClick={() => copy(code.endsWith("\n") ? code.slice(0, -1) : code)}
+              aria-label={copyLabel}
+              className="rounded p-1 text-muted hover:bg-hover hover:text-foreground"
+            />
+          }
         >
           {copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
-        </button>
+        </Tip>
       </div>
       {children}
     </div>

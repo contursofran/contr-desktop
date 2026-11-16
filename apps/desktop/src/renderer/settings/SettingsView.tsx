@@ -1,3 +1,4 @@
+import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useEffect, useState } from "react";
 import type { Settings, ThemeChoice, UpdateState } from "../../shared/api";
 
@@ -24,20 +25,23 @@ export function SettingsView() {
           <h2 className="text-xs font-medium text-muted">Appearance</h2>
           <div className="flex items-center justify-between rounded-xl border border-border bg-raised px-4 py-3">
             <span className="text-[13px]">Theme</span>
-            <div role="radiogroup" aria-label="Theme" className="flex gap-1 rounded-lg bg-canvas p-0.5">
+            <SegmentedControl<ThemeChoice>
+              aria-label="Theme"
+              value={data?.theme ?? null}
+              onValueChange={(v) => v && choose(v)}
+              className="relative isolate flex gap-1 rounded-lg bg-canvas p-0.5"
+            >
+              <SegmentedControlIndicator className="absolute -z-10 top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-md bg-selected" />
               {THEMES.map((t) => (
-                <button
+                <SegmentedControlItem
                   key={t.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={data?.theme === t.value}
-                  onClick={() => choose(t.value)}
-                  className={`rounded-md px-3 py-1 text-xs ${data?.theme === t.value ? "bg-selected text-foreground" : "text-muted hover:bg-hover"}`}
+                  value={t.value}
+                  className="relative rounded-md px-3 py-1 text-xs text-muted outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-foreground data-checked:text-foreground data-checked:hover:bg-transparent"
                 >
                   {t.label}
-                </button>
+                </SegmentedControlItem>
               ))}
-            </div>
+            </SegmentedControl>
           </div>
         </div>
         <Updates />
