@@ -1,3 +1,4 @@
+@layer ui-sdk;
 @import "tailwindcss";
 
 /* Theme tokens. Dark values from docs/design/README.md, Colors. Light values follow
@@ -34,6 +35,22 @@
     --color-ref-merged: #8250df;
     --color-ref-closed: #cf222e;
   }
+}
+
+/* UI SDK's tokens follow ours, so its parts take our colors in dark and light.
+   Its web.css is not imported: our parts set their own look (docs/design). */
+:root {
+  --ui-background: var(--color-raised);
+  --ui-foreground: var(--color-foreground);
+  --ui-muted: var(--color-hover);
+  --ui-muted-foreground: var(--color-muted);
+  --ui-border: var(--color-border);
+  --ui-input: var(--color-border);
+  --ui-primary: var(--color-working);
+  --ui-primary-foreground: #ffffff;
+  --ui-destructive: var(--color-ref-closed);
+  --ui-ring: var(--color-working);
+  --ui-ring-border: var(--color-working);
 }
 
 html,

@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { mkdtempSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
 
@@ -75,3 +77,58 @@ for (const [name, env, label] of [
     await app.close();
   });
 }
+
+test("a tab moves by drag and by Alt with the arrows, and the order stays after a restart", async () => {
+  test.setTimeout(60_000);
+  const dataDir = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-data-"));
+  const env = {
+    CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+    FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+    CONTR_TERMINAL: "t7",
+    CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
+    CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
+    CONTR_GIT: path.join(e2e, "fake-git.mjs"),
+  };
+  const [a, b] = ["Chat panel usability audit", "Install health check"];
+  let app = await launchApp(env, dataDir);
+  let page = await app.firstWindow();
+  let tabs = page.getByRole("tablist", { name: "Tabs" });
+  await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: b }).click();
+  await expect(tabs.getByRole("tab")).toHaveText([a, b]);
+
+  // A pointer drag of the second tab over the first moves it there; the tab under the drag shows lifted.
+  const from = (await tabs.getByRole("tab", { name: b }).boundingBox())!;
+  const to = (await tabs.getByRole("tab", { name: a }).boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2 - 10, from.y + from.height / 2, { steps: 3 });
+  await page.mouse.move(to.x + 10, to.y + to.height / 2, { steps: 10 });
+  await expect(tabs.locator("[data-grabbed]")).toHaveCount(1);
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `tab-drag-${scheme}.png`) });
+  }
+  await page.mouse.up();
+  await expect(tabs.getByRole("tab")).toHaveText([b, a]);
+
+  // Alt with Right moves the focused tab one place; Alt with Home moves it first.
+  await tabs.getByRole("tab", { name: b }).focus();
+  await page.keyboard.press("Alt+ArrowRight");
+  await expect(tabs.getByRole("tab")).toHaveText([a, b]);
+  await expect(tabs.getByRole("tab", { name: b })).toBeFocused();
+  await page.keyboard.press("Alt+Home");
+  await expect(tabs.getByRole("tab")).toHaveText([b, a]);
+  // A plain arrow does not move it.
+  await page.keyboard.press("ArrowRight");
+  await expect(tabs.getByRole("tab")).toHaveText([b, a]);
+  await app.close();
+
+  app = await launchApp(env, dataDir);
+  page = await app.firstWindow();
+  tabs = page.getByRole("tablist", { name: "Tabs" });
+  await expect(tabs.getByRole("tab")).toHaveText([b, a]);
+  await tabs.getByRole("button", { name: `Close ${a}` }).click();
+  await expect(tabs.getByRole("tab")).toHaveText([b]);
+  await app.close();
+});

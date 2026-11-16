@@ -1,4 +1,5 @@
 import { ChevronDown, GitBranch, Sparkle } from "lucide-react";
+import { Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@ui-sdk/react/menu";
 import { useEffect, useState } from "react";
 import type { ReplyInfo } from "../../../shared/api";
 import { menuCommand, modelLabel, PENDING_MS, shown, type Pending } from "./menu";
@@ -30,7 +31,6 @@ export function useReplyInfo(): { info: ReplyInfo; branch: string | null } {
 
 /** The model button (agent icon, model, effort, chevron) and its menu. A choice sends `/model` or `/effort`. */
 export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: string) => Promise<boolean> }) {
-  const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -43,50 +43,42 @@ export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: s
   const hasMenu = info.models.length > 0 || info.efforts.length > 0;
 
   function choose(kind: "model" | "effort", value: string) {
-    setOpen(false);
     const at = Date.now();
     setNow(at);
     setPending((p) => ({ ...(p && at - p.at < PENDING_MS ? p : {}), [kind]: value, at }));
     void send(menuCommand(kind, value)).then((ok) => !ok && setPending(null));
   }
 
-  const item = (kind: "model" | "effort", c: { value: string; label: string }, on: boolean) => (
-    <li key={`${kind}:${c.value}`}>
-      <button
-        type="button"
-        role="menuitemradio"
-        aria-checked={on}
-        onClick={() => choose(kind, c.value)}
-        className="w-full rounded px-2 py-1 text-left text-sm text-foreground hover:bg-hover aria-checked:bg-selected"
-      >
-        {c.label}
-      </button>
-    </li>
+  const button = (
+    <>
+      <Sparkle aria-hidden className="size-3.5" />
+      <span className="text-foreground">{modelLabel(model, info.models)}</span>
+      {effort && <span>{effort}</span>}
+      {hasMenu && <ChevronDown aria-hidden className="size-3.5" />}
+    </>
   );
-
+  const buttonClass = "flex items-center gap-1 rounded-full px-2 py-0.5 text-sm text-muted hover:bg-hover";
+  if (!hasMenu) {
+    return <button type="button" aria-label="Model" className={buttonClass}>{button}</button>;
+  }
+  const group = (kind: "model" | "effort", choices: ReplyInfo["models"], value: string | null) => (
+    <MenuRadioGroup value={value ?? ""} onValueChange={(v) => choose(kind, String(v))}>
+      {choices.map((c) => (
+        <MenuRadioItem key={c.value} value={c.value} closeOnSelect className="w-full cursor-default rounded px-2 py-1 text-left text-sm text-foreground outline-none data-checked:bg-selected data-highlighted:bg-hover">
+          {c.label}
+        </MenuRadioItem>
+      ))}
+    </MenuRadioGroup>
+  );
   return (
-    <div className="relative">
-      <button
-        type="button"
-        aria-label="Model"
-        aria-haspopup={hasMenu ? "menu" : undefined}
-        aria-expanded={hasMenu ? open : undefined}
-        onClick={() => hasMenu && setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-sm text-muted hover:bg-hover"
-      >
-        <Sparkle aria-hidden className="size-3.5" />
-        <span className="text-foreground">{modelLabel(model, info.models)}</span>
-        {effort && <span>{effort}</span>}
-        {hasMenu && <ChevronDown aria-hidden className="size-3.5" />}
-      </button>
-      {open && (
-        <ul role="menu" aria-label="Model and effort" className="absolute bottom-full left-0 z-10 mb-1 w-56 rounded-lg border border-border bg-raised p-1 shadow">
-          {info.models.map((c) => item("model", c, c.value === model))}
-          {info.models.length > 0 && info.efforts.length > 0 && <li role="separator" className="my-1 border-t border-border" />}
-          {info.efforts.map((c) => item("effort", c, c.value === effort))}
-        </ul>
-      )}
-    </div>
+    <Menu>
+      <MenuTrigger aria-label="Model" className={buttonClass}>{button}</MenuTrigger>
+      <MenuContent side="top" align="start" sideOffset={4} className="m-0 w-56 rounded-lg border border-border bg-raised p-1 shadow">
+        {info.models.length > 0 && group("model", info.models, model)}
+        {info.models.length > 0 && info.efforts.length > 0 && <MenuSeparator className="my-1 border-t border-border" />}
+        {info.efforts.length > 0 && group("effort", info.efforts, effort)}
+      </MenuContent>
+    </Menu>
   );
 }
 

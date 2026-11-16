@@ -11,7 +11,7 @@ import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { Sidebar } from "./sidebar/Sidebar";
-import { TopBar, findAgent, nextAfterClose, openTab } from "./topbar/TopBar";
+import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs } from "./topbar/TopBar";
 import type { Sidebar as SidebarData } from "../shared/api";
 
 type Side = "chat" | "terminal";
@@ -26,7 +26,8 @@ export function App() {
     return window.contr.onSidebar(setSidebar);
   }, []);
   // The open tabs. Selecting an agent anywhere opens its tab.
-  const [tabs, setTabs] = useState<string[]>([]);
+  const [tabs, setTabs] = useState<string[]>(readTabs);
+  useEffect(() => saveTabs(tabs), [tabs]);
   const [side, setSide] = useState<Side>("chat");
   useEffect(() => setTabs((t) => openTab(t, sidebar.selected)), [sidebar.selected]);
   // Titles from hc for tabs with no sidebar entry, read once per terminal.
@@ -62,7 +63,7 @@ export function App() {
     <div className="flex h-screen bg-canvas text-foreground">
       <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} />
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
+        <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
         {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
       </main>
     </div>
