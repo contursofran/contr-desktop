@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { chatTerminal, setupHelper } from "./helper";
+import { handleImageScheme, registerImageScheme } from "./localImages";
 import { registerRefsIpc } from "./refs/ipc";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
@@ -18,7 +19,10 @@ function createWindow(): void {
   else void win.loadFile(path.join(__dirname, "../renderer/index.html"));
 }
 
+registerImageScheme();
+
 void app.whenReady().then(() => {
+  handleImageScheme();
   if (e2e && process.platform === "darwin") app.setActivationPolicy("accessory");
   setupHelper(app.getAppPath());
   registerTerminalIpc();
