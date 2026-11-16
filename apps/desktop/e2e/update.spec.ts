@@ -31,6 +31,9 @@ async function releaseZip(version: string): Promise<string> {
   const project = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-release-"));
   writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "desktop", version, main: "main.js" }));
   writeFileSync(path.join(project, "main.js"), "process.exit(0);\n");
+  // The scratch project has no dependencies; a lockfile makes electron-builder list them with npm, not with
+  // the package manager that runs the tests.
+  writeFileSync(path.join(project, "package-lock.json"), JSON.stringify({ name: "desktop", version, lockfileVersion: 3, packages: {} }));
   await build({
     projectDir: project,
     targets: Platform.MAC.createTarget(["zip"], Arch.arm64),
