@@ -47,7 +47,7 @@ test("a Bash permission card allows with key 1", async () => {
   await key(page, "1");
   await page.waitForTimeout(300);
   await expect(section.getByRole("status")).toHaveCount(0);
-  await page.locator("body").evaluate((b) => (document.activeElement as HTMLElement).blur());
+  await page.evaluate(() => (document.activeElement as HTMLElement).blur());
   await key(page, "1");
   await expect(section).toContainText("Answer sent. Waiting for the agent.");
   await expect(section.getByRole("button", { name: /Allow once/ })).toBeDisabled();

@@ -71,3 +71,29 @@
 .chat-markdown :is(th, td):last-child { padding-inline-end: 0; }
 .chat-markdown thead th { font-weight: 600; }
 .chat-markdown hr { border-color: var(--color-border); margin: 1rem 0; }
+/* Remarks (docs/design/chat-blocks.md): a colored bar and a word. */
+.chat-markdown blockquote.chat-remark {
+  --remark: var(--color-muted);
+  border-inline-start: 3px solid var(--remark);
+  color: var(--color-foreground);
+}
+.chat-markdown .chat-remark-word {
+  margin: 0 0 0.2rem;
+  color: var(--remark);
+  font-weight: 600;
+}
+.chat-markdown .chat-remark[data-alert="done"], .chat-markdown .chat-remark[data-alert="tip"] { --remark: var(--color-done); }
+.chat-markdown .chat-remark[data-alert="decision"] { --remark: var(--color-ref-closed); }
+.chat-markdown .chat-remark[data-alert="warning"], .chat-markdown .chat-remark[data-alert="caution"] { --remark: var(--color-blocked); }
+.chat-markdown .chat-remark[data-alert="note"] { --remark: var(--color-working); }
+.chat-markdown .chat-remark[data-alert="important"] { --remark: var(--color-ref-merged); }
+.chat-markdown .chat-remark[data-alert="unverified"] { --remark: var(--color-dim); }
+.chat-markdown img {
+  display: block;
+  max-width: 100%;
+  max-height: 24rem;
+  border-radius: 0.375rem;
+}
+.chat-markdown .chat-remark-word + p {
+  margin-top: 0;
+}

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
 
 const api: ContrApi = {
@@ -17,6 +17,9 @@ const api: ContrApi = {
   openRef: (url) => ipcRenderer.invoke(OPEN_REF_CHANNEL, url),
   approve: (request, allow) => ipcRenderer.invoke(APPROVE_CHANNEL, request, allow),
   answer: (request, answers) => ipcRenderer.invoke(ANSWER_CHANNEL, request, answers),
+  board: (issues) => ipcRenderer.invoke(BOARD_CHANNEL, issues),
+  replyInfo: () => ipcRenderer.invoke(REPLY_INFO_CHANNEL),
+  branch: () => ipcRenderer.invoke(BRANCH_CHANNEL),
   terminal: terminalApi,
 };
 

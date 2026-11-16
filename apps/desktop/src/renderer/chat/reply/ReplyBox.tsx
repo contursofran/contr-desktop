@@ -1,5 +1,7 @@
-import { useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { composeMessage, isSendKey } from "./message";
+import { serial } from "./menu";
+import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
 
 /** The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V attaches an image. */
 export function ReplyBox({ title }: { title: string }) {
@@ -8,12 +10,23 @@ export function ReplyBox({ title }: { title: string }) {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const message = composeMessage(text, images);
+  const { info, branch } = useReplyInfo();
+  // Messages and menu commands go one after the other: a menu choice made during a send is not lost.
+  const queue = useRef(serial()).current;
+  const sendText = (body: string) =>
+    queue(() => window.contr.send(body)).catch((e: unknown) => ({ ok: false, message: String(e) }));
+
+  async function sendCommand(command: string): Promise<boolean> {
+    const result = await sendText(command);
+    if (!result.ok) setError(result.message ?? "send failed");
+    return result.ok;
+  }
 
   async function send() {
     if (message === "" || sending) return;
     setSending(true);
     setError(null);
-    const result = await window.contr.send(message).catch((e: unknown) => ({ ok: false, message: String(e) }));
+    const result = await sendText(message);
     setSending(false);
     if (!result.ok) return setError(result.message ?? "send failed");
     setText("");
@@ -63,14 +76,16 @@ export function ReplyBox({ title }: { title: string }) {
         onPaste={(event) => void onPaste(event)}
         className="w-full resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-dim"
       />
-      <div className="flex items-center justify-between">
-        {error ? (
-          <p role="alert" className="text-xs text-blocked">
-            Not sent: {error}
-          </p>
-        ) : (
-          <span />
-        )}
+      {error && (
+        <p role="alert" className="mb-1 text-xs text-blocked">
+          Not sent: {error}
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <ModelButton info={info} send={sendCommand} />
+        <span className="flex-1" />
+        <ContextRing context={info.context} />
+        <Branch branch={branch} />
         <button
           type="submit"
           aria-label="Send"
