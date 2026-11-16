@@ -5,11 +5,14 @@ import { orchPath } from "../board/board";
 import { chatTerminal, selectTerminal } from "../helper";
 import { readTitle } from "../helper/title";
 import { buildProjects, projectFromCommonDir, run } from "./agents";
+import { faviconUrl, gitState } from "./git";
 
 /** Without hc events (hc gone or too old), the list is read again every 10 s. */
 const POLL_MS = 10_000;
 /** hc events come in bursts: one read for a burst. */
 const DEBOUNCE_MS = 500;
+/** git has no event for a commit or a fetch: the branch and the commits ahead and behind are read again every 30 s too. */
+const GIT_POLL_MS = 30_000;
 
 /** The Projects list: agents from `hc ls --json`, workers' names from the orchestration tool, read again on each `hc events` line. */
 export function registerSidebarIpc(appRoot: string): void {
@@ -20,6 +23,12 @@ export function registerSidebarIpc(appRoot: string): void {
   const projectOf = (cwd: string) => {
     if (!projects.has(cwd)) projects.set(cwd, run(git, ["-C", cwd, "rev-parse", "--git-common-dir"]).then((out) => projectFromCommonDir(cwd, out.trim() || null)));
     return projects.get(cwd)!;
+  };
+  // A folder is looked at for a favicon once.
+  const favicons = new Map<string, string | null>();
+  const favicon = (cwd: string) => {
+    if (!favicons.has(cwd)) favicons.set(cwd, faviconUrl(cwd));
+    return favicons.get(cwd)!;
   };
   let last: Sidebar = { projects: [], selected: chatTerminal() };
 
@@ -42,7 +51,9 @@ export function registerSidebarIpc(appRoot: string): void {
         if (title) titles.set(t.address, title);
       }),
     );
-    return { projects: buildProjects({ hc: list, orch: orchOut, titles, projectOf: (c) => names.get(c) ?? c }), selected: chatTerminal() };
+    const built = buildProjects({ hc: list, orch: orchOut, titles, projectOf: (c) => names.get(c) ?? c });
+    const projects = await Promise.all(built.map(async (p) => ({ ...p, ...(await gitState(git, p.cwd)), favicon: favicon(p.cwd) })));
+    return { projects, selected: chatTerminal() };
   };
 
   let timer: NodeJS.Timeout | undefined;
@@ -63,6 +74,7 @@ export function registerSidebarIpc(appRoot: string): void {
   };
   follow();
   refresh();
+  setInterval(refresh, GIT_POLL_MS);
 
   ipcMain.handle(SIDEBAR_CHANNEL, () => ({ ...last, selected: chatTerminal() }));
   ipcMain.handle(SELECT_CHANNEL, (_event, terminal: unknown) => {

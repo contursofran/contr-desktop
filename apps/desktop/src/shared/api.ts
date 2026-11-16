@@ -101,6 +101,15 @@ export interface SidebarAgent {
 export interface SidebarProject {
   name: string;
   agents: SidebarAgent[];
+  /** The folder of its first agent: git and the favicon look here. */
+  cwd: string;
+  /** The current branch; null on a detached HEAD or with no git. */
+  branch: string | null;
+  /** Commits ahead of and behind the upstream; 0 with no upstream. */
+  ahead: number;
+  behind: number;
+  /** A `contr-image://local/...` URL of the project's favicon, else null (the folder icon shows). */
+  favicon: string | null;
 }
 
 export interface Sidebar {

@@ -17,7 +17,7 @@ describe("top bar tabs", () => {
     expect(nextAfterClose(["a"], "a")).toBe("");
   });
   it("finds a worker's title in the tree", () => {
-    const data: Sidebar = { selected: "", projects: [{ name: "p", agents: [agent("t7", "Orch", [agent("t8", "Worker")])] }] };
+    const data: Sidebar = { selected: "", projects: [{ name: "p", cwd: "", branch: null, ahead: 0, behind: 0, favicon: null, agents: [agent("t7", "Orch", [agent("t8", "Worker")])] }] };
     expect(findAgent(data, "t8")?.title).toBe("Worker");
     expect(findAgent(data, "t9")).toBeUndefined();
   });

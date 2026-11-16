@@ -25,8 +25,9 @@ describe("buildProjects", () => {
             workers: [{ terminal: "t2", title: "Fix it", name: "b-2", state: "done", kind: null, issue: "12", workers: [{ terminal: "t3", title: "t3", name: null, state: "blocked", kind: null, issue: null, workers: [] }] }],
           },
         ],
+        cwd: "/w/app", branch: null, ahead: 0, behind: 0, favicon: null,
       },
-      { name: "lib", agents: [{ terminal: "t4", title: "t4", name: null, state: "idle", kind: null, issue: null, workers: [] }] },
+      { name: "lib", agents: [{ terminal: "t4", title: "t4", name: null, state: "idle", kind: null, issue: null, workers: [] }], cwd: "/w/lib", branch: null, ahead: 0, behind: 0, favicon: null },
     ]);
   });
 

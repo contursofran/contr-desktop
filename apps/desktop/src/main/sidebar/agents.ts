@@ -78,18 +78,20 @@ export function buildProjects({ hc, orch, titles, projectOf }: ListInput): Sideb
     });
   }
   const projects = new Map<string, SidebarAgent[]>();
+  const cwds = new Map<string, string>();
   for (const a of agents.values()) {
     const parent = a.parent ? agents.get(a.parent) : undefined;
     if (parent) parent.workers.push(a);
     else {
       const p = a.cwd ? projectOf(a.cwd) : "Other";
       projects.set(p, [...(projects.get(p) ?? []), a]);
+      if (!cwds.has(p)) cwds.set(p, a.cwd);
     }
   }
   const clean = (a: SidebarAgent & { parent?: unknown; cwd?: unknown }): SidebarAgent => ({
     terminal: a.terminal, title: a.title, name: a.name, state: a.state, kind: a.kind, issue: a.issue, workers: a.workers.map(clean),
   });
-  return [...projects].map(([name, list]) => ({ name, agents: list.map(clean) }));
+  return [...projects].map(([name, list]) => ({ name, agents: list.map(clean), cwd: cwds.get(name) ?? "", branch: null, ahead: 0, behind: 0, favicon: null }));
 }
 
 /** The project of a folder: the checkout that holds its git common dir (so a worktree goes under its checkout), else the folder's name. */

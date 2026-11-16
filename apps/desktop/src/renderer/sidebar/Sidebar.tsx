@@ -1,6 +1,6 @@
-import { Bot, Folder } from "lucide-react";
+import { Bot, ChevronDown, ChevronRight, Folder } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { Sidebar as SidebarData, SidebarAgent } from "../../shared/api";
+import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../../shared/api";
 import { StateMark } from "../chat/blocks/Marks";
 import { Foot } from "./Foot";
 import { Head } from "./Head";
@@ -89,6 +89,44 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
   );
 }
 
+/** The shut projects, by name, kept in localStorage `projects.closed` (as herdr-contr). */
+const CLOSED_KEY = "projects.closed";
+function loadClosed(): Set<string> {
+  try {
+    const v = JSON.parse(localStorage.getItem(CLOSED_KEY) ?? "[]") as unknown;
+    return new Set(Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function contains(agents: SidebarAgent[], terminal: string): boolean {
+  return agents.some((a) => a.terminal === terminal || contains(a.workers, terminal));
+}
+
+/** A project row (docs/design/recipe-herdr.md, Projects list): chevron, favicon or folder, name, branch, and the commits ahead and behind. */
+function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProject; shown: boolean; closed: boolean; onToggle: () => void }) {
+  const Chevron = closed ? ChevronRight : ChevronDown;
+  return (
+    <div className="flex h-[30px] items-center gap-1.5 rounded-lg pr-2.5 pl-1.5 text-[13px]">
+      <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex shrink-0 text-dim hover:text-muted">
+        <Chevron aria-hidden className="size-[14px]" />
+      </button>
+      {project.favicon ? (
+        <img data-icon="favicon" src={project.favicon} alt="" className="size-4 shrink-0 rounded opacity-70" />
+      ) : (
+        <Folder data-icon="folder" aria-hidden className="size-4 shrink-0 text-dim" />
+      )}
+      <span className={`truncate font-medium ${shown ? "text-foreground" : "text-muted"}`}>{project.name}</span>
+      {project.branch && <span data-branch className="min-w-0 shrink truncate font-[Menlo,monospace] text-[11px] text-muted">{project.branch}</span>}
+      <span className="flex-1" />
+      {closed && project.agents.map((a) => <span key={a.terminal} className="flex scale-[0.93]"><StateMark state={a.state} label={`${a.title}: ${a.state}`} /></span>)}
+      {project.ahead > 0 && <span data-ahead className="shrink-0 font-[Menlo,monospace] text-[11px] text-muted">↑{project.ahead}</span>}
+      {project.behind > 0 && <span data-behind className="shrink-0 font-[Menlo,monospace] text-[11px] text-muted">↓{project.behind}</span>}
+    </div>
+  );
+}
+
 /** The head, the Projects list (one row per project, its agents under it, an orchestrator's workers under it) and the foot. */
 export function Sidebar({ data, onSelect }: { data: SidebarData; onSelect: (terminal: string) => void }) {
   const [changes, setChanges] = useState<Changes>(load);
@@ -107,6 +145,14 @@ export function Sidebar({ data, onSelect }: { data: SidebarData; onSelect: (term
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
+  const [closed, setClosed] = useState(loadClosed);
+  const toggle = (name: string) =>
+    setClosed((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(name)) next.add(name);
+      localStorage.setItem(CLOSED_KEY, JSON.stringify([...next]));
+      return next;
+    });
   const age = useMemo(() => (terminal: string) => (changes[terminal] ? Math.max(0, now - changes[terminal].at) : null), [changes, now]);
   return (
     <aside className="flex w-[250px] shrink-0 flex-col border-r border-border bg-canvas">
@@ -115,13 +161,12 @@ export function Sidebar({ data, onSelect }: { data: SidebarData; onSelect: (term
       <h2 className="px-2.5 pt-1.5 pb-1 text-xs font-medium text-muted">Projects</h2>
       {data.projects.map((p) => (
         <section key={p.name} aria-label={p.name} className="mb-2.5">
-          <div className="flex h-[30px] items-center gap-1.5 px-2.5 text-[13px] font-medium text-muted">
-            <Folder aria-hidden className="size-4 text-dim" />
-            <span className="truncate">{p.name}</span>
-          </div>
-          <ul className="flex flex-col gap-0.5">
-            {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
-          </ul>
+          <ProjectRow project={p} shown={contains(p.agents, data.selected)} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />
+          {!closed.has(p.name) && (
+            <ul className="flex flex-col gap-0.5">
+              {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
+            </ul>
+          )}
         </section>
       ))}
     </nav>
