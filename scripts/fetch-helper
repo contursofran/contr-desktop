@@ -1,0 +1,21 @@
+#!/bin/sh
+# Downloads the newest herdr-contr release and puts herdr-contr-feed and
+# herdr-contr-orch in bin/ (git ignores it). The app takes CONTR_HELPER over bin/.
+# Uses gh while the herdr-contr repository is private.
+set -eu
+repo="${HERDR_CONTR_REPO:-contursofran/herdr-contr}"
+root="$(cd "$(dirname "$0")/.." && pwd)"
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+tag="$(gh release list -R "$repo" --limit 20 --json tagName -q '[.[].tagName | select(startswith("build-"))][0]')"
+[ -n "$tag" ] || { echo "no build-* release in $repo" >&2; exit 1; }
+gh release download "$tag" -R "$repo" --pattern '*.zip' --dir "$work"
+unzip -q -o "$work"/*.zip -d "$work/zip"
+mkdir -p "$root/bin"
+for name in herdr-contr-feed herdr-contr-orch; do
+  file="$(find "$work/zip" -type f -path "*bin/$name" | head -n 1)"
+  [ -n "$file" ] || { echo "$name is not in $tag" >&2; exit 1; }
+  install -m 755 "$file" "$root/bin/$name"
+done
+echo "$tag" > "$root/bin/RELEASE"
+echo "bin/ has the helper from $tag"

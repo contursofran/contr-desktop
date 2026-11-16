@@ -22,15 +22,20 @@ export function TerminalView() {
     term.open(el);
     fit.fit();
     const api = window.contr.terminal;
-    api.onData((b) => term.write(b));
-    api.onEnd((r) => setNote(r));
+    const offData = api.onData((b) => term.write(b));
+    const offEnd = api.onEnd((r) => setNote(r));
     void api.attach(term.cols, term.rows).then((r) => { if (r.error) setNote(r.error); });
     term.onData((d) => api.input(d));
     term.onResize(({ cols, rows }) => api.resize(cols, rows));
     const ro = new ResizeObserver(() => fit.fit());
     ro.observe(el);
     term.focus();
-    return () => { ro.disconnect(); term.dispose(); };
+    return () => {
+      offData();
+      offEnd();
+      ro.disconnect();
+      term.dispose();
+    };
   }, []);
 
   return (

@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
+import { setupHelper } from "./helper";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 
@@ -14,6 +15,7 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  setupHelper(app.getAppPath());
   registerTerminalIpc();
   createWindow();
   app.on("activate", () => {

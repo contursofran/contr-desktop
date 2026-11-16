@@ -2,6 +2,9 @@ import { _electron as electron, expect, test } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 
+const fakeHelper = path.resolve(import.meta.dirname, "fake-helper.mjs");
+const fixture = path.resolve(import.meta.dirname, "fixtures/claude-session.jsonl");
+
 // A scratch hc core: its own short HC_SESSION (the socket path has a length limit), stopped after the test.
 // Every hc command here carries it, so the owner's core is never reached.
 const session = `cde${process.pid}`;
@@ -28,10 +31,16 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
   const app = await electron.launch({
     args: ["."],
     cwd: path.resolve(import.meta.dirname, ".."),
-    env: { ...process.env, CONTR_HC_SESSION: session, CONTR_HC_TERMINAL: run.address },
+    env: {
+      ...process.env,
+      CONTR_HELPER: fakeHelper,
+      FAKE_HELPER_FIXTURE: fixture,
+      CONTR_HC_SESSION: session,
+      CONTR_TERMINAL: run.address,
+    },
   });
   const page = await app.firstWindow();
-  await expect(page.getByText("The chat comes in a later step.")).toBeVisible();
+  await expect(page.locator("ol[aria-label=Chat] > li")).toHaveCount(13);
   await page.getByRole("button", { name: "Terminal" }).click();
   const term = page.getByTestId("terminal");
   await expect(term).toContainText("200");
@@ -39,6 +48,13 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
   await page.keyboard.type("echo from-xterm-$((6*7))");
   await page.keyboard.press("Enter");
   await expect(term).toContainText("from-xterm-42");
+  // Back and forth: the old view's listeners are gone, so each byte shows once.
+  await page.getByRole("button", { name: "Chat" }).click();
+  await page.getByRole("button", { name: "Terminal" }).click();
+  await page.keyboard.type("echo once-$((2*3))");
+  await page.keyboard.press("Enter");
+  await expect(term).toContainText("once-6");
+  expect((await term.innerText()).match(/once-6/g)).toHaveLength(1);
   expect(hc("read", run.address)).toContain("from-xterm-42");
   await page.screenshot({ path: path.join(shots, "terminal-shell.png") });
 

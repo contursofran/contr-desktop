@@ -1,14 +1,14 @@
-// The Terminal side's IPC. The terminal to show comes from env vars for now:
-// CONTR_HC_TERMINAL (address or name) and CONTR_HC_SESSION (the hc session; empty: hc's default).
+// The Terminal side's IPC. It shows the chat's terminal (CONTR_TERMINAL, see ../helper),
+// in the hc session that CONTR_HC_SESSION names (empty: hc's default session).
 import { ipcMain, type WebContents } from "electron";
+import { chatTerminal } from "../helper";
 import { HcAttach } from "./hc-attach";
 
 const sessions = new Map<number, HcAttach>();
 
 export function registerTerminalIpc(): void {
   ipcMain.handle("terminal:attach", (e, cols: number, rows: number) => {
-    const terminal = process.env.CONTR_HC_TERMINAL;
-    if (!terminal) return { error: "Set CONTR_HC_TERMINAL to the hc terminal to show." };
+    const terminal = chatTerminal();
     const wc: WebContents = e.sender;
     sessions.get(wc.id)?.close();
     const a = new HcAttach({ terminal, session: process.env.CONTR_HC_SESSION }, cols, rows, {
