@@ -1,14 +1,17 @@
 import { Check } from "lucide-react";
 import type { PrChecks, WorkerState } from "../../../shared/api";
 import { Spinner } from "../rows/Spinner";
+import { Tip } from "../../ui/Tip";
 
 /** The design's status marks: loader (working), check (done), dot (blocked), empty ring (idle). */
 export function StateMark({ state, label }: { state: WorkerState; label: string }) {
   const box = "inline-flex size-[14px] shrink-0 items-center justify-center";
-  if (state === "working") return <span className={box} title={label} data-state={state}><Spinner className="text-[13px] leading-none text-[var(--color-working)]" /></span>;
-  if (state === "done") return <span className={box} title={label} aria-label={label} data-state={state}><Check className="size-[13px] text-[var(--color-done)]" /></span>;
-  if (state === "blocked") return <span className={box} title={label} aria-label={label} data-state={state}><span className="size-[9px] rounded-full bg-[var(--color-blocked)]" /></span>;
-  return <span className={box} title={label} aria-label={label} data-state={state}><span className="size-[12px] rounded-full border border-[var(--color-dim)]" /></span>;
+  const icon =
+    state === "working" ? <Spinner className="text-[13px] leading-none text-[var(--color-working)]" />
+    : state === "done" ? <Check className="size-[13px] text-[var(--color-done)]" />
+    : state === "blocked" ? <span className="size-[9px] rounded-full bg-[var(--color-blocked)]" />
+    : <span className="size-[12px] rounded-full border border-[var(--color-dim)]" />;
+  return <Tip label={label} side="top"><span className={box} tabIndex={0} aria-label={label} data-state={state}>{icon}</span></Tip>;
 }
 
 const CHECKS: Record<NonNullable<PrChecks["checks"]>, { state: WorkerState; label: string }> = {

@@ -101,7 +101,7 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 2", 2]);
   await row.click();
   const list = page.getByRole("region", { name: "Inbox" });
-  await expect(list.locator("[data-item]")).toHaveText([/^Release notes draftWaits on a prompt$/, /^Install health checkD9 · The coordinator asks/]);
+  await expect(list.locator("[data-item]")).toHaveText([/^(blocked)?Release notes draftWaits on a prompt$/, /^Install health checkD9 · The coordinator asks/]);
   await shoot(page, "inbox-blocked");
 
   await list.locator('[data-item="t11"]').getByRole("button").click();

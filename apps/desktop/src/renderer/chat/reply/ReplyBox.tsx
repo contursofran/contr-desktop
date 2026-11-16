@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { Tip } from "../../ui/Tip";
 import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { composeMessage, isSendKey } from "./message";
 import { serial } from "./menu";
@@ -110,15 +111,11 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
         </p>
       )}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Attach image"
-          title="Attach image"
-          onClick={() => void onAttach()}
-          className="rounded-full p-1 text-muted hover:bg-hover hover:text-foreground"
-        >
-          <Plus aria-hidden className="size-4" />
-        </button>
+        <Tip label="Attach image" side="top">
+          <button type="button" aria-label="Attach image" onClick={() => void onAttach()} className="rounded-full p-1 text-muted hover:bg-hover hover:text-foreground">
+            <Plus aria-hidden className="size-4" />
+          </button>
+        </Tip>
         <ModelButton info={info} send={sendCommand} />
         <span className="flex-1" />
         <ContextRing context={info.context} />

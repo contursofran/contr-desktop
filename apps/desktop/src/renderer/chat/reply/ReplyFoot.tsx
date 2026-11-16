@@ -1,5 +1,6 @@
 import { ChevronDown, GitBranch, Sparkle } from "lucide-react";
 import { Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@ui-sdk/react/menu";
+import { Tip } from "../../ui/Tip";
 import { useEffect, useState } from "react";
 import type { ReplyInfo } from "../../../shared/api";
 import { menuCommand, modelLabel, PENDING_MS, shown, type Pending } from "./menu";
@@ -89,13 +90,15 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   const length = 2 * Math.PI * r;
   const filled = (Math.min(100, Math.max(0, context.percent)) / 100) * length;
   return (
-    <span title={context.text} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 text-xs ${context.warn ? "text-blocked" : "text-muted"}`}>
+    <Tip label={context.text} side="top">
+      <span tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 text-xs outline-none ${context.warn ? "text-blocked" : "text-muted"}`}>
       <svg aria-hidden viewBox="0 0 16 16" className="size-4 -rotate-90">
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" className="stroke-border" />
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" stroke="currentColor" strokeDasharray={`${filled} ${length}`} />
       </svg>
       {context.percent}%
-    </span>
+      </span>
+    </Tip>
   );
 }
 
