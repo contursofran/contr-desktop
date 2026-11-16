@@ -29,7 +29,9 @@ test("the window shows the helper's rows", async () => {
   const rows = page.locator("ol[aria-label=Chat] > li");
   await expect(rows).toHaveCount(17);
   await expect(rows.nth(1)).toContainText("The login form loses the email");
-  await expect(rows.nth(3).getByRole("button")).toHaveText(["Searched 2 patterns›", "Read 1 file›"]);
+  await expect(rows.nth(3).getByRole("button")).toHaveText(["Searched 2 patterns", "Read 1 file"]);
+  await expect(rows.nth(3).locator("button svg.lucide-search")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /Running a command/ }).getByRole("status")).toBeVisible();
   await expect(rows.nth(6)).toContainText("Opened PR #14");
   await expect(rows.nth(7)).toHaveText("14:06 · Worked 1m 0s · 6 tools");
   await expect(rows.nth(9)).toHaveText("↳ t2 docs-worker: Done: docs for the login form are updated in #15.");
@@ -39,6 +41,7 @@ test("the window shows the helper's rows", async () => {
   await ran.click();
   await expect(ran).toHaveAttribute("aria-expanded", "true");
   await expect(rows.nth(5)).toContainText("12 passed");
+  await expect(rows.nth(5)).toContainText("failed");
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector("main")!).backgroundColor);
   expect(bg).toBe("rgb(32, 32, 32)");
   await page.screenshot({ path: path.join(shots, "helper-rows.png") });
