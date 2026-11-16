@@ -1,10 +1,11 @@
-import { app, ipcMain, type WebContents } from "electron";
-import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
+import { app, BrowserWindow, dialog, ipcMain, type WebContents } from "electron";
+import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
 import { terminalTitle } from "./title";
 import { helperPath, runHelper, type HelperLine } from "./run";
 import { replyInfo } from "./reply";
+import { pickImage } from "./pick";
 
 let selected: string | undefined;
 
@@ -42,5 +43,11 @@ export function setupHelper(appRoot: string): void {
     if (!commands.has(terminal)) commands.set(terminal, runHelper(helper, ["commands", "--terminal", terminal]));
     return replyInfo(helper, terminal, commands.get(terminal)!);
   });
+  ipcMain.handle(PICK_IMAGE_CHANNEL, (event) =>
+    pickImage(process.env, (options) => {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      return window ? dialog.showOpenDialog(window, options) : dialog.showOpenDialog(options);
+    }),
+  );
   ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper, path.join(app.getPath("userData"), "paste")));
 }
