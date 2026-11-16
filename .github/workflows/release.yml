@@ -92,7 +92,7 @@ jobs:
           {
             echo "contr ${{ needs.stamp.outputs.version }} from ${{ needs.stamp.outputs.sha }}."
             echo
-            echo "The macOS app is not signed (no certificate yet). After you unzip or copy it, run"
-            echo "\`xattr -dr com.apple.quarantine /Applications/contr.app\` if macOS blocks it."
+            echo "The macOS app is not signed. The first time, open it with right-click > Open"
+            echo "(or run \`xattr -dr com.apple.quarantine /Applications/contr.app\`)."
           } > notes.md
       - run: gh release create "$TAG" dist/* -R "${{ github.repository }}" --target "${{ needs.stamp.outputs.sha }}" -t "$TAG" -F notes.md
