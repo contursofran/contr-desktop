@@ -1,5 +1,6 @@
 import type { Element } from "hast";
 import { Component, Suspense, useMemo, type ComponentProps, type ReactNode } from "react";
+import { diagramFor } from "../blocks/Diagram";
 import { HighlightedCode, MarkdownCodeBlock, extractFenceLanguage } from "./MarkdownCodeBlock";
 import { contrBlock } from "../blocks/contrBlock";
 import { RefChip } from "../refs/RefChip";
@@ -38,6 +39,8 @@ function Pre({ node, children }: WithNode<"pre">) {
   const block = contrBlock(language, code);
   if (block) return block;
   const plain = <pre>{children}</pre>;
+  const diagram = diagramFor(language, code);
+  if (diagram) return diagram;
   return (
     <MarkdownCodeBlock code={code} language={language}>
       <PlainOnError fallback={plain}>
