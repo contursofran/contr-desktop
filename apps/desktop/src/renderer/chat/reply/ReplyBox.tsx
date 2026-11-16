@@ -4,7 +4,7 @@ import { composeMessage, isSendKey } from "./message";
 import { serial } from "./menu";
 import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
 
-/** The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V or the + button attaches an image. */
+/** The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V attaches an image. */
 export function ReplyBox({ title }: { title: string }) {
   const [text, setText] = useState("");
   const [images, setImages] = useState<string[]>([]);
