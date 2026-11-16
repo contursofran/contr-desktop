@@ -1,6 +1,7 @@
-import { _electron as electron, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { launchApp } from "./launch";
 
 const fakeHelper = path.resolve(import.meta.dirname, "fake-helper.mjs");
 const fixture = path.resolve(import.meta.dirname, "fixtures/claude-session.jsonl");
@@ -28,18 +29,13 @@ test.setTimeout(60_000);
 
 test("the Terminal side shows an hc terminal and sends keys to it", async () => {
   const run = JSON.parse(hc("run", "--bg", "--json", "printf 'ready\\n'; seq 1 200; exec sh")) as { address: string };
-  const app = await electron.launch({
-    args: ["."],
-    cwd: path.resolve(import.meta.dirname, ".."),
-    env: {
-      ...process.env,
-      CONTR_HELPER: fakeHelper,
-      FAKE_HELPER_FIXTURE: fixture,
-      CONTR_HC_SESSION: session,
-      // The reply box reads the title with `hc get`: it goes to the scratch core too.
-      HC_SESSION: session,
-      CONTR_TERMINAL: run.address,
-    },
+  const app = await launchApp({
+    CONTR_HELPER: fakeHelper,
+    FAKE_HELPER_FIXTURE: fixture,
+    CONTR_HC_SESSION: session,
+    // The reply box reads the title with `hc get`: it goes to the scratch core too.
+    HC_SESSION: session,
+    CONTR_TERMINAL: run.address,
   });
   const page = await app.firstWindow();
   await expect(page.locator("ol[aria-label=Chat] > li")).toHaveCount(16);
