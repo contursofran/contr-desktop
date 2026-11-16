@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { ChatList } from "./chat/list/ChatList";
-import { StatusLine, orchestratingText } from "./chat/rows/StatusLine";
+import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
 import { useBoard } from "./chat/blocks/useBoard";
-import { ReplyBox } from "./chat/reply/ReplyBox";
+import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { Sidebar } from "./sidebar/Sidebar";
@@ -37,6 +37,9 @@ function Chat() {
   // The top strip is the drag area of the hidden title bar. The Chat / Terminal switch sits at its right.
   const [side, setSide] = useState<Side>("chat");
   const board = useBoard(NO_ISSUES);
+  const workers = board?.orchestrating ?? 0;
+  const [draft, setDraft] = useState<Draft>();
+  const orchestrate = () => setDraft((d) => ({ text: ORCHESTRATE_COMMAND, id: (d?.id ?? 0) + 1 }));
   const tab = (s: Side, label: string) => (
     <button
       type="button"
@@ -63,8 +66,12 @@ function Chat() {
             </p>
           )}
           <ChatList rows={feed.rows} />
-          <StatusLine working={feed.working} right={orchestratingText(board?.orchestrating ?? 0)} />
-          <ReplyBox title={title} />
+          <StatusLine
+            working={feed.working}
+            right={orchestratingText(workers)}
+            onOrchestrate={board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
+          />
+          <ReplyBox title={title} draft={draft} />
         </>
       ) : (
         <TerminalView />
