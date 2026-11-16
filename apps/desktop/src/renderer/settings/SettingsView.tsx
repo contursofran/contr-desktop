@@ -29,7 +29,7 @@ export function SettingsView() {
               aria-label="Theme"
               value={data?.theme ?? null}
               onValueChange={(v) => v && choose(v)}
-              className="relative isolate flex gap-1 rounded-lg bg-canvas p-0.5"
+              className="relative isolate flex gap-1 rounded-lg border border-border bg-chrome p-0.5"
             >
               <SegmentedControlIndicator className="absolute -z-10 top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-md bg-selected" />
               {THEMES.map((t) => (

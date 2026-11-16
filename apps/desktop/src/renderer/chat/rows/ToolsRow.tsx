@@ -33,7 +33,7 @@ export function ToolsRow({ row }: { row: FeedRow }) {
           {shown.calls.map((call, i) => (
             <li key={i} className="py-0.5">
               <span className="text-dim">{call.name}</span> <span className="font-mono text-xs">{call.summary}</span>{" "}
-              {!call.done ? <Spinner className="text-working" /> : call.error ? <span className="text-blocked">failed</span> : <CheckIcon aria-label="done" className="inline size-3 text-done" />}
+              {!call.done ? <Spinner size={11} className="text-working" /> : call.error ? <span className="text-blocked">failed</span> : <CheckIcon aria-label="done" className="inline size-3 text-done" />}
               {call.output && <pre className="mt-0.5 whitespace-pre-wrap font-mono text-xs text-dim">{call.output}</pre>}
             </li>
           ))}
@@ -47,8 +47,8 @@ function ToolChip({ chip, open, onClick }: { chip: Chip; open: boolean; onClick:
   const Icon = chipIcon(chip.symbol);
   const running = chip.calls.some((c) => !c.done);
   return (
-    <button type="button" aria-expanded={open} onClick={onClick} className="flex h-7 items-center gap-1.5 rounded-full border border-border px-3 text-muted hover:text-foreground">
-      {running ? <Spinner className="text-working" /> : <Icon aria-hidden className="size-3.5" />}
+    <button type="button" aria-expanded={open} onClick={onClick} className="flex h-7 items-center gap-1.5 rounded-full border border-border bg-chrome px-3 text-muted hover:text-foreground">
+      {running ? <Spinner size={11} className="text-working" /> : <Icon aria-hidden className="size-3.5" />}
       <span>{chip.text}</span>
       <ChevronDownIcon aria-hidden className={`size-3 transition-transform ${open ? "rotate-180" : ""}`} />
     </button>

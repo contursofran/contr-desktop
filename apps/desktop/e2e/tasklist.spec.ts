@@ -18,14 +18,16 @@ test("task-list boxes take their colors from theme tokens", async () => {
   const row = await chatRow(page, "a5");
   const checked = row.locator('li.task-list-item input:checked').first();
   const empty = row.locator('li.task-list-item input:not(:checked)').first();
+  // herdr-contr-mac.json and herdr-contr-mac-light.json `working`.
+  const working = { dark: ["#0a84ff", "rgb(10, 132, 255)"], light: ["#007aff", "rgb(0, 122, 255)"] };
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const token = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--color-working").trim());
     const style = (el: HTMLElement) => ({ bg: getComputedStyle(el).backgroundColor, border: getComputedStyle(el).borderTopColor });
     const c = await checked.evaluate(style);
     const e = await empty.evaluate(style);
-    expect(token).toBe("#007aff");
-    expect(c.bg).toBe("rgb(0, 122, 255)");
+    expect(token).toBe(working[scheme][0]);
+    expect(c.bg).toBe(working[scheme][1]);
     expect(e.bg).not.toBe(c.bg);
     expect(e.border).not.toBe(e.bg);
     await row.scrollIntoViewIfNeeded();

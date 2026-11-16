@@ -127,7 +127,7 @@ test("assistant rows show as Markdown with code blocks and tables", async () => 
   await page.screenshot({ path: path.join(shots, "markdown-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector("main")!).backgroundColor);
-  expect(bg).toBe("rgb(255, 255, 255)");
+  expect(bg).toBe("rgb(236, 236, 236)");
   await page.screenshot({ path: path.join(shots, "markdown-light.png") });
   await app.close();
 });
