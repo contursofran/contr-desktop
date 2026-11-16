@@ -4,6 +4,7 @@
 // `send` appends {terminal, text} as one JSON line to FAKE_HELPER_SEND_LOG.
 // `paste-image` answers `image` with FAKE_HELPER_PASTE_IMAGE as the path (null when not set).
 // FAKE_HELPER_SEND_ERROR=<code> makes `send` answer with that error.
+// `working` gives a fixed working line.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 import { appendFileSync, readFileSync } from "node:fs";
 
@@ -33,6 +34,9 @@ if (process.env.FAKE_HELPER_ERROR) {
   end(false);
 } else if (cmd === "paste-image") {
   out({ path: process.env.FAKE_HELPER_PASTE_IMAGE ?? null, type: "image" });
+  end(true);
+} else if (cmd === "working") {
+  out({ type: "working", text: "Hashing…", detail: "35s · ↓ 1.2k tokens" });
   end(true);
 } else if (cmd === "send") {
   appendFileSync(process.env.FAKE_HELPER_SEND_LOG, `${JSON.stringify({ terminal: arg("terminal"), text: arg("text") })}\n`);

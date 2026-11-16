@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { readFeedAnswer } from "./feed";
+import { readFeedAnswer, readWorking } from "./feed";
 import { helperPath, parseLines, runHelper } from "./run";
 
 const fake = path.resolve(import.meta.dirname, "../../../e2e/fake-helper.mjs");
@@ -39,11 +39,21 @@ describe("runHelper", () => {
   it("reads the fake helper's answer", async () => {
     process.env.FAKE_HELPER_FIXTURE = path.resolve(import.meta.dirname, "../../../e2e/fixtures/claude-session.jsonl");
     const lines = await runHelper(fake, ["feed", "--terminal", "t1"]);
-    expect(lines.filter((l) => l.type === "row")).toHaveLength(13);
+    expect(lines.filter((l) => l.type === "row")).toHaveLength(15);
   });
 
   it("takes the helper path from CONTR_HELPER", () => {
     expect(helperPath("/app", { CONTR_HELPER: "/x/feed" })).toBe("/x/feed");
     expect(helperPath("/r/apps/desktop", {})).toBe("/r/bin/herdr-contr-feed");
+  });
+});
+
+describe("readWorking", () => {
+  it("reads the fake helper's working line", async () => {
+    expect(await readWorking(fake, "t1")).toEqual({ text: "Hashing…", detail: "35s · ↓ 1.2k tokens" });
+  });
+
+  it("gives null when the helper fails", async () => {
+    expect(await readWorking("/nonexistent/herdr-contr-feed", "t1")).toBeNull();
   });
 });

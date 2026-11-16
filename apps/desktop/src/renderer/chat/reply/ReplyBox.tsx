@@ -38,7 +38,7 @@ export function ReplyBox({ title }: { title: string }) {
   return (
     <form
       aria-label="Reply"
-      className="mx-4 mb-4 rounded-lg border border-border bg-raised p-2"
+      className="mx-auto mb-4 w-full max-w-3xl rounded-lg border border-border bg-raised p-2"
       onSubmit={(event) => {
         event.preventDefault();
         void send();

@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
+import { Row } from "./chat/rows/Row";
+import { StatusLine } from "./chat/rows/StatusLine";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 
 export function App() {
   const [feed, setFeed] = useState(emptyFeed);
+  const [title, setTitle] = useState("");
+  useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
-  // The top strip is the drag area of the hidden title bar. Rows show as plain text for now.
+  // The top strip is the drag area of the hidden title bar.
   return (
     <main className="flex h-screen flex-col bg-canvas text-foreground">
       <div className="h-10 shrink-0 [-webkit-app-region:drag]" />
@@ -16,18 +20,14 @@ export function App() {
       )}
       <ol aria-label="Chat" className="flex-1 overflow-y-auto px-4 pb-4">
         {feed.rows.map((row) => (
-          <li key={row.id} data-kind={row.k} className="whitespace-pre-wrap py-1 text-sm">
-            <span className="text-dim">{row.k}: </span>
-            {rowText(row)}
+          <li key={row.id} data-kind={row.k} className="mx-auto w-full max-w-3xl py-1">
+            <Row row={row} />
           </li>
         ))}
       </ol>
-      <ReplyBox title={feed.agent ?? "agent"} />
+      <StatusLine working={feed.working} />
+      <ReplyBox title={title} />
     </main>
   );
 }
 
-function rowText(row: import("../shared/api").FeedRow): string {
-  if (row.k === "tools") return (row.chips ?? []).map((c) => c.text).join(", ");
-  return row.text ?? "";
-}
