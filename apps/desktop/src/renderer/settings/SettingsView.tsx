@@ -53,7 +53,7 @@ export function SettingsView() {
   );
 }
 
-/** The Updates section: this version, the newest one, and the Update button (downloads the .dmg and opens it). */
+/** The Updates section: this version, the newest one, and the Update button (installs the .zip, else opens the .dmg). */
 function Updates() {
   const [u, setU] = useState<UpdateState>();
   useEffect(() => {
@@ -73,7 +73,11 @@ function Updates() {
           <span className="text-[13px]">Newest</span>
           <span className="flex items-center gap-3">
             <span aria-label="Newest version" className="font-mono text-[11px] text-muted">{newest}</span>
-            {u?.available && (
+            {u?.ready ? (
+              <button type="button" onClick={() => void window.contr.restartToUpdate()} className="rounded-md bg-working px-3 py-1 text-xs text-white">
+                Restart to update
+              </button>
+            ) : u?.available && (
               <button type="button" disabled={u.progress !== null} onClick={() => void window.contr.downloadUpdate()} className="rounded-md bg-working px-3 py-1 text-xs text-white disabled:opacity-60">
                 {u.progress !== null ? `Downloading ${u.progress}%` : "Update"}
               </button>

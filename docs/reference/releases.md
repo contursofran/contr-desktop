@@ -13,7 +13,7 @@ to `main` (or by hand, `workflow_dispatch`). It:
 3. Publishes one GitHub release with the files and short notes. The file
    names do not change between releases: `contr-mac-universal.dmg`,
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
-   button finds the `.dmg` of the newest release by this name.
+   button finds the `.zip` and the `.dmg` of the newest release by these names.
 
 The workflow reads the releases of herdr-contr, a public repository, with
 its own token. It needs no secret.
@@ -49,8 +49,8 @@ The app is not signed and not notarized: there is no Apple certificate
 (or run `xattr -dr com.apple.quarantine /Applications/contr.app`). The
 release notes say this too.
 
-Auto-install (Squirrel.Mac, electron-updater) needs a signed app, so the
-Update button only downloads the newest `.dmg` and opens it.
+Squirrel.Mac and electron-updater need a signed app, so the Update button
+installs the new app with its own swap script (see The Update button).
 
 ## Build locally
 
@@ -66,11 +66,26 @@ Settings > Updates shows this app's version and the newest release's version.
 A packaged app reads `releases/latest` of contursofran/contr-desktop (no
 token) at start and every 6 hours. The version comes from the release notes
 ("contr 0.1.<run> from <sha>."), because the tag holds no version. When the
-newest one is newer and has `contr-mac-universal.dmg`, Settings shows an
-Update button and the foot's Settings button a dot. A press downloads the
-`.dmg` into Downloads, with progress, and opens it; the owner drags contr to
+newest one is newer, Settings shows an Update button and the foot's
+Settings button a dot.
+
+When the folder of the running `contr.app` is writable and the release has
+`contr-mac-universal.zip`, a press downloads the `.zip` with progress and
+unpacks it with `ditto` into a temp folder. The app checks that the
+`Info.plist` version is the release version and that `codesign --verify`
+passes (ad-hoc is fine). Then Settings shows "Restart to update". A press
+starts a detached swap script and quits. The script waits for the app's pid
+to end, moves the old app to `contr.app.old`, copies the new one in, removes
+quarantine (`xattr -dr com.apple.quarantine`) and opens it. It removes the old
+copy only after the new app runs. On any failure it puts the old app back and
+opens it.
+
+When the folder is not writable or the release has no `.zip`, a press
+downloads the `.dmg` into Downloads and opens it; the owner drags contr to
 Applications. A failed check or download shows its message.
 
 Dev and e2e builds show "Development build" and check nothing. e2e tests set
 `CONTR_UPDATE_URL` (a fake release JSON) and `CONTR_DOWNLOADS` (a scratch
-folder); with `CONTR_E2E=1` the `.dmg` is not opened.
+folder) and `CONTR_INSTALL_DIR` (a scratch folder in place of the running
+app's folder, never `/Applications`); with `CONTR_E2E=1` nothing is opened,
+swapped or quit.
