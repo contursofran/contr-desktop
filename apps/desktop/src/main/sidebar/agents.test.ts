@@ -3,7 +3,7 @@ import { buildProjects, projectFromCommonDir } from "./agents";
 
 const hc = JSON.stringify({
   terminals: [
-    { address: "t1", name: "orch", cwd: "/w/app", state: "live", status: "working" },
+    { address: "t1", name: "orch", cwd: "/w/app", state: "live", status: "working", agent: "claude-code" },
     { address: "t2", cwd: "/w/app-wt/x", parent: "t1", state: "live", status: "done" },
     { address: "t3", cwd: "/w/app-wt/y", parent: "t2", state: "live", status: "waiting" },
     { address: "t4", cwd: "/w/lib", parent: "t9", state: "live", status: "idle" },
@@ -11,7 +11,7 @@ const hc = JSON.stringify({
     { address: "t6", cwd: "/w/lib", state: "finished", status: "done" },
   ],
 });
-const orch = JSON.stringify([{ name: "b-2", address: "t2", title: "Fix it" }]);
+const orch = JSON.stringify([{ name: "b-2", address: "t2", title: "Fix it", issue: "12" }]);
 
 describe("buildProjects", () => {
   it("groups live agents by project and puts workers under their parent", () => {
@@ -21,12 +21,12 @@ describe("buildProjects", () => {
         name: "app",
         agents: [
           {
-            terminal: "t1", title: "Audit", name: "orch", state: "working",
-            workers: [{ terminal: "t2", title: "Fix it", name: "b-2", state: "done", workers: [{ terminal: "t3", title: "t3", name: null, state: "blocked", workers: [] }] }],
+            terminal: "t1", title: "Audit", name: "orch", state: "working", kind: "claude-code", issue: null,
+            workers: [{ terminal: "t2", title: "Fix it", name: "b-2", state: "done", kind: null, issue: "12", workers: [{ terminal: "t3", title: "t3", name: null, state: "blocked", kind: null, issue: null, workers: [] }] }],
           },
         ],
       },
-      { name: "lib", agents: [{ terminal: "t4", title: "t4", name: null, state: "idle", workers: [] }] },
+      { name: "lib", agents: [{ terminal: "t4", title: "t4", name: null, state: "idle", kind: null, issue: null, workers: [] }] },
     ]);
   });
 

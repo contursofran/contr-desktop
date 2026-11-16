@@ -37,3 +37,12 @@ describe("applyFeed working", () => {
     expect(applyFeed(s1, { type: "splice", at: 0, rows: [row("a")] }).working?.text).toBe("Hashing…");
   });
 });
+
+describe("applyFeed card", () => {
+  it("keeps the card across a splice and clears it on null", () => {
+    const card = { kind: "approval", request: "r", title: "t", command: "c", tool: "Bash", answered: false } as const;
+    const withCard = applyFeed(emptyFeed, { type: "card", card });
+    expect(applyFeed(withCard, { type: "splice", at: 0, rows: [] }).card).toEqual(card);
+    expect(applyFeed(withCard, { type: "card", card: null }).card).toBeNull();
+  });
+});

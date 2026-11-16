@@ -1,4 +1,5 @@
 import type { FeedEvent, FeedRow, Working } from "../../shared/api";
+import { readCard } from "./card";
 import { runHelper, type HelperLine } from "./run";
 
 /** `feed` is one call per command, so we call it again on a timer. The helper has no watch mode yet. */
@@ -40,6 +41,10 @@ export function startFeed(helper: string, terminal: string, emit: (event: FeedEv
     const working = await readWorking(helper, terminal);
     if (stopped) return;
     if (working) emit({ type: "working", working });
+    // The card is read on the same 1 s tick: the helper has no event for a prompt on screen.
+    const card = await readCard(helper, terminal);
+    if (stopped) return;
+    emit({ type: "card", card });
     timer = setTimeout(() => void tick(), FEED_INTERVAL_MS);
   };
   void tick();

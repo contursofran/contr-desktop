@@ -16,7 +16,26 @@ export interface FeedRow {
 export type FeedEvent =
   | { type: "splice"; at: number; rows: FeedRow[]; agent?: string; model?: string }
   | { type: "error"; code: string; message: string }
-  | { type: "working"; working: Working };
+  | { type: "working"; working: Working }
+  | { type: "card"; card: Card | null };
+
+/** The prompt on the agent's screen (helper `card`). */
+export type Card =
+  | { kind: "approval"; request: string; title: string; command: string; tool: string; answered: boolean }
+  | { kind: "question"; request: string; question: QuestionCard; unread: number };
+
+export interface QuestionCard {
+  agent: string;
+  delivery: "picker" | "message";
+  questions: { id: string; header: string; text: string; multi: boolean; options: { label: string; detail?: string; recommended?: boolean }[] }[];
+  noOther?: boolean;
+}
+
+/** The helper's `done` result of `approve` or `answer`: sent, changed, unconfirmed, answered, busy, failed, … */
+export interface PromptResult {
+  result: string;
+  message?: string;
+}
 
 /** The agent's working line (helper `working`). `text` is null when the agent does not work. */
 export interface Working {
@@ -34,10 +53,16 @@ export interface ContrApi {
   title(): Promise<string>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
+  /** Opens the native file picker for an image (png, jpeg, gif, webp). `path` is null when the owner cancels. */
+  pickImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
   /** PR and issue states of the agent's repository, from gh. null: gh does not know the number. */
   refs(numbers: number[]): Promise<Record<number, RefState | null>>;
   /** Opens a PR or issue in the browser. */
   openRef(url: string): Promise<void>;
+  /** Allows (true) or denies an approval card through the helper's `approve`. */
+  approve(request: string, allow: boolean): Promise<PromptResult>;
+  /** Answers a question card through the helper's `answer`: one entry per question. */
+  answer(request: string, answers: { picks: number[]; other?: string }[]): Promise<PromptResult>;
   /** The `contr-status` board: worker states from the orchestration tool, and each issue's PR checks from gh. */
   board(issues: number[]): Promise<Board>;
   /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
@@ -50,6 +75,12 @@ export interface ContrApi {
   onSidebar(listener: (sidebar: Sidebar) => void): () => void;
   /** Makes this terminal's agent the chat's agent. Returns the selected terminal. */
   select(terminal: string): Promise<string>;
+  /** The plan usage rows (helper `usage`), Claude then Codex. A plan with no data has no row. */
+  usage(): Promise<UsageRow[]>;
+  /** Listens to new plan usage (every 5 minutes). Returns a function that stops listening. */
+  onUsage(listener: (rows: UsageRow[]) => void): () => void;
+  /** hc's other machines (`hc machine ls --json`). */
+  machines(): Promise<Machine[]>;
   terminal: TerminalApi;
 }
 
@@ -59,6 +90,10 @@ export interface SidebarAgent {
   title: string;
   name: string | null;
   state: WorkerState;
+  /** The program's kind from hc `agent` ("claude-code", "codex"), null when hc gives none. */
+  kind: string | null;
+  /** The issue from the orchestration tool, null when unknown. */
+  issue: string | null;
   workers: SidebarAgent[];
 }
 
@@ -71,6 +106,19 @@ export interface SidebarProject {
 export interface Sidebar {
   projects: SidebarProject[];
   selected: string;
+}
+
+/** A foot row: the plan, the most used window's percent, and its text ("41% wk · 4d"). */
+export interface UsageRow {
+  plan: string;
+  percent: number;
+  value: string;
+}
+
+/** A machine hc reaches over ssh. `state` is hc's ("connected", "unreachable", "needs-login", ...). */
+export interface Machine {
+  name: string;
+  state: string;
 }
 
 /** A worker's mark: the loader, a check, a dot or an empty ring. */
@@ -121,12 +169,18 @@ export const FEED_CHANNEL = "contr:feed";
 export const FEED_READY_CHANNEL = "contr:feed-ready";
 export const SEND_CHANNEL = "contr:send";
 export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
+export const PICK_IMAGE_CHANNEL = "contr:pick-image";
 export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
+export const APPROVE_CHANNEL = "contr:approve";
+export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
 export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";
 export const SIDEBAR_EVENT = "contr:sidebar-event";
 export const SELECT_CHANNEL = "contr:select";
+export const USAGE_CHANNEL = "contr:usage";
+export const USAGE_EVENT = "contr:usage-event";
+export const MACHINES_CHANNEL = "contr:machines";

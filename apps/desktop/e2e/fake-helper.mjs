@@ -6,7 +6,11 @@
 // `paste-image` answers `image` with FAKE_HELPER_PASTE_IMAGE as the path (null when not set).
 // FAKE_HELPER_SEND_ERROR=<code> makes `send` answer with that error.
 // `working` gives a fixed working line.
+// `card` prints the `card` line in FAKE_HELPER_CARD (a JSON file), else `{"type":"card"}` (no card).
+// `approve` and `answer` append {cmd, terminal, request, allow|answers} to FAKE_HELPER_ANSWER_LOG and answer
+// `done` with FAKE_HELPER_ANSWER_RESULT (default `sent`).
 // `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model.
+// `usage` gives Claude and Codex plans that reset some hours and days from now.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -41,8 +45,30 @@ if (process.env.FAKE_HELPER_ERROR) {
 } else if (cmd === "paste-image") {
   out({ path: process.env.FAKE_HELPER_PASTE_IMAGE ?? null, type: "image" });
   end(true);
+} else if (cmd === "usage") {
+  const now = Math.floor(Date.now() / 1000);
+  const h = (n) => now + n * 3600 + 600;
+  out({
+    type: "usage",
+    plans: [
+      { plan: "claude", read_at: now, windows: [{ kind: "five_hour", used_percent: 38.4, resets_at: h(2) }, { kind: "seven_day", used_percent: 64.2, resets_at: h(96) }] },
+      { plan: "codex", read_at: now, windows: [{ kind: "five_hour", used_percent: 21.0, resets_at: h(3) }, { kind: "seven_day", used_percent: 9.0, resets_at: h(130) }] },
+    ],
+  });
+  end(true);
 } else if (cmd === "working") {
   out({ type: "working", text: "Hashing…", detail: "35s · ↓ 1.2k tokens" });
+  end(true);
+} else if (cmd === "card") {
+  const card = process.env.FAKE_HELPER_CARD ? JSON.parse(readFileSync(process.env.FAKE_HELPER_CARD, "utf8")) : {};
+  out({ ...card, type: "card" });
+  end(true);
+} else if (cmd === "approve" || cmd === "answer") {
+  const got = { cmd, terminal: arg("terminal"), request: arg("request") };
+  if (cmd === "approve") got.allow = rest.includes("--allow") && !rest.includes("--deny");
+  else got.answers = JSON.parse(arg("answers"));
+  if (process.env.FAKE_HELPER_ANSWER_LOG) appendFileSync(process.env.FAKE_HELPER_ANSWER_LOG, `${JSON.stringify(got)}\n`);
+  out({ result: process.env.FAKE_HELPER_ANSWER_RESULT ?? "sent", type: "done" });
   end(true);
 } else if (cmd === "model") {
   const none = process.env.FAKE_HELPER_MODEL === "none";

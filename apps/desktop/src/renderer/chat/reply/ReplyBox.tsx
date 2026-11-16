@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { composeMessage, isSendKey } from "./message";
 import { serial } from "./menu";
@@ -67,6 +68,13 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
     if (result.path) setImages((list) => [...list, result.path as string]);
   }
 
+  async function onAttach() {
+    // A picked file takes the same path as a pasted image.
+    const result = await window.contr.pickImage().catch((e: unknown) => ({ ok: false, path: null, message: String(e) }));
+    if (!result.ok) return setError(result.message ?? "attach failed");
+    if (result.path) setImages((list) => [...list, result.path as string]);
+  }
+
   return (
     <form
       aria-label="Reply"
@@ -102,6 +110,15 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
         </p>
       )}
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Attach image"
+          title="Attach image"
+          onClick={() => void onAttach()}
+          className="rounded-full p-1 text-muted hover:bg-hover hover:text-foreground"
+        >
+          <Plus aria-hidden className="size-4" />
+        </button>
         <ModelButton info={info} send={sendCommand} />
         <span className="flex-1" />
         <ContextRing context={info.context} />

@@ -5,8 +5,8 @@
 // The live ones of t7 are the hc terminals t8 to t10 of fake-hc.mjs.
 const workers = [
   { name: "b-30", parent: "t12", live: true, status: "blocked" },
-  { name: "b-30", address: "t8", parent: "t7", live: true, status: "working", title: "Flow and sequence diagrams" },
-  { name: "b-40", address: "t9", parent: "t7", live: true, status: "blocked", title: "Cards for prompts and questions" },
+  { name: "b-30", address: "t8", parent: "t7", live: true, status: "working", issue: "30", title: "Flow and sequence diagrams" },
+  { name: "b-40", address: "t9", parent: "t7", live: true, status: "blocked", issue: "40", title: "Cards for prompts and questions" },
   { name: "b-50", address: "t10", parent: "t7", live: true, status: "idle", title: "Virtual list" },
   { name: "b-60", parent: "t7", live: false },
 ];
