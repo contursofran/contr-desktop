@@ -8,6 +8,7 @@ import { registerSidebarIpc } from "./sidebar/ipc";
 import { registerFootIpc } from "./foot/ipc";
 import { inboxBadge, registerOwnerIpc } from "./owner/ipc";
 import { windowTitle } from "./owner/owner";
+import { registerSettingsIpc } from "./settings/ipc";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 
@@ -39,6 +40,7 @@ void app.whenReady().then(() => {
   registerSidebarIpc(app.getAppPath());
   registerFootIpc(app.getAppPath());
   registerOwnerIpc(app.getAppPath());
+  registerSettingsIpc(app.getAppPath());
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -154,7 +154,7 @@ function InboxRow({ count, shown, onOpen }: { count: number; shown: boolean; onO
 }
 
 /** The head, the Inbox row, the Projects list (one row per project, its agents under it, an orchestrator's workers under it) and the foot. */
-export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox }: { data: SidebarData; onSelect: (terminal: string) => void; inbox: number; inboxShown: boolean; onInbox: () => void }) {
+export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings, settingsShown }: { data: SidebarData; onSelect: (terminal: string) => void; inbox: number; inboxShown: boolean; onInbox: () => void; onSettings: () => void; settingsShown: boolean }) {
   const [changes, setChanges] = useState<Changes>(load);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -197,7 +197,7 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox }: { data: 
         </section>
       ))}
     </nav>
-    <Foot />
+    <Foot onSettings={onSettings} settingsShown={settingsShown} />
     </aside>
   );
 }

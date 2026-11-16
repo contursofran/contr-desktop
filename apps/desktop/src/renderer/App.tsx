@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Card } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
+import { SettingsView } from "./settings/SettingsView";
 import { blockedAgents } from "../shared/inbox";
 import { ChatList } from "./chat/list/ChatList";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
@@ -39,12 +40,15 @@ export function App() {
   }, [tabs, sidebar, titles]);
   // The Inbox in the main pane (D95) until an agent is selected.
   const [inbox, setInbox] = useState(false);
+  // The Settings view in the main pane, from the sidebar foot.
+  const [settings, setSettings] = useState(false);
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
   const select = (terminal: string) => {
     setSide("chat");
     setInbox(false);
+    setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
   };
   const close = (terminal: string) => {
@@ -56,10 +60,10 @@ export function App() {
   };
   return (
     <div className="flex h-screen bg-canvas text-foreground">
-      <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox} onInbox={() => setInbox(true)} />
+      <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} />
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} right={!inbox && sidebar.selected && <Switch side={side} onSide={setSide} />} />
-        {inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
+        <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
+        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
       </main>
     </div>
   );
