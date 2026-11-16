@@ -13,6 +13,7 @@ function launch(env: Record<string, string>) {
     FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
     CONTR_TERMINAL: "t7",
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
     FAKE_HC_TITLE: "Chat panel usability audit",
     CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
     ...env,
@@ -22,7 +23,7 @@ function launch(env: Record<string, string>) {
 test("with no workers, Orchestrate puts /contr:orchestrate in the reply box and does not send", async () => {
   test.setTimeout(60_000);
   const log = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "send.jsonl");
-  const app = await launch({ FAKE_ORCH_NONE: "1", FAKE_HELPER_SEND_LOG: log });
+  const app = await launch({ FAKE_ORCH_NONE: "1", FAKE_HC_AGENTS: "0", FAKE_HELPER_SEND_LOG: log });
   const page = await app.firstWindow();
   const status = page.getByLabel("Status");
   const orchestrate = status.getByRole("button", { name: "Orchestrate" });
@@ -49,6 +50,9 @@ test("with workers, the status line says Orchestrating and has no Orchestrate", 
   const page = await app.firstWindow();
   const status = page.getByLabel("Status");
   await expect(status).toContainText("Orchestrating · 3 workers");
+  // The sidebar shows the same three workers under the chat's agent.
+  const desktop = page.getByRole("navigation", { name: "Projects" }).getByRole("region", { name: "contr-desktop" });
+  for (const name of ["b-30", "b-40", "b-50"]) await expect(desktop.getByText(name, { exact: true })).toBeVisible();
   await expect(status.getByRole("button", { name: "Orchestrate" })).toHaveCount(0);
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
