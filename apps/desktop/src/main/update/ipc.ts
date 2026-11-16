@@ -13,7 +13,7 @@ import { DMG, newer, parseRelease, RELEASE_URL, ZIP } from "./release";
 const CHECK_MS = 6 * 60 * 60_000;
 
 /**
- * The Update button (owner decision, docs/decisions/79-auto-install.md). Only a packaged app checks; dev and e2e
+ * The Update button (owner decision, docs/decisions/80-auto-install.md). Only a packaged app checks; dev and e2e
  * show "Development build", unless CONTR_UPDATE_URL points the check at a fake release (e2e).
  * When the app's folder is writable and the release has the .zip, a press downloads and checks the new app,
  * and "Restart to update" swaps it in. Else a press downloads the .dmg into Downloads and opens it.
