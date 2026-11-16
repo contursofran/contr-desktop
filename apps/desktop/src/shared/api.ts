@@ -16,7 +16,26 @@ export interface FeedRow {
 export type FeedEvent =
   | { type: "splice"; at: number; rows: FeedRow[]; agent?: string; model?: string }
   | { type: "error"; code: string; message: string }
-  | { type: "working"; working: Working };
+  | { type: "working"; working: Working }
+  | { type: "card"; card: Card | null };
+
+/** The prompt on the agent's screen (helper `card`). */
+export type Card =
+  | { kind: "approval"; request: string; title: string; command: string; tool: string; answered: boolean }
+  | { kind: "question"; request: string; question: QuestionCard; unread: number };
+
+export interface QuestionCard {
+  agent: string;
+  delivery: "picker" | "message";
+  questions: { id: string; header: string; text: string; multi: boolean; options: { label: string; detail?: string; recommended?: boolean }[] }[];
+  noOther?: boolean;
+}
+
+/** The helper's `done` result of `approve` or `answer`: sent, changed, unconfirmed, answered, busy, failed, … */
+export interface PromptResult {
+  result: string;
+  message?: string;
+}
 
 /** The agent's working line (helper `working`). `text` is null when the agent does not work. */
 export interface Working {
@@ -40,6 +59,10 @@ export interface ContrApi {
   refs(numbers: number[]): Promise<Record<number, RefState | null>>;
   /** Opens a PR or issue in the browser. */
   openRef(url: string): Promise<void>;
+  /** Allows (true) or denies an approval card through the helper's `approve`. */
+  approve(request: string, allow: boolean): Promise<PromptResult>;
+  /** Answers a question card through the helper's `answer`: one entry per question. */
+  answer(request: string, answers: { picks: number[]; other?: string }[]): Promise<PromptResult>;
   /** The `contr-status` board: worker states from the orchestration tool, and each issue's PR checks from gh. */
   board(issues: number[]): Promise<Board>;
   /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
@@ -146,6 +169,8 @@ export const PICK_IMAGE_CHANNEL = "contr:pick-image";
 export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
+export const APPROVE_CHANNEL = "contr:approve";
+export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
 export const BRANCH_CHANNEL = "contr:branch";

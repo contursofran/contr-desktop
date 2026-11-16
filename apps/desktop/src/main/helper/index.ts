@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, type WebContents } from "electron";
-import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
+import { answer, approve, type Answer } from "./card";
 import { terminalTitle } from "./title";
 import { helperPath, runHelper, type HelperLine } from "./run";
 import { replyInfo } from "./reply";
@@ -35,6 +36,8 @@ export function setupHelper(appRoot: string): void {
     });
   });
   ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, chatTerminal(), text));
+  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper, chatTerminal(), request, allow));
+  ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper, chatTerminal(), request, answers));
   ipcMain.handle(TITLE_CHANNEL, () => terminalTitle(chatTerminal()));
   // `commands` changes seldom: one call per agent and app run.
   const commands = new Map<string, Promise<HelperLine[]>>();
