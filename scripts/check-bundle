@@ -1,0 +1,15 @@
+#!/bin/sh
+# Checks a packaged macOS app: both binaries are in Resources/bin, the app
+# binary is universal, and herdr-contr-orch --help runs. Opens nothing on screen.
+# Usage: scripts/check-bundle [path/to/contr.app]
+set -eu
+root="$(cd "$(dirname "$0")/.." && pwd)"
+app="${1:-$root/apps/desktop/release/mac-universal/contr.app}"
+res="$app/Contents/Resources"
+for name in herdr-contr-feed herdr-contr-orch; do
+  [ -x "$res/bin/$name" ] || { echo "missing $res/bin/$name" >&2; exit 1; }
+done
+lipo -archs "$app/Contents/MacOS/contr" | grep -q "x86_64 arm64" || { echo "app is not universal" >&2; exit 1; }
+"$res/bin/herdr-contr-orch" --help > /dev/null
+[ -f "$res/app.asar" ] || { echo "missing app.asar" >&2; exit 1; }
+echo "bundle ok: $(cat "$res/bin/RELEASE" 2>/dev/null || echo 'no RELEASE')"

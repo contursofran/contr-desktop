@@ -16,13 +16,15 @@ when it does that job better. Until then, herdr-contr stays the daily app.
 | `docs/research/why-electron.md` | why this app exists, and the lessons from the three apps before it |
 | `docs/design/README.md` | the design to aim for, with the screenshot and the canvases |
 | `docs/reference/helper-protocol.md` | the helper's JSON Lines protocol, that feeds the chat |
+| `docs/reference/releases.md` | how a release is made and where its binaries come from |
 | `docs/research/t3code-chat.md` | which parts of t3code to copy, and how |
 
 ## The helper
 
 `scripts/fetch-helper` downloads the newest herdr-contr release into `bin/`
-(it needs `gh`). The app runs `bin/herdr-contr-feed`, or the program that
-`CONTR_HELPER` names, for the terminal that `CONTR_TERMINAL` names (default
+(it needs `gh`). In dev the app runs `bin/herdr-contr-feed`; the packaged
+app runs the copy in its `Resources/bin`. `CONTR_HELPER` names another
+program. It reads the terminal that `CONTR_TERMINAL` names (default
 `t1`). The reply box takes the terminal's title from `hc get --json` (or the
 program that `CONTR_HC` names). Tests use `apps/desktop/e2e/fake-helper.mjs` and
 `fake-hc.mjs`.
