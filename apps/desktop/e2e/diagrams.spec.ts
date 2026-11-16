@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import path from "node:path";
+import { chatRow } from "./chat";
 import { launchApp } from "./launch";
 
 const shots = path.resolve(import.meta.dirname, "../../../tmp/shots");
@@ -13,7 +14,7 @@ test("contr-flow and contr-seq draw; a block past a limit shows as code", async 
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
   });
   const page = await app.firstWindow();
-  const row = page.locator("ol[aria-label=Chat] > li").last();
+  const row = await chatRow(page, "r1");
 
   const flow = row.locator('[data-diagram="contr-flow"]');
   await expect(flow.locator("[data-node]")).toHaveCount(4);

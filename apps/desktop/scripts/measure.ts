@@ -35,9 +35,9 @@ const app = await launchApp({
 const page = await app.firstWindow();
 await page.waitForLoadState("domcontentloaded");
 const tWindow = performance.now() - t0;
-await page.locator("ol[aria-label=Chat] > li").first().waitFor();
+await page.locator("[aria-label=Chat] [role=listitem]").first().waitFor();
 const tRows = performance.now() - t0;
-const rows = await page.locator("ol[aria-label=Chat] > li").count();
+const rows = await page.locator("[aria-label=Chat] [role=listitem]").count();
 const pid = app.process().pid!;
 await new Promise((r) => setTimeout(r, idleMs));
 const mem = rssTree(pid);

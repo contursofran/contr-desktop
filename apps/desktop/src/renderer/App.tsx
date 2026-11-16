@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Row } from "./chat/rows/Row";
+import { ChatList } from "./chat/list/ChatList";
 import { StatusLine } from "./chat/rows/StatusLine";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
@@ -58,13 +58,7 @@ function Chat() {
               {feed.error.code}: {feed.error.message}
             </p>
           )}
-          <ol aria-label="Chat" className="flex-1 overflow-y-auto px-4 pb-4">
-            {feed.rows.map((row) => (
-              <li key={row.id} data-kind={row.k} className="mx-auto w-full max-w-3xl py-1">
-                <Row row={row} />
-              </li>
-            ))}
-          </ol>
+          <ChatList rows={feed.rows} />
           <StatusLine working={feed.working} />
           <ReplyBox title={title} />
         </>

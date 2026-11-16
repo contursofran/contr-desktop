@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import path from "node:path";
+import { chatRow } from "./chat";
 import { launchApp } from "./launch";
 
 const shots = path.resolve(import.meta.dirname, "../../../tmp/shots");
@@ -13,7 +14,7 @@ test("remarks show a word and local images draw", async () => {
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
   });
   const page = await app.firstWindow();
-  const row = page.locator("ol[aria-label=Chat] > li").last();
+  const row = await chatRow(page, "r1");
   const remarks = row.locator(".chat-remark");
   await expect(remarks).toHaveCount(5);
   expect(await remarks.locator(".chat-remark-word").allTextContents()).toEqual([

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
+import { chatList } from "./chat";
 import { launchApp } from "./launch";
 
 const fakeHelper = path.resolve(import.meta.dirname, "fake-helper.mjs");
@@ -38,7 +39,7 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
     CONTR_TERMINAL: run.address,
   });
   const page = await app.firstWindow();
-  await expect(page.locator("ol[aria-label=Chat] > li")).toHaveCount(17);
+  await expect(chatList(page).locator('[data-row-id="a6"]')).toBeVisible();
   await page.getByRole("button", { name: "Terminal" }).click();
   const term = page.getByTestId("terminal");
   await expect(term).toContainText("200");
