@@ -1,12 +1,14 @@
 // Copied in part from t3code packages/shared/src/markdownPipeline.ts at the commit in
 // THIRD_PARTY_NOTICES.md (MIT). Changes: only the sanitize schema, the code-meta and
-// inline-code plugins and the plugin lists; no raw HTML, images, file, thread or
-// Windows-path links, Codex directives or autolink fixes. INLINE_TEXT_PLUGINS is ours.
+// inline-code plugins and the plugin lists; no raw HTML, t3code images, file, thread or
+// Windows-path links, Codex directives or autolink fixes. INLINE_TEXT_PLUGINS and the
+// contr-image protocol for local images (markdownLocalImages.ts) are ours.
 import type { PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { remarkRefs } from "../refs/remarkRefs";
 import { remarkGithubAlerts } from "./markdownGithubAlerts";
+import { remarkLocalImages } from "./markdownLocalImages";
 import { remarkNormalizeListItemIndentation } from "./markdownListIndentation";
 import { remarkKeepOrderedListNumbers } from "./markdownOrderedListNumbers";
 
@@ -82,11 +84,13 @@ const CHAT_MARKDOWN_SANITIZE_SCHEMA = {
     blockquote: [...(defaultSchema.attributes?.blockquote ?? []), "dataAlert"],
     "contr-ref": [["dataRef", /^\d+$/]],
   },
+  protocols: { ...defaultSchema.protocols, src: ["contr-image"] },
 } satisfies Parameters<typeof rehypeSanitize>[0];
 
 export const CHAT_MARKDOWN_REMARK_PLUGINS: PluggableList = [
   remarkGfm,
   remarkGithubAlerts,
+  remarkLocalImages,
   remarkKeepOrderedListNumbers,
   remarkNormalizeListItemIndentation,
   remarkPreserveCodeMeta,

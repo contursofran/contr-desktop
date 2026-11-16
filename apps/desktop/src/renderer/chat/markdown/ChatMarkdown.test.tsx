@@ -54,3 +54,42 @@ describe("PR and issue chips", () => {
     expect(html("`#12`")).toContain("<code data-inline-code=\"\">#12</code>");
   });
 });
+
+describe("remarks", () => {
+  it.each([
+    ["DONE", "done", "Done"],
+    ["DECISION", "decision", "Decision needed"],
+    ["WARNING", "warning", "Warning"],
+    ["UNVERIFIED", "unverified", "Not verified"],
+    ["NOTE", "note", "Note"],
+    ["TIP", "tip", "Tip"],
+    ["CAUTION", "caution", "Caution"],
+  ])("shows [!%s] with its word", (tag, alert, word) => {
+    const out = html(`> [!${tag}]\n> Body text`);
+    expect(out).toContain(`data-alert="${alert}" class="chat-remark"`);
+    expect(out).toContain(`<p class="chat-remark-word">${word}</p>`);
+    expect(out).toContain("Body text");
+    expect(out).not.toContain("[!");
+  });
+
+  it("keeps a plain quote and an unknown tag as a quote", () => {
+    expect(html("> just a quote")).toBe('<div class="chat-markdown"><blockquote>\n<p>just a quote</p>\n</blockquote></div>');
+    expect(html("> [!OTHER]\n> x")).not.toContain("chat-remark");
+  });
+});
+
+describe("images", () => {
+  it("draws a local PNG, JPEG or SVG alone on its line through contr-image", () => {
+    expect(html("![shot](</tmp/a b.png>)")).toContain('<img src="contr-image://local/tmp/a%20b.png" alt="shot"/>');
+    expect(html("![j](/x/y.jpeg)")).toContain('src="contr-image://local/x/y.jpeg"');
+    expect(html("![s](/x/y.svg)")).toContain('src="contr-image://local/x/y.svg"');
+  });
+
+  it("keeps web URLs, other files and inline images as links", () => {
+    for (const md of ["![web](https://example.com/a.png)", "![t](/etc/passwd)", "See ![x](/tmp/a.png) here", "![r](a.png)"]) {
+      const out = html(md);
+      expect(out).not.toContain("<img");
+      expect(out).toContain("<a ");
+    }
+  });
+});

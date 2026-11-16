@@ -1,5 +1,5 @@
 // Copied from t3code packages/shared/src/markdownGithubAlerts.ts at the commit in THIRD_PARTY_NOTICES.md (MIT).
-// Changes: none.
+// Changes: the contr tags DONE, DECISION and UNVERIFIED (docs/design/chat-blocks.md, Remarks).
 
 interface MarkdownAstNode {
   type?: string;
@@ -10,7 +10,7 @@ interface MarkdownAstNode {
   children?: MarkdownAstNode[];
 }
 
-const GITHUB_ALERT_MARKER = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\](?:\r?\n|$)/i;
+const GITHUB_ALERT_MARKER = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|DONE|DECISION|UNVERIFIED)\](?:\r?\n|$)/i;
 
 function readGithubAlert(node: MarkdownAstNode): void {
   if (node.type !== "blockquote") return;
