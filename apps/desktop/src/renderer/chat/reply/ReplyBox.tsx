@@ -1,12 +1,31 @@
 import { Plus } from "lucide-react";
-import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { composeMessage, isSendKey } from "./message";
 import { serial } from "./menu";
 import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
 
-/** The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V attaches an image. */
-export function ReplyBox({ title }: { title: string }) {
+/** A text to put in the box. A new `id` puts it again. */
+export interface Draft {
+  text: string;
+  id: number;
+}
+
+/**
+ * The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V attaches an image.
+ * A `draft` replaces the text, puts the caret at its end and focuses the box; it does not send.
+ */
+export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
   const [text, setText] = useState("");
+  const box = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (!draft) return;
+    setText(draft.text);
+    const el = box.current;
+    if (!el) return;
+    el.value = draft.text;
+    el.focus();
+    el.setSelectionRange(draft.text.length, draft.text.length);
+  }, [draft]);
   const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -75,6 +94,7 @@ export function ReplyBox({ title }: { title: string }) {
         </ul>
       )}
       <textarea
+        ref={box}
         aria-label={`Reply to ${title}`}
         placeholder={`Reply to ${title}`}
         rows={2}
