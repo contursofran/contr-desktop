@@ -66,3 +66,12 @@ export async function sendText(helper: string, terminal: string, text: string): 
   if (changed) return { ok: false, message: String(changed.message ?? "the terminal changed") };
   return { ok: true };
 }
+
+/** Saves the clipboard's image as a PNG in `dir` with the helper's `paste-image` command. */
+export async function pasteImage(helper: string, dir: string): Promise<{ ok: boolean; path?: string | null; message?: string }> {
+  const lines = await runHelper(helper, ["paste-image", "--dir", dir]);
+  const error = lines.find((l) => l.type === "error");
+  if (error) return { ok: false, message: String(error.message) };
+  const image = lines.find((l) => l.type === "image");
+  return { ok: true, path: typeof image?.path === "string" ? image.path : null };
+}

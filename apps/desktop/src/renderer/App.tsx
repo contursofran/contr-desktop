@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Row } from "./chat/rows/Row";
 import { StatusLine } from "./chat/rows/StatusLine";
+import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 
@@ -8,6 +9,8 @@ type Side = "chat" | "terminal";
 
 export function App() {
   const [feed, setFeed] = useState(emptyFeed);
+  const [title, setTitle] = useState("");
+  useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   // The top strip is the drag area of the hidden title bar. The Chat / Terminal switch sits at its right.
   const [side, setSide] = useState<Side>("chat");
@@ -44,6 +47,7 @@ export function App() {
             ))}
           </ol>
           <StatusLine working={feed.working} />
+          <ReplyBox title={title} />
         </>
       ) : (
         <TerminalView />

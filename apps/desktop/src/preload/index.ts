@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { FEED_CHANNEL, FEED_READY_CHANNEL, SEND_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
+import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
 
 const api: ContrApi = {
@@ -11,6 +11,8 @@ const api: ContrApi = {
     return () => ipcRenderer.off(FEED_CHANNEL, handler);
   },
   send: (text) => ipcRenderer.invoke(SEND_CHANNEL, text),
+  title: () => ipcRenderer.invoke(TITLE_CHANNEL),
+  pasteImage: () => ipcRenderer.invoke(PASTE_IMAGE_CHANNEL),
   terminal: terminalApi,
 };
 

@@ -36,6 +36,8 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
       CONTR_HELPER: fakeHelper,
       FAKE_HELPER_FIXTURE: fixture,
       CONTR_HC_SESSION: session,
+      // The reply box reads the title with `hc get`: it goes to the scratch core too.
+      HC_SESSION: session,
       CONTR_TERMINAL: run.address,
     },
   });
