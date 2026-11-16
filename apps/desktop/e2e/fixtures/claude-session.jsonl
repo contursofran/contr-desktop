@@ -11,3 +11,5 @@
 {"id": "u3", "k": "user", "text": "Thanks. Now add a test for the remember-me box.", "ts": 1793670910000}
 {"id": "a4", "k": "assistant", "ts": 1793670915000, "text": "Adding the test to `LoginForm.test.tsx`."}
 {"id": "a4-t1", "k": "tools", "ts": 1793670916000, "chips": [{"symbol": "terminal", "text": "Running a command", "calls": [{"name": "Bash", "summary": "pnpm test auth --watch=false", "done": false, "error": false}]}]}
+{"id": "st-1", "k": "status", "text": "Context compacted"}
+{"id": "u4", "k": "user", "text": "This is the box I mean.", "images": 2, "ts": 1793670920000}
