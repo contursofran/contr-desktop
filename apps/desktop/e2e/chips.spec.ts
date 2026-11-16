@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { chatRow } from "./chat";
 import { launchApp } from "./launch";
 
 const shots = path.resolve(import.meta.dirname, "../../../tmp/shots");
@@ -23,7 +24,7 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   });
   const page = await app.firstWindow();
   await page.emulateMedia({ colorScheme: "dark" });
-  const row = page.locator("ol[aria-label=Chat] > li").last();
+  const row = await chatRow(page, "a6");
   const chips = row.locator("[data-ref-state]");
   await expect(chips).toHaveCount(9);
   const seen = await chips.evaluateAll((els) => els.map((e) => `${e.textContent} ${e.getAttribute("data-ref-kind")} ${e.getAttribute("data-ref-state")}`));
@@ -40,7 +41,7 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   await expect(row.locator('a[href="https://example.com/x"]')).toHaveText("#12");
   await expect(row.getByText("#99 is not known")).toBeVisible();
   // The owner's own text stays plain.
-  await expect(page.locator("ol[aria-label=Chat] > li").nth(1).locator("[data-ref-state]")).toHaveCount(0);
+  await expect((await chatRow(page, "u1")).locator("[data-ref-state]")).toHaveCount(0);
   // Colors come from the theme tokens.
   const color = (n: number) => chips.nth(n).evaluate((e) => getComputedStyle(e).color);
   expect([await color(0), await color(1), await color(3)]).toEqual(["rgb(163, 113, 247)", "rgb(63, 185, 80)", "rgb(248, 81, 73)"]);

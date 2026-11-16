@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { chatList, chatRow } from "./chat";
 import { launchApp } from "./launch";
 
 const shots = path.resolve(import.meta.dirname, "../../../tmp/shots");
@@ -26,23 +27,25 @@ test("the window shows the helper's rows", async () => {
   const app = await launch({ FAKE_HELPER_SEND_LOG: sendLog });
   const page = await app.firstWindow();
   await page.emulateMedia({ colorScheme: "dark" });
-  const rows = page.locator("ol[aria-label=Chat] > li");
-  await expect(rows).toHaveCount(17);
-  await expect(rows.nth(1)).toContainText("The login form loses the email");
-  await expect(rows.nth(3).getByRole("button")).toHaveText(["Searched 2 patterns›", "Read 1 file›"]);
-  await expect(rows.nth(6)).toContainText("Opened PR #14");
-  await expect(rows.nth(7)).toHaveText("14:06 · Worked 1m 0s · 6 tools");
-  await expect(rows.nth(9)).toHaveText("↳ t2 docs-worker: Done: docs for the login form are updated in #15.");
-  await expect(rows.nth(14)).toContainText("2 pictures");
+  // The list opens at the end: the last row is on screen.
+  await expect(chatList(page).locator('[data-row-id="a6"]')).toBeInViewport();
+  await expect(await chatRow(page, "u1")).toContainText("The login form loses the email");
+  await expect((await chatRow(page, "a1-t1")).getByRole("button")).toHaveText(["Searched 2 patterns›", "Read 1 file›"]);
+  await expect(await chatRow(page, "a3")).toContainText("Opened PR #14");
+  await expect(await chatRow(page, "f-a3")).toHaveText("14:06 · Worked 1m 0s · 6 tools");
+  await expect(await chatRow(page, "u2")).toHaveText("↳ t2 docs-worker: Done: docs for the login form are updated in #15.");
+  await expect(await chatRow(page, "u4")).toContainText("2 pictures");
   await expect(page.getByLabel("Status")).toContainText("Hashing…35s · ↓ 1.2k tokens");
-  const ran = rows.nth(5).getByRole("button", { name: /Ran 2 commands/ });
+  const tools = await chatRow(page, "a2-t1");
+  const ran = tools.getByRole("button", { name: /Ran 2 commands/ });
   await ran.click();
   await expect(ran).toHaveAttribute("aria-expanded", "true");
-  await expect(rows.nth(5)).toContainText("12 passed");
+  await expect(tools).toContainText("12 passed");
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector("main")!).backgroundColor);
   expect(bg).toBe("rgb(32, 32, 32)");
+  await chatRow(page, "u1");
   await page.screenshot({ path: path.join(shots, "helper-rows.png") });
-  await rows.last().scrollIntoViewIfNeeded();
+  await chatRow(page, "a6");
   await page.screenshot({ path: path.join(shots, "helper-rows-end.png") });
 
   expect(await page.evaluate(() => window.contr.send("hello"))).toEqual({ ok: true });
@@ -100,7 +103,7 @@ test("assistant rows show as Markdown with code blocks and tables", async () => 
   const app = await launch();
   const page = await app.firstWindow();
   await page.emulateMedia({ colorScheme: "dark" });
-  const answer = page.locator("ol[aria-label=Chat] > li").nth(15);
+  const answer = await chatRow(page, "a5");
   await expect(answer.getByRole("heading", { name: "Remember-me test" })).toBeVisible();
   await expect(answer.locator("table tbody tr")).toHaveCount(3);
   await expect(answer.locator("td code").first()).toHaveText("src/auth/LoginForm.tsx");

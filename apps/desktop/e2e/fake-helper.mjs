@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A fake herdr-contr-feed for tests. It plays FAKE_HELPER_FIXTURE (JSON Lines of `row` objects).
-// `feed` without --cursor gives all rows; with a cursor it gives `unchanged`.
+// `feed` without --cursor gives all rows; with a cursor it gives the rows appended since, or `unchanged`.
 // `send` appends {terminal, text} as one JSON line to FAKE_HELPER_SEND_LOG.
 // `paste-image` answers `image` with FAKE_HELPER_PASTE_IMAGE as the path (null when not set).
 // FAKE_HELPER_SEND_ERROR=<code> makes `send` answer with that error.
@@ -21,12 +21,14 @@ if (process.env.FAKE_HELPER_ERROR) {
   out({ code: process.env.FAKE_HELPER_ERROR, message: `fake error ${process.env.FAKE_HELPER_ERROR}`, type: "error" });
   end(false);
 } else if (cmd === "feed") {
-  out({ agent: "claude", cursor: "fake.1", model: "claude-opus-5-5", path: "fixture", size: 1, start: 0, type: "log" });
-  if (arg("cursor")) out({ type: "unchanged" });
+  // The cursor is the row count: rows appended to the fixture since then come as a splice.
+  const rows = readFileSync(process.env.FAKE_HELPER_FIXTURE, "utf8").split("\n").filter((l) => l.trim());
+  const seen = Number(arg("cursor")?.slice("fake.".length) ?? 0);
+  out({ agent: "claude", cursor: `fake.${rows.length}`, model: "claude-opus-5-5", path: "fixture", size: 1, start: 0, type: "log" });
+  if (seen >= rows.length) out({ type: "unchanged" });
   else {
-    const rows = readFileSync(process.env.FAKE_HELPER_FIXTURE, "utf8").split("\n").filter((l) => l.trim());
-    out({ at: 0, count: rows.length, type: "splice" });
-    for (const r of rows) out({ ...JSON.parse(r), type: "row" });
+    out({ at: seen, count: rows.length - seen, type: "splice" });
+    for (const r of rows.slice(seen)) out({ ...JSON.parse(r), type: "row" });
   }
   end(true);
 } else if (cmd === "send" && process.env.FAKE_HELPER_SEND_ERROR) {
