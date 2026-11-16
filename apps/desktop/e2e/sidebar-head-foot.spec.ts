@@ -20,6 +20,8 @@ test("the sidebar head has the machine switch, the foot the plan usage and Setti
   const head = page.locator("aside > header");
   await expect(head).toContainText("contr");
   await expect(head.getByRole("button", { name: "Machine" })).toHaveText("This computer");
+  const label = head.getByTestId("machine-label");
+  expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   await expect(head.getByRole("button", { name: "Search" })).toBeVisible();
   await expect(head.getByRole("button", { name: "Hide sidebar" })).toBeVisible();
 
@@ -43,5 +45,7 @@ test("the sidebar head has the machine switch, the foot the plan usage and Setti
   await page.screenshot({ path: path.join(shots, "sidebar-machines-dark.png") });
   await menu.getByRole("menuitemradio", { name: "aerum-pc" }).click();
   await expect(head.getByRole("button", { name: "Machine" })).toHaveText("aerum-pc");
+  const picked = head.getByTestId("machine-label");
+  expect(await picked.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   await app.close();
 });
