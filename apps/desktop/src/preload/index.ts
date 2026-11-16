@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
+import { BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, type Sidebar, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
 
 const api: ContrApi = {
@@ -18,6 +18,13 @@ const api: ContrApi = {
   board: (issues) => ipcRenderer.invoke(BOARD_CHANNEL, issues),
   replyInfo: () => ipcRenderer.invoke(REPLY_INFO_CHANNEL),
   branch: () => ipcRenderer.invoke(BRANCH_CHANNEL),
+  sidebar: () => ipcRenderer.invoke(SIDEBAR_CHANNEL),
+  onSidebar(listener) {
+    const handler = (_event: unknown, sidebar: Sidebar) => listener(sidebar);
+    ipcRenderer.on(SIDEBAR_EVENT, handler);
+    return () => ipcRenderer.off(SIDEBAR_EVENT, handler);
+  },
+  select: (terminal) => ipcRenderer.invoke(SELECT_CHANNEL, terminal),
   terminal: terminalApi,
 };
 

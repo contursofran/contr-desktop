@@ -3,7 +3,7 @@ import path from "node:path";
 
 /**
  * Starts the app for e2e. CONTR_E2E=1 keeps the app in the background:
- * no activation, no Dock icon, no focused window. Every spec launches here.
+ * no activation, no Dock icon, and the window never shows. Every spec launches here.
  */
 export function launchApp(env: Record<string, string> = {}) {
   return electron.launch({

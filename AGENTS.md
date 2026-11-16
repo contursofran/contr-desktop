@@ -54,7 +54,7 @@ parts; when the design has no answer, ask.
   `pnpm test` (unit) and `pnpm e2e` (Playwright on the Electron app, with
   the fake helper). `pnpm dev` runs the app with hot reload. The e2e
   screenshots go to `tmp/shots/`.
-- e2e runs must never take the owner's focus or input: every spec launches
+- e2e runs must never show a window, take the owner's focus or input: every spec launches
   through `apps/desktop/e2e/launch.ts` (`CONTR_E2E=1`), and tests use no
   OS-level keys or mouse.
 - All must pass, and the `CI` check on the PR, before you report done.

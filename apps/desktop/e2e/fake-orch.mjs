@@ -1,12 +1,13 @@
 #!/usr/bin/env node
-// A fake herdr-contr-orch for tests. `agents ls --all --json` lists four workers of the chat's agent (t1), one in
-// each state, three of them live, and a b-30 of another project that the board must not show.
+// A fake herdr-contr-orch for tests. `agents ls --all --json` lists four workers of the chat's agent (t7), one in
+// each state, three of them live, and a b-30 of another agent (t12) that the board must not show.
+// The live ones of t7 are the hc terminals t8 to t10 of fake-hc.mjs.
 const workers = [
-  { name: "b-30", parent: "t9", live: true, status: "blocked" },
-  { name: "b-30", parent: "t1", live: true, status: "working" },
-  { name: "b-40", parent: "t1", live: true, status: "blocked" },
-  { name: "b-50", parent: "t1", live: true, status: "idle" },
-  { name: "b-60", parent: "t1", live: false },
+  { name: "b-30", parent: "t12", live: true, status: "blocked" },
+  { name: "b-30", address: "t8", parent: "t7", live: true, status: "working", title: "Flow and sequence diagrams" },
+  { name: "b-40", address: "t9", parent: "t7", live: true, status: "blocked", title: "Cards for prompts and questions" },
+  { name: "b-50", address: "t10", parent: "t7", live: true, status: "idle", title: "Virtual list" },
+  { name: "b-60", parent: "t7", live: false },
 ];
 const args = process.argv.slice(2).join(" ");
 if (args !== "agents ls --all --json") process.exit(2);

@@ -44,7 +44,33 @@ export interface ContrApi {
   replyInfo(): Promise<ReplyInfo>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
   branch(): Promise<string | null>;
+  /** The Projects list and the selected agent. */
+  sidebar(): Promise<Sidebar>;
+  /** Listens to changes of the Projects list. Returns a function that stops listening. */
+  onSidebar(listener: (sidebar: Sidebar) => void): () => void;
+  /** Makes this terminal's agent the chat's agent. Returns the selected terminal. */
+  select(terminal: string): Promise<string>;
   terminal: TerminalApi;
+}
+
+/** An agent row. An orchestrator has workers (hc `parent`). `name` is the worker's name, else hc's name. */
+export interface SidebarAgent {
+  terminal: string;
+  title: string;
+  name: string | null;
+  state: WorkerState;
+  workers: SidebarAgent[];
+}
+
+/** A project: the repository of its agents' folder. */
+export interface SidebarProject {
+  name: string;
+  agents: SidebarAgent[];
+}
+
+export interface Sidebar {
+  projects: SidebarProject[];
+  selected: string;
 }
 
 /** A worker's mark: the loader, a check, a dot or an empty ring. */
@@ -101,3 +127,6 @@ export const OPEN_REF_CHANNEL = "contr:open-ref";
 export const BOARD_CHANNEL = "contr:board";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
 export const BRANCH_CHANNEL = "contr:branch";
+export const SIDEBAR_CHANNEL = "contr:sidebar";
+export const SIDEBAR_EVENT = "contr:sidebar-event";
+export const SELECT_CHANNEL = "contr:select";
