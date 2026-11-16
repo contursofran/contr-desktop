@@ -1,4 +1,5 @@
 import type { FeedRow } from "../../../shared/api";
+import { ChatMarkdown } from "../markdown/ChatMarkdown";
 import { ToolsRow } from "./ToolsRow";
 import { UserRow } from "./UserRow";
 
@@ -15,6 +16,8 @@ export function Row({ row }: { row: FeedRow }) {
           <span className="h-px flex-1 bg-border" />{row.text}<span className="h-px flex-1 bg-border" />
         </div>
       );
+    case "assistant":
+      return <ChatMarkdown text={row.text ?? ""} />;
     case "footer":
       return <p className="text-xs text-dim">{row.text}</p>;
     case "status":

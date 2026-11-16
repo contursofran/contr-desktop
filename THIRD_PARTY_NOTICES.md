@@ -4,9 +4,19 @@
 
 - Source: https://github.com/pingdotgg/t3code
 - Pinned commit: `b5554ac8114f2ce7ce8b5973690ccb8cbb248efd` (t3code main on 2026-11-16).
-- Copied files: none yet. Each later copied file names its source path and
-  this commit in a header, and says what we changed. This section lists the
-  copied files by folder.
+- Copied files: each copied file names its source path and this commit in a
+  header, and says what we changed. This section lists the copied files by
+  folder.
+  - `apps/desktop/src/renderer/chat/markdown/`: `markdownGithubAlerts.ts`,
+    `markdownListIndentation.ts`, `markdownOrderedListNumbers.ts`,
+    `markdownRenderer.ts`, `pipeline.ts` (part), `syntaxHighlighting.ts`,
+    `MarkdownCodeBlock.tsx` (part), `MarkdownTable.tsx` (part), `markdown.css`
+    (adapted).
+
+## @pierre/diffs
+
+The code highlighter (npm `@pierre/diffs`, with `@pierre/highlights` WASM
+lexers) is a dependency, under the Apache License 2.0.
 
 ```text
 MIT License

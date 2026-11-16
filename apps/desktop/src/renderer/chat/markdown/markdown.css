@@ -1,0 +1,73 @@
+/* Adapted from t3code apps/web/src/index.css (.chat-markdown rules) at the commit in
+   THIRD_PARTY_NOTICES.md (MIT). Changes: our theme tokens; headings at one size. */
+.chat-markdown {
+  font-size: 0.875rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.chat-markdown > :first-child { margin-top: 0; }
+.chat-markdown > :last-child { margin-bottom: 0; }
+.chat-markdown p,
+.chat-markdown ul,
+.chat-markdown ol,
+.chat-markdown blockquote,
+.chat-markdown .chat-markdown-table-container {
+  margin: 0.65rem 0;
+}
+/* All heading levels show at one size (docs/design/chat-blocks.md, Headings and lists). */
+.chat-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1rem 0 0.4rem;
+  font-size: 1em;
+  font-weight: 600;
+}
+.chat-markdown ul { list-style-type: disc; padding-inline-start: 1.25rem; }
+.chat-markdown ol { list-style-type: decimal; padding-inline-start: 1.5rem; }
+.chat-markdown ul ul { list-style-type: circle; }
+.chat-markdown ol ol { list-style-type: lower-alpha; }
+.chat-markdown li + li { margin-top: 0.25rem; }
+/* GitHub-style task lists: the checkbox replaces the list marker. */
+.chat-markdown li.task-list-item { list-style-type: none; }
+.chat-markdown li.task-list-item input[type="checkbox"] {
+  margin-inline: -1.25rem 0.35em;
+  vertical-align: middle;
+}
+.chat-markdown a { color: var(--color-working); text-decoration: none; }
+.chat-markdown a:hover { text-decoration: underline; }
+.chat-markdown strong { font-weight: 700; }
+.chat-markdown blockquote {
+  border-inline-start: 2px solid var(--color-border);
+  padding-inline-start: 0.75rem;
+  color: var(--color-muted);
+}
+.chat-markdown :not(pre) > code {
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--color-foreground) 10%, transparent);
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+}
+.chat-markdown pre,
+.chat-markdown .chat-markdown-shiki pre {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  background: transparent !important;
+  padding: 0.5rem 0.75rem 0.7rem;
+  font-size: 0.8rem;
+  scrollbar-width: thin;
+}
+.chat-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.chat-markdown th,
+.chat-markdown td {
+  padding: 0.45rem 0.75rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+.chat-markdown :is(th, td):first-child { padding-inline-start: 0; }
+.chat-markdown :is(th, td):last-child { padding-inline-end: 0; }
+.chat-markdown thead th { font-weight: 600; }
+.chat-markdown hr { border-color: var(--color-border); margin: 1rem 0; }
