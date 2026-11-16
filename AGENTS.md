@@ -52,7 +52,8 @@ parts; when the design has no answer, ask.
 
 - `pnpm install --frozen-lockfile`, then `pnpm typecheck`, `pnpm lint`,
   `pnpm test` (unit) and `pnpm e2e` (Playwright on the Electron app, with
-  the fake helper).
+  the fake helper). `pnpm dev` runs the app with hot reload. The e2e
+  screenshots go to `tmp/shots/`.
 - All must pass, and the `CI` check on the PR, before you report done.
 - The first PR sets these scripts up; until then, say which checks exist.
 
