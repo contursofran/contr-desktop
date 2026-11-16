@@ -1,6 +1,7 @@
-import { ipcMain, type WebContents } from "electron";
-import { FEED_CHANNEL, FEED_READY_CHANNEL, SEND_CHANNEL } from "../../shared/api";
-import { sendText, startFeed } from "./feed";
+import { app, ipcMain, type WebContents } from "electron";
+import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL } from "../../shared/api";
+import path from "node:path";
+import { pasteImage, sendText, startFeed } from "./feed";
 import { helperPath } from "./run";
 
 /** The terminal of the chat's agent. The spike shows one chat: CONTR_TERMINAL picks it. */
@@ -25,4 +26,5 @@ export function setupHelper(appRoot: string): void {
     });
   });
   ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, terminal, text));
+  ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper, path.join(app.getPath("userData"), "paste")));
 }

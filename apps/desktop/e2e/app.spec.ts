@@ -34,6 +34,44 @@ test("the window shows the helper's rows", async () => {
   await app.close();
 });
 
+test("the reply box sends the typed text and pasted image", async () => {
+  test.setTimeout(60_000);
+  const sendLog = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "send.jsonl");
+  const app = await launch({ FAKE_HELPER_SEND_LOG: sendLog, FAKE_HELPER_PASTE_IMAGE: "/fake/paste/shot.png" });
+  const page = await app.firstWindow();
+  const box = page.getByRole("textbox", { name: "Reply to claude" });
+  await expect(box).toHaveAttribute("placeholder", "Reply to claude");
+  await box.click();
+  await page.keyboard.type("first line");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.type("second line");
+  await box.evaluate((el) => {
+    const data = new DataTransfer();
+    data.items.add(new File(["x"], "shot.png", { type: "image/png" }));
+    el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+  });
+  await expect(page.getByRole("list", { name: "Attachments" })).toHaveText("shot.png");
+  await page.screenshot({ path: path.join(shots, "reply-box.png") });
+  await page.keyboard.press("Enter");
+  await expect(box).toHaveValue("");
+  expect(JSON.parse(readFileSync(sendLog, "utf8"))).toEqual({
+    terminal: "t7",
+    text: "first line\nsecond line\n/fake/paste/shot.png",
+  });
+  await app.close();
+});
+
+test("the reply box shows an error when the send fails", async () => {
+  const app = await launch({ FAKE_HELPER_SEND_ERROR: "no-terminal" });
+  const page = await app.firstWindow();
+  const box = page.getByRole("textbox", { name: "Reply to claude" });
+  await box.fill("hello");
+  await box.press("Enter");
+  await expect(page.getByRole("alert")).toHaveText("Not sent: fake send error no-terminal");
+  await expect(box).toHaveValue("hello");
+  await app.close();
+});
+
 test("the window shows the helper's error", async () => {
   const app = await launch({ FAKE_HELPER_ERROR: "no-core" });
   const page = await app.firstWindow();

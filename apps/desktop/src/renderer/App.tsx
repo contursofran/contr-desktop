@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 
 export function App() {
@@ -21,6 +22,7 @@ export function App() {
           </li>
         ))}
       </ol>
+      <ReplyBox title={feed.agent ?? "agent"} />
     </main>
   );
 }
