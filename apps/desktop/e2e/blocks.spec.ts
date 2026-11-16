@@ -15,6 +15,7 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
     CONTR_GH: path.join(e2e, "fake-gh.mjs"),
     CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
     CONTR_REPO_DIR: e2e,
+    CONTR_TERMINAL: "t7",
   });
   const page = await app.firstWindow();
   const row = await chatRow(page, "r1");
@@ -24,6 +25,8 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
   await expect(workers).toHaveCount(4);
   await expect(workers.nth(0)).toContainText("b-30");
   await expect(workers.nth(0)).toContainText("Status board");
+  // The chat's agent (t7) has three live workers; the b-30 of t12 is not counted or shown.
+  await expect(page.getByLabel("Status")).toContainText("Orchestrating · 3 workers");
   // Worker marks from the fake orch: working, blocked, idle, done.
   await expect(board.locator("[data-state]").first()).toBeVisible();
   for (const [i, state] of ["working", "blocked", "idle", "done"].entries()) {

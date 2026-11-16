@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChatList } from "./chat/list/ChatList";
-import { StatusLine } from "./chat/rows/StatusLine";
+import { StatusLine, orchestratingText } from "./chat/rows/StatusLine";
+import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
@@ -8,6 +9,8 @@ import { Sidebar } from "./sidebar/Sidebar";
 import type { Sidebar as SidebarData } from "../shared/api";
 
 type Side = "chat" | "terminal";
+
+const NO_ISSUES: number[] = [];
 
 /** The sidebar and the selected agent's chat. A switch mounts the chat again: feed, title, reply box and terminal follow. */
 export function App() {
@@ -33,6 +36,7 @@ function Chat() {
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   // The top strip is the drag area of the hidden title bar. The Chat / Terminal switch sits at its right.
   const [side, setSide] = useState<Side>("chat");
+  const board = useBoard(NO_ISSUES);
   const tab = (s: Side, label: string) => (
     <button
       type="button"
@@ -59,7 +63,7 @@ function Chat() {
             </p>
           )}
           <ChatList rows={feed.rows} />
-          <StatusLine working={feed.working} />
+          <StatusLine working={feed.working} right={orchestratingText(board?.orchestrating ?? 0)} />
           <ReplyBox title={title} />
         </>
       ) : (
