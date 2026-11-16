@@ -12,5 +12,6 @@
 - Approval: 1 allows once, 2 denies. A question: 1-9 picks an option (a
   one-choice pick moves on), the number after the options goes to the
   own-answer box, Enter goes on or sends.
-- The buttons stay off after `sent`, `unconfirmed` and `answered`, and come
+- Approval: the buttons stay off after `sent`, `unconfirmed`, `answered` and
+  `changed` (the next `card` read shows the new prompt), and come
   back after `busy`, `failed` and `no-identity`.
