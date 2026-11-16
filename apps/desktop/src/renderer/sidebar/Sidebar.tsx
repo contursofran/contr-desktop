@@ -108,7 +108,7 @@ function contains(agents: SidebarAgent[], terminal: string): boolean {
 function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProject; shown: boolean; closed: boolean; onToggle: () => void }) {
   const Chevron = closed ? ChevronRight : ChevronDown;
   return (
-    <div className="flex h-[30px] items-center gap-1.5 rounded-lg pr-2.5 pl-1.5 text-[13px]">
+    <div className="flex h-[30px] items-center gap-1.5 overflow-hidden rounded-lg pr-2.5 pl-1.5 text-[13px]">
       <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex shrink-0 text-dim hover:text-muted">
         <Chevron aria-hidden className="size-[14px]" />
       </button>
@@ -117,12 +117,23 @@ function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProj
       ) : (
         <Folder data-icon="folder" aria-hidden className="size-4 shrink-0 text-dim" />
       )}
-      <span className={`truncate font-medium ${shown ? "text-foreground" : "text-muted"}`}>{project.name}</span>
-      {project.branch && <span data-branch className="min-w-0 shrink truncate font-[Menlo,monospace] text-[11px] text-muted">{project.branch}</span>}
-      <span className="flex-1" />
-      {closed && project.agents.map((a) => <span key={a.terminal} className="flex scale-[0.93]"><StateMark state={a.state} label={`${a.title}: ${a.state}`} /></span>)}
-      {project.ahead > 0 && <span data-ahead className="shrink-0 font-[Menlo,monospace] text-[11px] text-muted">↑{project.ahead}</span>}
-      {project.behind > 0 && <span data-behind className="shrink-0 font-[Menlo,monospace] text-[11px] text-muted">↓{project.behind}</span>}
+      {/* The name reads in full: the branch shrinks first (to nothing), then the marks, then the counts; the name truncates last. */}
+      <span data-name className={`max-w-full shrink-[0.001] truncate font-medium ${shown ? "text-foreground" : "text-muted"}`}>{project.name}</span>
+      {/* A branch with no room wraps to a second line that the 16 px box hides. */}
+      {project.branch && (
+        <span className="flex h-4 min-w-0 shrink-[1000] flex-wrap overflow-hidden">
+          <span className="h-4 w-0" />
+          <span data-branch className="font-[Menlo,monospace] text-[11px] leading-4 whitespace-nowrap text-muted">{project.branch}</span>
+        </span>
+      )}
+      <span className="min-w-0 flex-1" />
+      {closed && <span className="flex min-w-0 shrink-[100] overflow-hidden">{project.agents.map((a) => <span key={a.terminal} className="flex shrink-0 scale-[0.93]"><StateMark state={a.state} label={`${a.title}: ${a.state}`} /></span>)}</span>}
+      {(project.ahead > 0 || project.behind > 0) && (
+        <span className="flex min-w-0 shrink-[10] gap-1.5 overflow-hidden font-[Menlo,monospace] text-[11px] whitespace-nowrap text-muted">
+          {project.ahead > 0 && <span data-ahead>↑{project.ahead}</span>}
+          {project.behind > 0 && <span data-behind>↓{project.behind}</span>}
+        </span>
+      )}
     </div>
   );
 }

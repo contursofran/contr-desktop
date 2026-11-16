@@ -73,6 +73,11 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
   await expect(desktop.getByRole("listitem")).toHaveCount(0);
   await expect(desktop.locator("[data-state]")).toHaveCount(2);
+  const name = desktop.locator("[data-name]");
+  await expect(name).toHaveText("contr-desktop");
+  expect(await name.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  // The branch has no room on the shut row: it hides (it is on the hidden second line), not a cut piece.
+  expect(await desktop.locator("[data-branch]").evaluate((e) => e.getBoundingClientRect().top >= e.parentElement!.getBoundingClientRect().bottom)).toBe(true);
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "project-shut-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
