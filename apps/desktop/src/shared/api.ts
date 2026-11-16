@@ -15,7 +15,14 @@ export interface FeedRow {
 /** What main sends after each helper call. */
 export type FeedEvent =
   | { type: "splice"; at: number; rows: FeedRow[]; agent?: string; model?: string }
-  | { type: "error"; code: string; message: string };
+  | { type: "error"; code: string; message: string }
+  | { type: "working"; working: Working };
+
+/** The agent's working line (helper `working`). `text` is null when the agent does not work. */
+export interface Working {
+  text: string | null;
+  detail: string | null;
+}
 
 export interface ContrApi {
   platform: string;
