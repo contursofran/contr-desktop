@@ -34,8 +34,17 @@ export interface ContrApi {
   title(): Promise<string>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
+  /** PR and issue states of the agent's repository, from gh. null: gh does not know the number. */
+  refs(numbers: number[]): Promise<Record<number, RefState | null>>;
+  /** Opens a PR or issue in the browser. */
+  openRef(url: string): Promise<void>;
   terminal: TerminalApi;
 }
+
+/** A PR or an issue of the agent's repository, as gh says now. */
+export type RefState =
+  | { kind: "pr"; state: "open" | "draft" | "merged" | "closed"; url: string }
+  | { kind: "issue"; state: "open" | "closed" | "not-planned"; url: string };
 
 /** The Terminal side: the agent's hc terminal. */
 export interface TerminalApi {
@@ -55,3 +64,5 @@ export const FEED_READY_CHANNEL = "contr:feed-ready";
 export const SEND_CHANNEL = "contr:send";
 export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
 export const TITLE_CHANNEL = "contr:title";
+export const REFS_CHANNEL = "contr:refs";
+export const OPEN_REF_CHANNEL = "contr:open-ref";

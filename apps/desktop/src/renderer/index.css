@@ -14,6 +14,10 @@
   --color-working: #007aff;
   --color-done: #34c759;
   --color-blocked: #ff9500;
+  /* PR and issue chips: GitHub's state colors. */
+  --color-ref-open: #3fb950;
+  --color-ref-merged: #a371f7;
+  --color-ref-closed: #f85149;
 }
 
 @media (prefers-color-scheme: light) {
@@ -26,6 +30,9 @@
     --color-muted: #6e6e6e;
     --color-dim: #8e8e8e;
     --color-foreground: #1d1d1f;
+    --color-ref-open: #1a7f37;
+    --color-ref-merged: #8250df;
+    --color-ref-closed: #cf222e;
   }
 }
 

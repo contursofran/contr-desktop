@@ -27,7 +27,7 @@ test("the window shows the helper's rows", async () => {
   const page = await app.firstWindow();
   await page.emulateMedia({ colorScheme: "dark" });
   const rows = page.locator("ol[aria-label=Chat] > li");
-  await expect(rows).toHaveCount(16);
+  await expect(rows).toHaveCount(17);
   await expect(rows.nth(1)).toContainText("The login form loses the email");
   await expect(rows.nth(3).getByRole("button")).toHaveText(["Searched 2 patterns›", "Read 1 file›"]);
   await expect(rows.nth(6)).toContainText("Opened PR #14");

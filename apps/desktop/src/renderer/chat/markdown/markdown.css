@@ -31,8 +31,8 @@
   margin-inline: -1.25rem 0.35em;
   vertical-align: middle;
 }
-.chat-markdown a { color: var(--color-working); text-decoration: none; }
-.chat-markdown a:hover { text-decoration: underline; }
+.chat-markdown a:not([data-slot="context-chip"]) { color: var(--color-working); text-decoration: none; }
+.chat-markdown a:not([data-slot="context-chip"]):hover { text-decoration: underline; }
 .chat-markdown strong { font-weight: 700; }
 .chat-markdown blockquote {
   border-inline-start: 2px solid var(--color-border);

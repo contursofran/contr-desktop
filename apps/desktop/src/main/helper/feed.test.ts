@@ -39,7 +39,7 @@ describe("runHelper", () => {
   it("reads the fake helper's answer", async () => {
     process.env.FAKE_HELPER_FIXTURE = path.resolve(import.meta.dirname, "../../../e2e/fixtures/claude-session.jsonl");
     const lines = await runHelper(fake, ["feed", "--terminal", "t1"]);
-    expect(lines.filter((l) => l.type === "row")).toHaveLength(16);
+    expect(lines.filter((l) => l.type === "row")).toHaveLength(17);
   });
 
   it("takes the helper path from CONTR_HELPER", () => {

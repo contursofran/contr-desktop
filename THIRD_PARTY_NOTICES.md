@@ -12,6 +12,8 @@
     `markdownRenderer.ts`, `pipeline.ts` (part), `syntaxHighlighting.ts`,
     `MarkdownCodeBlock.tsx` (part), `MarkdownTable.tsx` (part), `markdown.css`
     (adapted).
+  - `apps/desktop/src/renderer/chat/refs/`: `pullRequestIcons.tsx` (adapted),
+    `ContextChip.tsx` (part).
 
 ## @pierre/diffs
 
