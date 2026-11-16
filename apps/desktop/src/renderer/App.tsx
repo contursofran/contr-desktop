@@ -7,7 +7,7 @@ import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { Sidebar } from "./sidebar/Sidebar";
-import { TopBar, nextAfterClose, openTab } from "./topbar/TopBar";
+import { TopBar, findAgent, nextAfterClose, openTab } from "./topbar/TopBar";
 import type { Sidebar as SidebarData } from "../shared/api";
 
 type Side = "chat" | "terminal";
@@ -25,6 +25,15 @@ export function App() {
   const [tabs, setTabs] = useState<string[]>([]);
   const [side, setSide] = useState<Side>("chat");
   useEffect(() => setTabs((t) => openTab(t, sidebar.selected)), [sidebar.selected]);
+  // Titles from hc for tabs with no sidebar entry, read once per terminal.
+  const [titles, setTitles] = useState<Record<string, string>>({});
+  useEffect(() => {
+    for (const t of tabs) {
+      if (findAgent(sidebar, t) || t in titles) continue;
+      setTitles((m) => ({ ...m, [t]: "" }));
+      void window.contr.tabTitle(t).then((title) => setTitles((m) => ({ ...m, [t]: title })));
+    }
+  }, [tabs, sidebar, titles]);
   const select = (terminal: string) => {
     setSide("chat");
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
@@ -40,7 +49,7 @@ export function App() {
     <div className="flex h-screen bg-canvas text-foreground">
       <Sidebar data={sidebar} onSelect={select} />
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={sidebar} tabs={tabs} onSelect={select} onClose={close} right={sidebar.selected && <Switch side={side} onSide={setSide} />} />
+        <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} right={sidebar.selected && <Switch side={side} onSide={setSide} />} />
         {sidebar.selected && <Chat key={sidebar.selected} side={side} />}
       </main>
     </div>

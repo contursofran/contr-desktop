@@ -29,7 +29,7 @@ test.skip(!hasHc, "hc is not installed");
 test.setTimeout(60_000);
 
 test("the Terminal side shows an hc terminal and sends keys to it", async () => {
-  const run = JSON.parse(hc("run", "--bg", "--json", "printf 'ready\\n'; seq 1 200; exec sh")) as { address: string };
+  const run = JSON.parse(hc("run", "--bg", "--json", "printf '\\033]0;Build watcher\\007ready\\n'; seq 1 200; exec sh")) as { address: string };
   const app = await launchApp({
     CONTR_HELPER: fakeHelper,
     FAKE_HELPER_FIXTURE: fixture,
@@ -63,6 +63,8 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
   await expect(term).toContainText("PID", { timeout: 15_000 });
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(900, 560));
   await expect.poll(() => JSON.parse(hc("get", "--json", run.address)).cols as number).toBeLessThan(120);
+  // The tab shows the terminal's title from hc, not its id.
+  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText(["Build watcher"]);
   await page.screenshot({ path: path.join(shots, "terminal-top.png") });
   await page.keyboard.press("q");
   await app.close();
