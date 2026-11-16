@@ -47,6 +47,8 @@ export function App() {
   const [inbox, setInbox] = useState(false);
   // The Settings view in the main pane, from the sidebar foot.
   const [settings, setSettings] = useState(false);
+  // The app menu's "Check for Updates…" shows Settings too.
+  useEffect(() => window.contr.onOpenSettings(() => setSettings(true)), []);
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;

@@ -64,10 +64,15 @@ scripts/check-bundle    # both binaries are there and herdr-contr-orch runs
 
 Settings > Updates shows this app's version and the newest release's version.
 A packaged app reads `releases/latest` of contursofran/contr-desktop (no
-token) at start and every 6 hours. The version comes from the release notes
-("contr 0.1.<run> from <sha>."), because the tag holds no version. When the
-newest one is newer, Settings shows an Update button and the foot's
-Settings button a dot.
+token) at start, every 6 hours, each time the Settings view opens, on
+"Check now" in Settings > Updates and on "Check for Updates…" in the macOS
+app menu (it also opens Settings). One check runs at a time. While it runs,
+"Check now" says "Checking…"; after it, Settings shows "Up to date" or the
+newest version, and "Checked just now" or "Checked 5m ago". The version comes
+from the release notes ("contr 0.1.<run> from <sha>."), because the tag holds
+no version. When the newest one is newer, Settings shows an Update button and
+the foot's Settings button a dot. A check while a download runs or a new app
+is ready keeps that download: a newer release does not replace the ready app.
 
 When the folder of the running `contr.app` is writable and the release has
 `contr-mac-universal.zip`, a press downloads the `.zip` with progress and
