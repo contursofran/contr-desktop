@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 // A fake hc for tests. `get --json <terminal>` gives FAKE_HC_TITLE (else the terminal's title below), its `agent` and FAKE_HC_CWD.
 // `machine ls --json` gives two machines when FAKE_HC_AGENTS=1, else none.
 // `ls --json` lists (with hc's `agent` kind) the agents below when FAKE_HC_AGENTS=1, else none. `events` ends at once: the app polls.
@@ -24,6 +25,8 @@ if (cmd === "get") {
   ];
   process.stdout.write(JSON.stringify({ machines: process.env.FAKE_HC_AGENTS === "1" ? machines : [] }));
 } else if (cmd === "ls") {
-  const list = process.env.FAKE_HC_AGENTS === "1" ? agents.map((t) => ({ ...t, title: undefined })) : [];
+  // FAKE_HC_STATUS: a JSON file { address: status } that a test rewrites to change an agent's status.
+  const status = process.env.FAKE_HC_STATUS ? JSON.parse(readFileSync(process.env.FAKE_HC_STATUS, "utf8")) : {};
+  const list = process.env.FAKE_HC_AGENTS === "1" ? agents.map((t) => ({ ...t, status: status[t.address] ?? t.status, title: undefined })) : [];
   process.stdout.write(JSON.stringify({ terminals: list }));
 } else process.exit(1);

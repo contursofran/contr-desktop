@@ -8,8 +8,19 @@ import { inboxCount, ownerResult, parseOwnerOpen, windowTitle } from "./owner";
 /** The open count as the main process last set it; e2e reads it here, as e2e runs set no Dock badge. */
 export let inboxBadge = 0;
 
-/** Shows `n` in each window title and on the Dock badge (not under CONTR_E2E: no Dock icon there). */
-export function showInboxCount(n: number): void {
+/** The open owner items and the agents blocked on a prompt; the Inbox count is their sum. */
+let ownerOpen = 0;
+let blocked = 0;
+
+/** Sets the number of agents blocked on a prompt (the sidebar's hc read) and shows the new count. */
+export function setBlockedCount(n: number): void {
+  blocked = n;
+  showInboxCount();
+}
+
+/** Shows the Inbox count in each window title and on the Dock badge (not under CONTR_E2E: no Dock icon there). */
+function showInboxCount(): void {
+  const n = ownerOpen + blocked;
   inboxBadge = n;
   (globalThis as { contrInboxBadge?: number }).contrInboxBadge = n;
   for (const w of BrowserWindow.getAllWindows()) w.setTitle(windowTitle(n));
@@ -39,10 +50,11 @@ export function registerOwnerIpc(appRoot: string): void {
     if (text === lastText) return;
     last = items;
     lastText = text;
-    showInboxCount(inboxCount(last));
+    ownerOpen = inboxCount(last);
+    showInboxCount();
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(OWNER_EVENT, last);
   };
-  showInboxCount(0);
+  showInboxCount();
   void read();
   setInterval(() => void read(), OWNER_POLL_MS);
   ipcMain.handle(OWNER_CHANNEL, () => last);
