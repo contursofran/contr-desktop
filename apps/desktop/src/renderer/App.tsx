@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Card } from "./chat/card/Card";
 import { ChatList } from "./chat/list/ChatList";
 import { StatusLine, orchestratingText } from "./chat/rows/StatusLine";
 import { useBoard } from "./chat/blocks/useBoard";
@@ -63,6 +64,7 @@ function Chat() {
             </p>
           )}
           <ChatList rows={feed.rows} />
+          {feed.card && <Card card={feed.card} />}
           <StatusLine working={feed.working} right={orchestratingText(board?.orchestrating ?? 0)} />
           <ReplyBox title={title} />
         </>
