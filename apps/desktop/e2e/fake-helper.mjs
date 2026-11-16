@@ -5,6 +5,9 @@
 // `paste-image` answers `image` with FAKE_HELPER_PASTE_IMAGE as the path (null when not set).
 // FAKE_HELPER_SEND_ERROR=<code> makes `send` answer with that error.
 // `working` gives a fixed working line.
+// `card` prints the `card` line in FAKE_HELPER_CARD (a JSON file), else `{"type":"card"}` (no card).
+// `approve` and `answer` append {cmd, terminal, request, allow|answers} to FAKE_HELPER_ANSWER_LOG and answer
+// `done` with FAKE_HELPER_ANSWER_RESULT (default `sent`).
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 import { appendFileSync, readFileSync } from "node:fs";
 
@@ -37,6 +40,17 @@ if (process.env.FAKE_HELPER_ERROR) {
   end(true);
 } else if (cmd === "working") {
   out({ type: "working", text: "Hashing…", detail: "35s · ↓ 1.2k tokens" });
+  end(true);
+} else if (cmd === "card") {
+  const card = process.env.FAKE_HELPER_CARD ? JSON.parse(readFileSync(process.env.FAKE_HELPER_CARD, "utf8")) : {};
+  out({ ...card, type: "card" });
+  end(true);
+} else if (cmd === "approve" || cmd === "answer") {
+  const got = { cmd, terminal: arg("terminal"), request: arg("request") };
+  if (cmd === "approve") got.allow = rest.includes("--allow") && !rest.includes("--deny");
+  else got.answers = JSON.parse(arg("answers"));
+  if (process.env.FAKE_HELPER_ANSWER_LOG) appendFileSync(process.env.FAKE_HELPER_ANSWER_LOG, `${JSON.stringify(got)}\n`);
+  out({ result: process.env.FAKE_HELPER_ANSWER_RESULT ?? "sent", type: "done" });
   end(true);
 } else if (cmd === "send") {
   appendFileSync(process.env.FAKE_HELPER_SEND_LOG, `${JSON.stringify({ terminal: arg("terminal"), text: arg("text") })}\n`);

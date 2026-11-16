@@ -1,0 +1,1 @@
+{"command":"pnpm --filter desktop exec playwright test e2e/app.spec.ts","kind":"approval","request":"toolu_01HxQ7bVf3kPz9Ns2RtLmW4d","title":"Bash command","tool":"Bash"}

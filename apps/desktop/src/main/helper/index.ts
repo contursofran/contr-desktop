@@ -1,7 +1,8 @@
 import { app, ipcMain, type WebContents } from "electron";
-import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
+import { answer, approve, type Answer } from "./card";
 import { terminalTitle } from "./title";
 import { helperPath } from "./run";
 
@@ -27,6 +28,8 @@ export function setupHelper(appRoot: string): void {
     });
   });
   ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, terminal, text));
+  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper, terminal, request, allow));
+  ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper, terminal, request, answers));
   ipcMain.handle(TITLE_CHANNEL, () => terminalTitle(terminal));
   ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper, path.join(app.getPath("userData"), "paste")));
 }

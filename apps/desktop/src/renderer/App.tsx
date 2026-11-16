@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Card } from "./chat/card/Card";
 import { Row } from "./chat/rows/Row";
 import { StatusLine } from "./chat/rows/StatusLine";
 import { ReplyBox } from "./chat/reply/ReplyBox";
@@ -46,6 +47,7 @@ export function App() {
               </li>
             ))}
           </ol>
+          {feed.card && <Card card={feed.card} />}
           <StatusLine working={feed.working} />
           <ReplyBox title={title} />
         </>
