@@ -17,3 +17,10 @@ when it does that job better. Until then, herdr-contr stays the daily app.
 | `docs/design/README.md` | the design to aim for, with the screenshot and the canvases |
 | `docs/reference/helper-protocol.md` | the helper's JSON Lines protocol, that feeds the chat |
 | `docs/research/t3code-chat.md` | which parts of t3code to copy, and how |
+
+## The helper
+
+`scripts/fetch-helper` downloads the newest herdr-contr release into `bin/`
+(it needs `gh`). The app runs `bin/herdr-contr-feed`, or the program that
+`CONTR_HELPER` names, for the terminal that `CONTR_TERMINAL` names (default
+`t1`). Tests use `apps/desktop/e2e/fake-helper.mjs`.

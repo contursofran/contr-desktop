@@ -1,4 +1,4 @@
 /// <reference types="vite/client" />
 interface Window {
-  contr: { platform: string };
+  contr: import("../shared/api").ContrApi;
 }
