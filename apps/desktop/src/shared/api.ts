@@ -91,6 +91,10 @@ export interface ContrApi {
   ownerAnswer(id: string, answer: string): Promise<OwnerResult>;
   /** Marks an owner to-do done (`owner done <id>`). */
   ownerDone(id: string): Promise<OwnerResult>;
+  /** The Settings view's data. */
+  settings(): Promise<Settings>;
+  /** Saves the theme choice and shows it at once. */
+  setTheme(theme: ThemeChoice): Promise<ThemeChoice>;
   terminal: TerminalApi;
 }
 
@@ -244,3 +248,16 @@ export interface OwnerResult {
   ok: boolean;
   note: string | null;
 }
+
+/** The theme choice in Settings. "system" follows macOS. */
+export type ThemeChoice = "system" | "dark" | "light";
+
+/** What the Settings view shows. */
+export interface Settings {
+  theme: ThemeChoice;
+  /** The helper's path (CONTR_HELPER, else bin/herdr-contr-feed at the repository root). */
+  helper: string;
+}
+
+export const SETTINGS_CHANNEL = "contr:settings";
+export const THEME_CHANNEL = "contr:theme";

@@ -4,9 +4,9 @@ import type { UsageRow } from "../../shared/api";
 
 /**
  * The sidebar foot (docs/design/recipe-herdr.md, the foot): one row per plan (name, meter, "41% wk · 4d"),
- * then Settings and the add machine button. Settings and + do nothing yet (issue 16 builds Settings).
+ * then Settings and the add machine button. Settings opens the Settings view; + does nothing yet.
  */
-export function Foot() {
+export function Foot({ onSettings, settingsShown }: { onSettings: () => void; settingsShown: boolean }) {
   const [rows, setRows] = useState<UsageRow[]>([]);
   useEffect(() => {
     void window.contr.usage().then(setRows);
@@ -28,7 +28,7 @@ export function Foot() {
         </ul>
       )}
       <div className="flex gap-1 px-2.5 pt-1 pb-2.5">
-        <button type="button" className="flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] text-muted hover:bg-hover">
+        <button type="button" aria-pressed={settingsShown} onClick={onSettings} className={`flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] hover:bg-hover ${settingsShown ? "bg-selected text-foreground" : "text-muted"}`}>
           <Settings aria-hidden className="size-4" />
           Settings
         </button>
