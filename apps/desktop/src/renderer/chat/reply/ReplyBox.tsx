@@ -111,11 +111,10 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
         </p>
       )}
       <div className="flex items-center gap-2">
-        <Tip
-          text="Attach image"
-          trigger={<button type="button" aria-label="Attach image" onClick={() => void onAttach()} className="rounded-full p-1 text-muted hover:bg-hover hover:text-foreground" />}
-        >
-          <Plus aria-hidden className="size-4" />
+        <Tip label="Attach image" side="top">
+          <button type="button" aria-label="Attach image" onClick={() => void onAttach()} className="rounded-full p-1 text-muted hover:bg-hover hover:text-foreground">
+            <Plus aria-hidden className="size-4" />
+          </button>
         </Tip>
         <ModelButton info={info} send={sendCommand} />
         <span className="flex-1" />

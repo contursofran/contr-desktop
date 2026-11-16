@@ -40,18 +40,15 @@ export function MarkdownCodeBlock({
     >
       <div className="flex items-center justify-between gap-2 pt-1.5 pr-1.5 pb-0 pl-3 select-none">
         <span className="truncate font-mono text-xs text-muted">{language}</span>
-        <Tip
-          text={copyLabel}
-          trigger={
-            <button
-              type="button"
-              onClick={() => copy(code.endsWith("\n") ? code.slice(0, -1) : code)}
-              aria-label={copyLabel}
-              className="rounded p-1 text-muted hover:bg-hover hover:text-foreground"
-            />
-          }
-        >
-          {copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
+        <Tip label={copyLabel} side="top">
+          <button
+            type="button"
+            onClick={() => copy(code.endsWith("\n") ? code.slice(0, -1) : code)}
+            aria-label={copyLabel}
+            className="rounded p-1 text-muted hover:bg-hover hover:text-foreground"
+          >
+            {copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
+          </button>
         </Tip>
       </div>
       {children}

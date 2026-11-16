@@ -4,6 +4,7 @@ import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../..
 import { StateMark } from "../chat/blocks/Marks";
 import { Foot } from "./Foot";
 import { Head } from "./Head";
+import { Tip } from "../ui/Tip";
 import { type Changes, duration, load, save, tip, track } from "./ages";
 import claude from "./icons/claude.svg?raw";
 import codex from "./icons/codex.svg?raw";
@@ -35,19 +36,20 @@ function Worker({ agent, selected, depth, onSelect }: { agent: SidebarAgent; sel
   const showName = agent.name && agent.name !== agent.title;
   return (
     <li>
-      <button
-        type="button"
-        aria-current={shown || undefined}
-        title={tip(agent) || agent.title}
-        onClick={() => onSelect(agent.terminal)}
-        style={{ paddingLeft: 8 + depth * 14 }}
-        className={`flex h-[26px] w-full items-center gap-2 rounded-md pr-2 text-left text-xs hover:bg-hover ${shown ? "bg-raised text-foreground" : agent.state === "done" ? "text-dim" : "text-muted"}`}
-      >
-        <AgentIcon agent={agent} size={13} />
-        <span className="min-w-0 flex-1 truncate">{agent.title}</span>
-        {showName && <span className="max-w-[72px] shrink truncate font-mono text-[10px] text-dim">{agent.name}</span>}
-        <Mark agent={agent} />
-      </button>
+      <Tip label={tip(agent) || agent.title} side="right">
+        <button
+          type="button"
+          aria-current={shown || undefined}
+          onClick={() => onSelect(agent.terminal)}
+          style={{ paddingLeft: 8 + depth * 14 }}
+          className={`flex h-[26px] w-full items-center gap-2 rounded-md pr-2 text-left text-xs hover:bg-hover ${shown ? "bg-raised text-foreground" : agent.state === "done" ? "text-dim" : "text-muted"}`}
+        >
+          <AgentIcon agent={agent} size={13} />
+          <span className="min-w-0 flex-1 truncate">{agent.title}</span>
+          {showName && <span className="max-w-[72px] shrink truncate font-mono text-[10px] text-dim">{agent.name}</span>}
+          <Mark agent={agent} />
+        </button>
+      </Tip>
       {agent.workers.length > 0 && <Workers agents={agent.workers} selected={selected} depth={depth + 1} onSelect={onSelect} />}
     </li>
   );
@@ -67,23 +69,24 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
   const n = count(agent);
   return (
     <li>
-      <button
-        type="button"
-        aria-current={shown || undefined}
-        title={agent.title}
-        onClick={() => onSelect(agent.terminal)}
-        className={`flex w-full items-center gap-2 rounded-lg py-1.5 pr-2.5 pl-[26px] text-left text-[13px] ${shown ? "bg-raised font-medium text-foreground ring-1 ring-border" : unread ? "font-semibold text-foreground hover:bg-hover" : "text-muted hover:bg-hover"}`}
-      >
-        <span className="flex h-[18px] items-center self-start"><AgentIcon agent={agent} size={15} /></span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate">{agent.title}</span>
-          {n > 0 && <span className="block text-xs font-normal text-muted">Orchestrating · {n} {n === 1 ? "worker" : "workers"}</span>}
-        </span>
-        {since !== null && agent.state !== "working" && (
-          <span data-age className="shrink-0 self-start font-[Menlo,monospace] text-[11px] leading-[18px] font-normal text-muted">{duration(since)}</span>
-        )}
-        <Mark agent={agent} />
-      </button>
+      <Tip label={agent.title} side="right">
+        <button
+          type="button"
+          aria-current={shown || undefined}
+          onClick={() => onSelect(agent.terminal)}
+          className={`flex w-full items-center gap-2 rounded-lg py-1.5 pr-2.5 pl-[26px] text-left text-[13px] ${shown ? "bg-raised font-medium text-foreground ring-1 ring-border" : unread ? "font-semibold text-foreground hover:bg-hover" : "text-muted hover:bg-hover"}`}
+        >
+          <span className="flex h-[18px] items-center self-start"><AgentIcon agent={agent} size={15} /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate">{agent.title}</span>
+            {n > 0 && <span className="block text-xs font-normal text-muted">Orchestrating · {n} {n === 1 ? "worker" : "workers"}</span>}
+          </span>
+          {since !== null && agent.state !== "working" && (
+            <span data-age className="shrink-0 self-start font-[Menlo,monospace] text-[11px] leading-[18px] font-normal text-muted">{duration(since)}</span>
+          )}
+          <Mark agent={agent} />
+        </button>
+      </Tip>
       {n > 0 && <Workers agents={agent.workers} selected={selected} depth={0} onSelect={onSelect} />}
     </li>
   );
