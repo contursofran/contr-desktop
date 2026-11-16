@@ -12,8 +12,15 @@ export async function chatRow(page: Page, id: string): Promise<Locator> {
     await list.evaluate((el, y) => el.scrollTo({ top: y }), top);
     await page.waitForTimeout(50);
     if (await row.count()) {
-      await row.scrollIntoViewIfNeeded();
-      return row;
+      // The list can mount the row again while it measures it: try again then.
+      for (let i = 0; ; i++) {
+        try {
+          await row.scrollIntoViewIfNeeded({ timeout: 2000 });
+          return row;
+        } catch (e) {
+          if (i >= 4) throw e;
+        }
+      }
     }
     const { height, max } = await list.evaluate((el) => ({ height: el.clientHeight, max: el.scrollHeight - el.clientHeight }));
     if (top >= max) break;
