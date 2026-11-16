@@ -22,7 +22,7 @@ describe("top bar tabs", () => {
     expect(findAgent(data, "t9")).toBeUndefined();
   });
   it("labels a tab with the sidebar title, else the title from hc, never the terminal id", () => {
-    const data: Sidebar = { selected: "", projects: [{ name: "p", agents: [agent("t7", "Orch")] }] };
+    const data: Sidebar = { selected: "", projects: [{ name: "p", cwd: "", branch: null, ahead: 0, behind: 0, favicon: null, agents: [agent("t7", "Orch")] }] };
     expect(tabLabel(data, "t7", { t7: "Other" })).toBe("Orch");
     expect(tabLabel(data, "t9", { t9: "Claude Code" })).toBe("Claude Code");
     expect(tabLabel(data, "t9", {})).toBe("");
