@@ -21,6 +21,7 @@ test("the theme control moves with the arrow keys and has one tab stop", async (
   test.setTimeout(60_000);
   const app = await launchApp(env, mkdtempSync(path.join(os.tmpdir(), "contr-e2e-data-")));
   const page = await app.firstWindow();
+  await page.emulateMedia({ colorScheme: null });
   await page.locator("aside > footer").getByRole("button", { name: "Settings" }).click();
   const theme = page.getByRole("radiogroup", { name: "Theme" });
   const radio = (name: string) => theme.getByRole("radio", { name });
@@ -36,8 +37,14 @@ test("the theme control moves with the arrow keys and has one tab stop", async (
   await page.keyboard.press("ArrowLeft");
   await expect(radio("Dark")).toHaveAttribute("aria-checked", "true");
   await expect(theme.locator("[tabindex='0']")).toHaveCount(1);
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
+  const indicator = theme.locator("[data-slot='segmented-control-indicator']");
+  for (const [name, scheme] of [["Dark", "dark"], ["Light", "light"]] as const) {
+    await radio(name).click();
+    await expect(radio(name)).toHaveAttribute("data-checked", "");
+    await expect.poll(() => app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe(scheme);
+    const item = await radio(name).boundingBox();
+    await expect.poll(async () => Math.round((await indicator.boundingBox())?.x ?? -1)).toBe(Math.round(item?.x ?? 0));
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.getByRole("region", { name: "Settings" }).screenshot({ path: path.join(shots, `uisdk-theme-${scheme}.png`) });
   }
   await app.close();
