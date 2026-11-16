@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // A fake herdr-contr-feed for tests. It plays FAKE_HELPER_FIXTURE (JSON Lines of `row` objects).
 // `feed` without --cursor gives all rows; with a cursor it gives `unchanged`.
+// `$FIXTURES` in a row becomes the fixture folder (an absolute path).
 // `send` appends {terminal, text} as one JSON line to FAKE_HELPER_SEND_LOG.
 // `paste-image` answers `image` with FAKE_HELPER_PASTE_IMAGE as the path (null when not set).
 // FAKE_HELPER_SEND_ERROR=<code> makes `send` answer with that error.
 // `working` gives a fixed working line.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 import { appendFileSync, readFileSync } from "node:fs";
+import path from "node:path";
 
 const [cmd, ...rest] = process.argv.slice(2);
 const arg = (name) => {
@@ -24,9 +26,10 @@ if (process.env.FAKE_HELPER_ERROR) {
   out({ agent: "claude", cursor: "fake.1", model: "claude-opus-5-5", path: "fixture", size: 1, start: 0, type: "log" });
   if (arg("cursor")) out({ type: "unchanged" });
   else {
+    const fixtures = path.dirname(process.env.FAKE_HELPER_FIXTURE);
     const rows = readFileSync(process.env.FAKE_HELPER_FIXTURE, "utf8").split("\n").filter((l) => l.trim());
     out({ at: 0, count: rows.length, type: "splice" });
-    for (const r of rows) out({ ...JSON.parse(r), type: "row" });
+    for (const r of rows) out({ ...JSON.parse(r.replaceAll("$FIXTURES", fixtures)), type: "row" });
   }
   end(true);
 } else if (cmd === "send" && process.env.FAKE_HELPER_SEND_ERROR) {
