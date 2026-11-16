@@ -5,6 +5,7 @@
 import type { PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import { remarkRefs } from "../refs/remarkRefs";
 import { remarkGithubAlerts } from "./markdownGithubAlerts";
 import { remarkNormalizeListItemIndentation } from "./markdownListIndentation";
 import { remarkKeepOrderedListNumbers } from "./markdownOrderedListNumbers";
@@ -69,15 +70,17 @@ function remarkNormalizeLinksAndTagInlineCode() {
  * nodes with `data.hName` and `data.hProperties`; add those names to the sanitize
  * schema below and map them to a component in ChatMarkdown.tsx.
  */
-export const INLINE_TEXT_PLUGINS: PluggableList = [];
+export const INLINE_TEXT_PLUGINS: PluggableList = [remarkRefs];
 
 const CHAT_MARKDOWN_SANITIZE_SCHEMA = {
   ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "contr-ref"],
   attributes: {
     ...defaultSchema.attributes,
     "*": (defaultSchema.attributes?.["*"] ?? []).filter((attribute) => attribute !== "title"),
     code: [["className", /^language-./], "dataCodeMeta", "dataInlineCode"],
     blockquote: [...(defaultSchema.attributes?.blockquote ?? []), "dataAlert"],
+    "contr-ref": [["dataRef", /^\d+$/]],
   },
 } satisfies Parameters<typeof rehypeSanitize>[0];
 

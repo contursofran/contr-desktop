@@ -1,6 +1,7 @@
 import type { Element } from "hast";
 import { Component, Suspense, useMemo, type ComponentProps, type ReactNode } from "react";
 import { HighlightedCode, MarkdownCodeBlock, extractFenceLanguage } from "./MarkdownCodeBlock";
+import { RefChip } from "../refs/RefChip";
 import { MarkdownTable } from "./MarkdownTable";
 import { createMarkdownRenderer } from "./markdownRenderer";
 import { CHAT_MARKDOWN_REHYPE_PLUGINS, CHAT_MARKDOWN_REMARK_PLUGINS } from "./pipeline";
@@ -55,6 +56,11 @@ function Table({ node, ...props }: WithNode<"table">) {
   return <MarkdownTable {...props} />;
 }
 
+/** `contr-ref` from remarkRefs: a PR or issue number. */
+function Ref({ node, children }: { node?: Element; children?: ReactNode }) {
+  return <RefChip number={Number(node?.properties.dataRef)}>{children}</RefChip>;
+}
+
 const SAFE_URL = /^(?:https?:|mailto:|#|\/)/i;
 
 /** Keeps web links and drops other schemes, as react-markdown's default does. */
@@ -62,11 +68,11 @@ function urlTransform(url: string): string {
   return SAFE_URL.test(url) || !/^[a-z][a-z0-9+.-]*:/i.test(url) ? url : "";
 }
 
-/** Element to component map. Issue #4 adds its chip component here. */
+/** Element to component map. */
 const render = createMarkdownRenderer({
   remarkPlugins: CHAT_MARKDOWN_REMARK_PLUGINS,
   rehypePlugins: CHAT_MARKDOWN_REHYPE_PLUGINS,
-  components: { pre: Pre, a: Link, table: Table },
+  components: { pre: Pre, a: Link, table: Table, "contr-ref": Ref },
   urlTransform,
 });
 

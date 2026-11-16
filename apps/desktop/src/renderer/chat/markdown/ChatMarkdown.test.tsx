@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ChatMarkdown } from "./ChatMarkdown";
 
 const html = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} />);
@@ -22,5 +22,35 @@ describe("ChatMarkdown", () => {
 
   it("opens web links outside the app", () => {
     expect(html("[t3](https://example.com)")).toContain('target="_blank"');
+  });
+});
+
+vi.mock("../refs/useRef", () => ({
+  useRefState: (n: number) =>
+    ({
+      12: { kind: "pr", state: "merged", url: "https://github.com/o/r/pull/12" },
+      9: { kind: "issue", state: "not-planned", url: "https://github.com/o/r/issues/9" },
+      404: null,
+    })[n],
+}));
+
+describe("PR and issue chips", () => {
+  const chip = (n: number, state: string) => new RegExp(`<a [^>]*href="[^"]*/${n}"[^>]*data-ref-state="${state}"`);
+
+  it("turns #12 into a chip in text, list items, table cells and emphasis", () => {
+    for (const text of ["See #12.", "- see #12", "| PR |\n|---|\n| #12 |", "*(#12)*"]) {
+      const out = html(text);
+      expect(out).toMatch(chip(12, "merged"));
+      expect(out).toContain('aria-label="PR #12, Merged"');
+      expect(out).toContain(">#12</span></a>");
+    }
+    expect(html("Fixes #9")).toMatch(chip(9, "not-planned"));
+  });
+
+  it("keeps code, links, unknown numbers and non-references as text", () => {
+    for (const text of ["`#12`", "[see #12](https://example.com)", "#404", "a#12 &#12; x/#12 #12a", "#13"]) {
+      expect(html(text)).not.toContain("data-ref-state");
+    }
+    expect(html("`#12`")).toContain("<code data-inline-code=\"\">#12</code>");
   });
 });
