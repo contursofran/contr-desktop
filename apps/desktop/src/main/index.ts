@@ -6,7 +6,8 @@ import { registerBoardIpc } from "./board/ipc";
 import { registerRefsIpc } from "./refs/ipc";
 import { registerSidebarIpc } from "./sidebar/ipc";
 import { registerFootIpc } from "./foot/ipc";
-import { registerOwnerIpc } from "./owner/ipc";
+import { inboxBadge, registerOwnerIpc } from "./owner/ipc";
+import { windowTitle } from "./owner/owner";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 
@@ -17,6 +18,9 @@ function createWindow(): void {
   const win = new BrowserWindow(
     windowOptions(process.platform, path.join(__dirname, "../preload/index.cjs"), e2e),
   );
+  // The title is the main process's: it carries the Inbox count, so the page's <title> does not replace it.
+  win.setTitle(windowTitle(inboxBadge));
+  win.on("page-title-updated", (e) => e.preventDefault());
   if (!e2e) win.once("ready-to-show", () => win.show());
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) void win.loadURL(devUrl);

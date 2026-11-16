@@ -17,13 +17,13 @@ export function parseOwnerOpen(json: string): OwnerItems {
   }
   const out: OwnerItems = { questions: [], todos: [] };
   if (!Array.isArray(list)) return out;
-  for (const raw of list as Record<string, unknown>[]) {
+  for (const [order, raw] of (list as Record<string, unknown>[]).entries()) {
     const id = str(raw?.id);
     const coordinator = local(raw?.coordinator);
     if (!id || !coordinator) continue;
     if (raw.kind === "todo") {
       const text = str(raw.text);
-      if (text) out.todos.push({ id, coordinator, from: str(raw.from), text, know: raw.todo_kind === "know" } satisfies OwnerTodo);
+      if (text) out.todos.push({ id, coordinator, order, from: str(raw.from), text, know: raw.todo_kind === "know" } satisfies OwnerTodo);
       continue;
     }
     const question = str(raw.question);
@@ -33,7 +33,7 @@ export function parseOwnerOpen(json: string): OwnerItems {
     const rec = options.findIndex((o) => o.recommended);
     if (rec > 0) options.unshift(...options.splice(rec, 1));
     const refs = (Array.isArray(raw.refs) ? raw.refs : []).map(str).filter(Boolean);
-    out.questions.push({ id, coordinator, title: str(raw.title), from: str(raw.from), question, options, refs } satisfies OwnerQuestion);
+    out.questions.push({ id, coordinator, order, title: str(raw.title), from: str(raw.from), question, options, refs } satisfies OwnerQuestion);
   }
   return out;
 }
@@ -48,3 +48,9 @@ export function ownerResult(code: number | null, stderr: string, saved: string):
   if (code != null && /coordinator not reached/.test(why)) return { ok: true, note: `${saved}, but the coordinator did not get it: ${why}` };
   return { ok: false, note: why };
 }
+
+/** The number of open items: the Inbox count, the window title and the Dock badge. */
+export const inboxCount = (items: OwnerItems): number => items.questions.length + items.todos.length;
+
+/** The window title: "contr", and "contr · Inbox N" while items are open. */
+export const windowTitle = (n: number): string => (n > 0 ? `contr · Inbox ${n}` : "contr");

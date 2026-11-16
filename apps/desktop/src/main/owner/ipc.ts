@@ -1,9 +1,20 @@
 import { execFile } from "node:child_process";
-import { BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { OWNER_ANSWER_CHANNEL, OWNER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_EVENT, type OwnerItems } from "../../shared/api";
 import { orchPath } from "../board/board";
 import { run } from "../sidebar/agents";
-import { ownerResult, parseOwnerOpen } from "./owner";
+import { inboxCount, ownerResult, parseOwnerOpen, windowTitle } from "./owner";
+
+/** The open count as the main process last set it; e2e reads it here, as e2e runs set no Dock badge. */
+export let inboxBadge = 0;
+
+/** Shows `n` in each window title and on the Dock badge (not under CONTR_E2E: no Dock icon there). */
+export function showInboxCount(n: number): void {
+  inboxBadge = n;
+  (globalThis as { contrInboxBadge?: number }).contrInboxBadge = n;
+  for (const w of BrowserWindow.getAllWindows()) w.setTitle(windowTitle(n));
+  if (process.env.CONTR_E2E !== "1") app.setBadgeCount(n);
+}
 
 /** The owner file has no event: `owner open --json` is read every 3 s (docs/design/recipe-herdr.md). */
 const OWNER_POLL_MS = 3_000;
@@ -28,8 +39,10 @@ export function registerOwnerIpc(appRoot: string): void {
     if (text === lastText) return;
     last = items;
     lastText = text;
+    showInboxCount(inboxCount(last));
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(OWNER_EVENT, last);
   };
+  showInboxCount(0);
   void read();
   setInterval(() => void read(), OWNER_POLL_MS);
   ipcMain.handle(OWNER_CHANNEL, () => last);

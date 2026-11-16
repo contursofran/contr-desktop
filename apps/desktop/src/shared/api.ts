@@ -215,6 +215,8 @@ export interface OwnerQuestion {
   id: string;
   /** The hc address of the coordinator that asked, with no `hc:` prefix. */
   coordinator: string;
+  /** The place in `owner open --json` (oldest first), shared by questions and to-dos. */
+  order: number;
   title: string;
   from: string;
   question: string;
@@ -226,6 +228,7 @@ export interface OwnerQuestion {
 export interface OwnerTodo {
   id: string;
   coordinator: string;
+  order: number;
   from: string;
   text: string;
   know: boolean;

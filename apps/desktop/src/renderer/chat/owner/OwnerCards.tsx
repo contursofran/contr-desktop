@@ -16,18 +16,24 @@ const primary = `${button} bg-foreground text-canvas hover:bg-foreground`;
 const key = "rounded bg-selected px-1.5 font-mono text-xs text-muted";
 const more = (n: number) => (n > 0 ? ` · ${n} more after this` : "");
 
-/** The open owner items of `terminal` (its coordinator's chat), from `owner open --json`. */
-export function useOwnerItems(terminal: string): OwnerItems {
+/** All open owner items of every coordinator, from `owner open --json`. */
+export function useAllOwnerItems(): OwnerItems {
   const [items, setItems] = useState<OwnerItems>({ questions: [], todos: [] });
   useEffect(() => {
     void window.contr.owner().then(setItems);
     return window.contr.onOwner(setItems);
   }, []);
+  return items;
+}
+
+/** The open owner items of `terminal` (its coordinator's chat). */
+export function useOwnerItems(terminal: string): OwnerItems {
+  const items = useAllOwnerItems();
   return { questions: items.questions.filter((q) => q.coordinator === terminal), todos: items.todos.filter((t) => t.coordinator === terminal) };
 }
 
 /** A note that stays after its item left: "saved, coordinator not reached", for 15 s. */
-function useSavedNote(): [string | null, (n: string) => void] {
+export function useSavedNote(): [string | null, (n: string) => void] {
   const [note, setNote] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -52,7 +58,7 @@ export function OwnerCards({ items }: { items: OwnerItems }) {
   );
 }
 
-function Note({ text }: { text: string }) {
+export function Note({ text }: { text: string }) {
   return <p role="status" className={`${box} text-xs text-muted`}>{text}</p>;
 }
 
@@ -72,12 +78,14 @@ function useRun(onSaved: (n: string) => void) {
   return { off, error, go };
 }
 
-function Question({ q, rest, onSaved }: { q: OwnerQuestion; rest: number; onSaved: (n: string) => void }) {
+/** `keys` false: the digit and Enter keys do not answer (the Inbox shows many cards at once). */
+export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; rest: number; onSaved: (n: string) => void; keys?: boolean }) {
   const { off, error, go } = useRun(onSaved);
   const [other, setOther] = useState("");
   const otherRef = useRef<HTMLInputElement>(null);
   const send = (answer: string) => answer.trim() && void go(() => window.contr.ownerAnswer(q.id, answer.trim()));
   useKeys((k) => {
+    if (!keys) return;
     const n = Number(k);
     if (n >= 1 && n <= q.options.length) send(q.options[n - 1]!.label);
     else if (n === q.options.length + 1) otherRef.current?.focus();
@@ -121,7 +129,7 @@ function Question({ q, rest, onSaved }: { q: OwnerQuestion; rest: number; onSave
   );
 }
 
-function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved: (n: string) => void }) {
+export function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved: (n: string) => void }) {
   const { off, error, go } = useRun(onSaved);
   const [copied, setCopied] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
