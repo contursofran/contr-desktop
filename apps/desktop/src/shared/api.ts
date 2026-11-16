@@ -38,7 +38,23 @@ export interface ContrApi {
   refs(numbers: number[]): Promise<Record<number, RefState | null>>;
   /** Opens a PR or issue in the browser. */
   openRef(url: string): Promise<void>;
+  /** The `contr-status` board: worker states from the orchestration tool, and each issue's PR checks from gh. */
+  board(issues: number[]): Promise<Board>;
   terminal: TerminalApi;
+}
+
+/** A worker's mark: the loader, a check, a dot or an empty ring. */
+export type WorkerState = "working" | "done" | "blocked" | "idle";
+
+/** The PR that closes an issue, and its head's checks. null checks: the PR has none. */
+export interface PrChecks {
+  pr: number;
+  checks: "pass" | "pending" | "fail" | null;
+}
+
+export interface Board {
+  workers: Record<string, WorkerState>;
+  checks: Record<number, PrChecks | null>;
 }
 
 /** A PR or an issue of the agent's repository, as gh says now. */
@@ -66,3 +82,4 @@ export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
 export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
+export const BOARD_CHANNEL = "contr:board";

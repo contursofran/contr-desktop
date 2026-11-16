@@ -5,7 +5,7 @@ import { OPEN_REF_CHANNEL, REFS_CHANNEL } from "../../shared/api";
 import { ghRefs, readCwd, RefCache } from "./gh";
 
 /** The folder of the agent's repository: CONTR_REPO_DIR, else the hc terminal's cwd (read-only `hc get --json`). */
-function repoDir(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string | null> {
+export function repoDir(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string | null> {
   if (process.env.CONTR_REPO_DIR) return Promise.resolve(process.env.CONTR_REPO_DIR);
   return new Promise((resolve) => {
     execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readCwd(String(stdout ?? ""))));
