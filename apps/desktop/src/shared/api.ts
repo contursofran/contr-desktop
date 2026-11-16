@@ -90,6 +90,10 @@ export interface SidebarAgent {
   title: string;
   name: string | null;
   state: WorkerState;
+  /** The program's kind from hc `agent` ("claude-code", "codex"), null when hc gives none. */
+  kind: string | null;
+  /** The issue from the orchestration tool, null when unknown. */
+  issue: string | null;
   workers: SidebarAgent[];
 }
 

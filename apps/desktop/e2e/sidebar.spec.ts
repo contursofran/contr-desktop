@@ -27,10 +27,18 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ })).toHaveText(/Orchestrating · 3 workers/);
   await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ })).toHaveAttribute("aria-current", "true");
   await expect(desktop.getByRole("button", { name: /Flow and sequence diagrams/ })).toContainText("b-30");
-  await expect(desktop.getByRole("button", { name: /Release notes draft/ })).toBeVisible();
+  const flow = desktop.getByRole("button", { name: /Flow and sequence diagrams/ });
+  await expect(flow).toHaveAttribute("title", "b-30 · #30 · Flow and sequence diagrams");
+  await expect(flow.locator("[data-icon]")).toHaveAttribute("data-icon", "claude-code");
+  await expect(desktop.getByRole("button", { name: /Virtual list/ })).toHaveAttribute("title", "b-50 · Virtual list");
+  const notes = desktop.getByRole("button", { name: /Release notes draft/ });
+  await expect(notes.locator("[data-age]")).toHaveText("<1m");
+  await expect(notes).toHaveCSS("font-weight", "600");
+  await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ }).locator("[data-age]")).toHaveCount(0);
   const herdr = nav.getByRole("region", { name: "herdr-contr" });
   await expect(herdr.getByRole("button")).toHaveCount(1);
   await expect(herdr.getByRole("button")).toContainText("Install health check");
+  await expect(herdr.getByRole("button").locator("[data-icon]")).toHaveAttribute("data-icon", "codex");
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
   // #57: the status line counts the same workers as the rows under the agent (t7: three; the 5 rows hold t7, t11 and its 3 workers).
   await expect(page.getByLabel("Status")).toContainText("Orchestrating · 3 workers");
@@ -41,6 +49,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
 
   await herdr.getByRole("button", { name: "Install health check" }).click();
   await expect(herdr.getByRole("button", { name: "Install health check" })).toHaveAttribute("aria-current", "true");
+  await expect(notes).toHaveCSS("font-weight", "600");
   // #57: the tool lists a live b-30 under t12 with no hc terminal: no worker row and no worker count.
   await expect(herdr.getByRole("button")).toHaveCount(1);
   await expect(page.getByLabel("Status")).toBeVisible();

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // A fake hc for tests. `get --json <terminal>` gives FAKE_HC_TITLE (else the terminal's title below) and FAKE_HC_CWD.
 // `machine ls --json` gives two machines when FAKE_HC_AGENTS=1, else none.
-// `ls --json` lists the agents below when FAKE_HC_AGENTS=1, else none. `events` ends at once: the app polls.
+// `ls --json` lists (with hc's `agent` kind) the agents below when FAKE_HC_AGENTS=1, else none. `events` ends at once: the app polls.
 const agents = [
-  { address: "t7", name: "orch-contr-desktop", cwd: "/work/contr-desktop", status: "working", title: "Chat panel usability audit" },
-  { address: "t8", cwd: "/work/contr-desktop-wt/agent/30", parent: "t7", status: "working" },
-  { address: "t9", cwd: "/work/contr-desktop-wt/agent/40", parent: "t7", status: "done" },
+  { address: "t7", name: "orch-contr-desktop", cwd: "/work/contr-desktop", status: "working", agent: "claude-code", title: "Chat panel usability audit" },
+  { address: "t8", cwd: "/work/contr-desktop-wt/agent/30", parent: "t7", status: "working", agent: "claude-code" },
+  { address: "t9", cwd: "/work/contr-desktop-wt/agent/40", parent: "t7", status: "done", agent: "claude-code" },
   { address: "t10", cwd: "/work/contr-desktop-wt/agent/50", parent: "t7", status: "done" },
-  { address: "t11", name: "notes", cwd: "/work/contr-desktop", status: "done", title: "Release notes draft" },
-  { address: "t12", cwd: "/work/herdr-contr", status: "working", title: "Install health check" },
+  { address: "t11", name: "notes", cwd: "/work/contr-desktop", status: "done", agent: "claude-code", title: "Release notes draft" },
+  { address: "t12", cwd: "/work/herdr-contr", status: "working", agent: "codex", title: "Install health check" },
   { address: "t13", name: "term-1", cwd: "/work/herdr-contr" },
 ].map((t) => ({ ...t, state: "live" }));
 const [cmd, , terminal] = process.argv.slice(2);
