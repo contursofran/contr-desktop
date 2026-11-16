@@ -14,18 +14,25 @@ export function repoDir(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Pr
 }
 
 /** PR and issue states for the chat's chips, and the click that opens one in the browser. */
-export function registerRefsIpc(terminal: string): void {
-  let dir: Promise<string | null> | undefined;
-  const cache = new RefCache(async (numbers) => {
-    dir ??= repoDir(terminal);
-    const cwd = await dir;
-    return cwd ? ghRefs(cwd, numbers) : new Map();
-  });
+export function registerRefsIpc(terminal: () => string): void {
+  // One cache per agent: agents can be in other repositories.
+  const caches = new Map<string, RefCache>();
+  const cacheOf = (t: string) => {
+    if (!caches.has(t)) {
+      let dir: Promise<string | null> | undefined;
+      caches.set(t, new RefCache(async (numbers) => {
+        dir ??= repoDir(t);
+        const cwd = await dir;
+        return cwd ? ghRefs(cwd, numbers) : new Map();
+      }));
+    }
+    return caches.get(t)!;
+  };
   ipcMain.handle(REFS_CHANNEL, (_event, numbers: unknown) =>
-    cache.get(Array.isArray(numbers) ? numbers.filter((n): n is number => Number.isInteger(n) && n > 0) : []),
+    cacheOf(terminal()).get(Array.isArray(numbers) ? numbers.filter((n): n is number => Number.isInteger(n) && n > 0) : []),
   );
   ipcMain.handle(BRANCH_CHANNEL, async () => {
-    const cwd = await repoDir(terminal);
+    const cwd = await repoDir(terminal());
     return cwd ? gitBranch(cwd) : null;
   });
   ipcMain.handle(OPEN_REF_CHANNEL, (_event, url: unknown) => {

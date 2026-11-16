@@ -4,10 +4,29 @@ import { StatusLine } from "./chat/rows/StatusLine";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
+import { Sidebar } from "./sidebar/Sidebar";
+import type { Sidebar as SidebarData } from "../shared/api";
 
 type Side = "chat" | "terminal";
 
+/** The sidebar and the selected agent's chat. A switch mounts the chat again: feed, title, reply box and terminal follow. */
 export function App() {
+  const [sidebar, setSidebar] = useState<SidebarData>({ projects: [], selected: "" });
+  useEffect(() => {
+    void window.contr.sidebar().then(setSidebar);
+    return window.contr.onSidebar(setSidebar);
+  }, []);
+  const select = (terminal: string) =>
+    void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
+  return (
+    <div className="flex h-screen bg-canvas text-foreground">
+      <Sidebar data={sidebar} onSelect={select} />
+      {sidebar.selected && <Chat key={sidebar.selected} />}
+    </div>
+  );
+}
+
+function Chat() {
   const [feed, setFeed] = useState(emptyFeed);
   const [title, setTitle] = useState("");
   useEffect(() => void window.contr.title().then(setTitle), []);
@@ -25,7 +44,7 @@ export function App() {
     </button>
   );
   return (
-    <main className="flex h-screen flex-col bg-canvas text-foreground">
+    <main className="flex min-w-0 flex-1 flex-col bg-canvas">
       <div className="flex h-10 shrink-0 items-center justify-end px-3 [-webkit-app-region:drag]">
         <div role="group" aria-label="Chat or Terminal" className="flex gap-0.5 rounded-md border border-border bg-raised p-0.5 [-webkit-app-region:no-drag]">
           {tab("chat", "Chat")}

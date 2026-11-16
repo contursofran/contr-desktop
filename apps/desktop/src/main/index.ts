@@ -4,6 +4,7 @@ import { chatTerminal, setupHelper } from "./helper";
 import { handleImageScheme, registerImageScheme } from "./localImages";
 import { registerBoardIpc } from "./board/ipc";
 import { registerRefsIpc } from "./refs/ipc";
+import { registerSidebarIpc } from "./sidebar/ipc";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 
@@ -27,8 +28,9 @@ void app.whenReady().then(() => {
   if (e2e && process.platform === "darwin") app.setActivationPolicy("accessory");
   setupHelper(app.getAppPath());
   registerTerminalIpc();
-  registerRefsIpc(chatTerminal());
-  registerBoardIpc(app.getAppPath(), chatTerminal());
+  registerRefsIpc(chatTerminal);
+  registerBoardIpc(app.getAppPath(), chatTerminal);
+  registerSidebarIpc(app.getAppPath());
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
