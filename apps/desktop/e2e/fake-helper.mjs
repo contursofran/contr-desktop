@@ -55,6 +55,7 @@ if (process.env.FAKE_HELPER_ERROR) {
   else got.answers = JSON.parse(arg("answers"));
   if (process.env.FAKE_HELPER_ANSWER_LOG) appendFileSync(process.env.FAKE_HELPER_ANSWER_LOG, `${JSON.stringify(got)}\n`);
   out({ result: process.env.FAKE_HELPER_ANSWER_RESULT ?? "sent", type: "done" });
+  end(true);
 } else if (cmd === "model") {
   const none = process.env.FAKE_HELPER_MODEL === "none";
   out({ type: "model", agent: "claude", model: none ? null : "claude-opus-5-5", effort: none ? null : "medium" });
