@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { setupHelper } from "./helper";
+import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 
 /** e2e runs set CONTR_E2E=1: the app must not take the owner's focus. */
@@ -19,6 +20,7 @@ function createWindow(): void {
 void app.whenReady().then(() => {
   if (e2e && process.platform === "darwin") app.setActivationPolicy("accessory");
   setupHelper(app.getAppPath());
+  registerTerminalIpc();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

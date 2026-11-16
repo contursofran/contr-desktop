@@ -26,3 +26,5 @@ when it does that job better. Until then, herdr-contr stays the daily app.
 `t1`). The reply box takes the terminal's title from `hc get --json` (or the
 program that `CONTR_HC` names). Tests use `apps/desktop/e2e/fake-helper.mjs` and
 `fake-hc.mjs`.
+The Terminal side shows the same terminal through hc, in the hc session that
+`CONTR_HC_SESSION` names (default: hc's own).
