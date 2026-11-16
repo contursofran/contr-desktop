@@ -3,6 +3,7 @@ import { Card } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
+import { blockedAgents } from "../shared/inbox";
 import { ChatList } from "./chat/list/ChatList";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
 import { useBoard } from "./chat/blocks/useBoard";
@@ -42,6 +43,7 @@ export function App() {
   // The Settings view in the main pane, from the sidebar foot.
   const [settings, setSettings] = useState(false);
   const owner = useAllOwnerItems();
+  const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
   const select = (terminal: string) => {
     setSide("chat");
@@ -58,10 +60,10 @@ export function App() {
   };
   return (
     <div className="flex h-screen bg-canvas text-foreground">
-      <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} />
+      <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} />
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
-        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} name={name} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
+        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
       </main>
     </div>
   );

@@ -4,6 +4,8 @@ import { SELECT_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, type Sidebar } from "..
 import { orchPath } from "../board/board";
 import { chatTerminal, selectTerminal } from "../helper";
 import { readTitle } from "../helper/title";
+import { setBlockedCount } from "../owner/ipc";
+import { blockedAgents } from "../../shared/inbox";
 import { buildProjects, projectFromCommonDir, run } from "./agents";
 import { faviconUrl, gitState } from "./git";
 
@@ -62,6 +64,7 @@ export function registerSidebarIpc(appRoot: string): void {
     timer = setTimeout(() => {
       void read().then((s) => {
         last = s;
+        setBlockedCount(blockedAgents(s.projects).length);
         for (const w of BrowserWindow.getAllWindows()) w.webContents.send(SIDEBAR_EVENT, s);
       });
     }, DEBOUNCE_MS);
