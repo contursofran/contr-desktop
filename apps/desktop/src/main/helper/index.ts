@@ -7,20 +7,26 @@ import { terminalTitle } from "./title";
 import { helperPath, runHelper, type HelperLine } from "./run";
 import { replyInfo } from "./reply";
 
-/** The terminal of the chat's agent. The spike shows one chat: CONTR_TERMINAL picks it. */
+let selected: string | undefined;
+
+/** The terminal of the chat's agent: the one picked in the sidebar, else CONTR_TERMINAL at start. */
 export function chatTerminal(env = process.env): string {
-  return env.CONTR_TERMINAL ?? "t1";
+  return selected ?? env.CONTR_TERMINAL ?? "t1";
+}
+
+/** Picks the chat's agent. The renderer then listens again, and the feed starts for this terminal. */
+export function selectTerminal(terminal: string): void {
+  selected = terminal;
 }
 
 /** Wires the helper to the renderer: the feed starts when the renderer listens. */
 export function setupHelper(appRoot: string): void {
   const helper = helperPath(appRoot);
-  const terminal = chatTerminal();
   const feeds = new Map<WebContents, () => void>();
   ipcMain.on(FEED_READY_CHANNEL, (event) => {
     const sender = event.sender;
     feeds.get(sender)?.();
-    feeds.set(sender, startFeed(helper, terminal, (feed) => {
+    feeds.set(sender, startFeed(helper, chatTerminal(), (feed) => {
       if (!sender.isDestroyed()) sender.send(FEED_CHANNEL, feed);
     }));
     sender.once("destroyed", () => {
@@ -28,15 +34,16 @@ export function setupHelper(appRoot: string): void {
       feeds.delete(sender);
     });
   });
-  ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, terminal, text));
-  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper, terminal, request, allow));
-  ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper, terminal, request, answers));
-  ipcMain.handle(TITLE_CHANNEL, () => terminalTitle(terminal));
-  // `commands` changes seldom: one call per app run.
-  let commands: Promise<HelperLine[]> | undefined;
+  ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, chatTerminal(), text));
+  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper, chatTerminal(), request, allow));
+  ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper, chatTerminal(), request, answers));
+  ipcMain.handle(TITLE_CHANNEL, () => terminalTitle(chatTerminal()));
+  // `commands` changes seldom: one call per agent and app run.
+  const commands = new Map<string, Promise<HelperLine[]>>();
   ipcMain.handle(REPLY_INFO_CHANNEL, () => {
-    commands ??= runHelper(helper, ["commands", "--terminal", terminal]);
-    return replyInfo(helper, terminal, commands);
+    const terminal = chatTerminal();
+    if (!commands.has(terminal)) commands.set(terminal, runHelper(helper, ["commands", "--terminal", terminal]));
+    return replyInfo(helper, terminal, commands.get(terminal)!);
   });
   ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper, path.join(app.getPath("userData"), "paste")));
 }

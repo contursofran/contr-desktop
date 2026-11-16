@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
 
 const api: ContrApi = {
@@ -20,6 +20,20 @@ const api: ContrApi = {
   board: (issues) => ipcRenderer.invoke(BOARD_CHANNEL, issues),
   replyInfo: () => ipcRenderer.invoke(REPLY_INFO_CHANNEL),
   branch: () => ipcRenderer.invoke(BRANCH_CHANNEL),
+  sidebar: () => ipcRenderer.invoke(SIDEBAR_CHANNEL),
+  onSidebar(listener) {
+    const handler = (_event: unknown, sidebar: Sidebar) => listener(sidebar);
+    ipcRenderer.on(SIDEBAR_EVENT, handler);
+    return () => ipcRenderer.off(SIDEBAR_EVENT, handler);
+  },
+  select: (terminal) => ipcRenderer.invoke(SELECT_CHANNEL, terminal),
+  usage: () => ipcRenderer.invoke(USAGE_CHANNEL),
+  onUsage(listener) {
+    const handler = (_event: unknown, rows: UsageRow[]) => listener(rows);
+    ipcRenderer.on(USAGE_EVENT, handler);
+    return () => ipcRenderer.off(USAGE_EVENT, handler);
+  },
+  machines: () => ipcRenderer.invoke(MACHINES_CHANNEL),
   terminal: terminalApi,
 };
 

@@ -67,7 +67,52 @@ export interface ContrApi {
   replyInfo(): Promise<ReplyInfo>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
   branch(): Promise<string | null>;
+  /** The Projects list and the selected agent. */
+  sidebar(): Promise<Sidebar>;
+  /** Listens to changes of the Projects list. Returns a function that stops listening. */
+  onSidebar(listener: (sidebar: Sidebar) => void): () => void;
+  /** Makes this terminal's agent the chat's agent. Returns the selected terminal. */
+  select(terminal: string): Promise<string>;
+  /** The plan usage rows (helper `usage`), Claude then Codex. A plan with no data has no row. */
+  usage(): Promise<UsageRow[]>;
+  /** Listens to new plan usage (every 5 minutes). Returns a function that stops listening. */
+  onUsage(listener: (rows: UsageRow[]) => void): () => void;
+  /** hc's other machines (`hc machine ls --json`). */
+  machines(): Promise<Machine[]>;
   terminal: TerminalApi;
+}
+
+/** An agent row. An orchestrator has workers (hc `parent`). `name` is the worker's name, else hc's name. */
+export interface SidebarAgent {
+  terminal: string;
+  title: string;
+  name: string | null;
+  state: WorkerState;
+  workers: SidebarAgent[];
+}
+
+/** A project: the repository of its agents' folder. */
+export interface SidebarProject {
+  name: string;
+  agents: SidebarAgent[];
+}
+
+export interface Sidebar {
+  projects: SidebarProject[];
+  selected: string;
+}
+
+/** A foot row: the plan, the most used window's percent, and its text ("41% wk · 4d"). */
+export interface UsageRow {
+  plan: string;
+  percent: number;
+  value: string;
+}
+
+/** A machine hc reaches over ssh. `state` is hc's ("connected", "unreachable", "needs-login", ...). */
+export interface Machine {
+  name: string;
+  state: string;
 }
 
 /** A worker's mark: the loader, a check, a dot or an empty ring. */
@@ -82,6 +127,8 @@ export interface PrChecks {
 export interface Board {
   workers: Record<string, WorkerState>;
   checks: Record<number, PrChecks | null>;
+  /** Live workers whose parent is the chat's agent (its hc address in CONTR_TERMINAL). */
+  orchestrating: number;
 }
 
 /** The reply box's data. A part the helper does not know is null (or empty). */
@@ -124,3 +171,9 @@ export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
 export const BRANCH_CHANNEL = "contr:branch";
+export const SIDEBAR_CHANNEL = "contr:sidebar";
+export const SIDEBAR_EVENT = "contr:sidebar-event";
+export const SELECT_CHANNEL = "contr:select";
+export const USAGE_CHANNEL = "contr:usage";
+export const USAGE_EVENT = "contr:usage-event";
+export const MACHINES_CHANNEL = "contr:machines";

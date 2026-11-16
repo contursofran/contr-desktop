@@ -1,20 +1,43 @@
 import { useEffect, useState } from "react";
 import { Card } from "./chat/card/Card";
 import { ChatList } from "./chat/list/ChatList";
-import { StatusLine } from "./chat/rows/StatusLine";
+import { StatusLine, orchestratingText } from "./chat/rows/StatusLine";
+import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
+import { Sidebar } from "./sidebar/Sidebar";
+import type { Sidebar as SidebarData } from "../shared/api";
 
 type Side = "chat" | "terminal";
 
+const NO_ISSUES: number[] = [];
+
+/** The sidebar and the selected agent's chat. A switch mounts the chat again: feed, title, reply box and terminal follow. */
 export function App() {
+  const [sidebar, setSidebar] = useState<SidebarData>({ projects: [], selected: "" });
+  useEffect(() => {
+    void window.contr.sidebar().then(setSidebar);
+    return window.contr.onSidebar(setSidebar);
+  }, []);
+  const select = (terminal: string) =>
+    void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
+  return (
+    <div className="flex h-screen bg-canvas text-foreground">
+      <Sidebar data={sidebar} onSelect={select} />
+      {sidebar.selected && <Chat key={sidebar.selected} />}
+    </div>
+  );
+}
+
+function Chat() {
   const [feed, setFeed] = useState(emptyFeed);
   const [title, setTitle] = useState("");
   useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   // The top strip is the drag area of the hidden title bar. The Chat / Terminal switch sits at its right.
   const [side, setSide] = useState<Side>("chat");
+  const board = useBoard(NO_ISSUES);
   const tab = (s: Side, label: string) => (
     <button
       type="button"
@@ -26,7 +49,7 @@ export function App() {
     </button>
   );
   return (
-    <main className="flex h-screen flex-col bg-canvas text-foreground">
+    <main className="flex min-w-0 flex-1 flex-col bg-canvas">
       <div className="flex h-10 shrink-0 items-center justify-end px-3 [-webkit-app-region:drag]">
         <div role="group" aria-label="Chat or Terminal" className="flex gap-0.5 rounded-md border border-border bg-raised p-0.5 [-webkit-app-region:no-drag]">
           {tab("chat", "Chat")}
@@ -42,7 +65,7 @@ export function App() {
           )}
           <ChatList rows={feed.rows} />
           {feed.card && <Card card={feed.card} />}
-          <StatusLine working={feed.working} />
+          <StatusLine working={feed.working} right={orchestratingText(board?.orchestrating ?? 0)} />
           <ReplyBox title={title} />
         </>
       ) : (

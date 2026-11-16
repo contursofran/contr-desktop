@@ -17,3 +17,9 @@ export function StatusLine({ working, right }: { working: Working | null; right?
     </div>
   );
 }
+
+/** "Orchestrating · N workers" when the agent has live workers. The design gives no text for none, so it shows nothing. */
+export function orchestratingText(n: number): string | undefined {
+  if (n <= 0) return undefined;
+  return `Orchestrating · ${n} ${n === 1 ? "worker" : "workers"}`;
+}

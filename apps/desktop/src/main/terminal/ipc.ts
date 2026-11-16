@@ -1,4 +1,4 @@
-// The Terminal side's IPC. It shows the chat's terminal (CONTR_TERMINAL, see ../helper),
+// The Terminal side's IPC. It shows the chat's terminal (the selected agent, see ../helper),
 // in the hc session that CONTR_HC_SESSION names (empty: hc's default session).
 import { ipcMain, type WebContents } from "electron";
 import { chatTerminal } from "../helper";
