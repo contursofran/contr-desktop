@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL, TAB_TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
 
 const api: ContrApi = {
@@ -12,6 +12,7 @@ const api: ContrApi = {
   },
   send: (text) => ipcRenderer.invoke(SEND_CHANNEL, text),
   title: () => ipcRenderer.invoke(TITLE_CHANNEL),
+  tabTitle: (terminal) => ipcRenderer.invoke(TAB_TITLE_CHANNEL, terminal),
   pasteImage: () => ipcRenderer.invoke(PASTE_IMAGE_CHANNEL),
   pickImage: () => ipcRenderer.invoke(PICK_IMAGE_CHANNEL),
   refs: (numbers) => ipcRenderer.invoke(REFS_CHANNEL, numbers),

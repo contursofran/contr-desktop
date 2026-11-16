@@ -19,6 +19,11 @@ export function findAgent(data: Sidebar, terminal: string): SidebarAgent | undef
   return undefined;
 }
 
+/** A tab's label: the sidebar entry's title, else the title read from hc (`titles`), else "" while it loads. Never the terminal id. */
+export function tabLabel(data: Sidebar, terminal: string, titles: Record<string, string>): string {
+  return findAgent(data, terminal)?.title ?? titles[terminal] ?? "";
+}
+
 /** The open tabs with `selected` added at the end when it is not open yet. */
 export function openTab(tabs: string[], selected: string): string[] {
   return !selected || tabs.includes(selected) ? tabs : [...tabs, selected];
@@ -34,10 +39,12 @@ export function nextAfterClose(tabs: string[], closed: string): string {
 /**
  * The top strip (docs/design/README.md part 2): the drag area of the hidden title bar.
  * Centered: one tab per open agent and an inert + (new tab comes later). On the right: `right`.
+ * A label grows to 170 px (recipe-herdr.md); tabs shrink only when the bar is full, then it scrolls.
  */
-export function TopBar({ data, tabs, onSelect, onClose, right }: {
+export function TopBar({ data, tabs, titles, onSelect, onClose, right }: {
   data: Sidebar;
   tabs: string[];
+  titles: Record<string, string>;
   onSelect: (terminal: string) => void;
   onClose: (terminal: string) => void;
   right?: ReactNode;
@@ -48,12 +55,12 @@ export function TopBar({ data, tabs, onSelect, onClose, right }: {
         <div role="tablist" aria-label="Tabs" className="flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border bg-raised p-0.5 [-webkit-app-region:no-drag]">
           {tabs.map((t) => {
             const shown = t === data.selected;
-            const title = findAgent(data, t)?.title ?? t;
+            const title = tabLabel(data, t, titles);
             return (
-              <div key={t} className={`flex h-7 max-w-[170px] shrink-0 items-center rounded-full text-[13px] ${shown ? "bg-selected font-semibold text-foreground" : "text-muted hover:bg-hover"}`}>
+              <div key={t} className={`flex h-7 min-w-[72px] items-center rounded-full text-[13px] ${shown ? "bg-selected font-semibold text-foreground" : "text-muted hover:bg-hover"}`}>
                 <button type="button" role="tab" aria-selected={shown} title={title} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-1.5 py-1 pl-2.5 pr-1">
                   <Sparkle aria-hidden className="size-3.5 shrink-0" />
-                  <span className="truncate">{title}</span>
+                  <span className="max-w-[170px] truncate">{title}</span>
                 </button>
                 <button type="button" aria-label={`Close ${title}`} onClick={() => onClose(t)} className="mr-1 rounded-full p-0.5 hover:bg-hover">
                   <X aria-hidden className="size-3" />
