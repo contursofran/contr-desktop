@@ -37,7 +37,7 @@ test("the reply box shows the model, effort, context and branch, and the menu se
   await page.getByRole("form", { name: "Reply" }).screenshot({ path: path.join(shots, "reply-foot-dark.png") });
 
   await model.click();
-  const menu = page.getByRole("menu", { name: "Model and effort" });
+  const menu = page.getByRole("menu", { name: "Model" });
   await expect(menu.getByRole("menuitemradio")).toHaveText(["Opus 5.5", "Sonnet 5", "low", "medium", "high"]);
   await expect(menu.getByRole("menuitemradio", { checked: true })).toHaveText(["Opus 5.5", "medium"]);
   await page.screenshot({ path: path.join(shots, "reply-menu-dark.png") });
@@ -66,5 +66,43 @@ test("the menu opens before the first reply, when the helper knows no model (her
   await model.click();
   await page.getByRole("menuitemradio", { name: "Opus 5.5" }).click();
   await expect.poll(() => sent(log)).toEqual(["/model claude-opus-5-5"]);
+  await app.close();
+});
+
+test("the menu moves with the keys, picks with Enter, and closes on Escape and outside clicks with focus back on the button", async () => {
+  test.setTimeout(60_000);
+  const log = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "send.jsonl");
+  const app = await launch(log);
+  const page = await app.firstWindow();
+  const model = page.getByRole("button", { name: "Model" });
+  const menu = page.getByRole("menu", { name: "Model" });
+  await expect(model).toHaveText("Opus 5.5medium");
+
+  // Escape closes it and gives focus back to the button.
+  await model.click();
+  await expect(menu).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(model).toBeFocused();
+
+  // A click outside closes it.
+  await model.click();
+  await expect(menu).toBeVisible();
+  await page.mouse.click(5, 300);
+  await expect(menu).toBeHidden();
+
+  // Arrow keys move, typeahead jumps, Enter picks and closes.
+  await model.focus();
+  await page.keyboard.press("Enter");
+  await expect(menu).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect(menu.locator("[data-highlighted]")).toHaveText("Sonnet 5");
+  await page.keyboard.type("h");
+  await expect(menu.locator("[data-highlighted]")).toHaveText("high");
+  await page.keyboard.press("Enter");
+  await expect(menu).toBeHidden();
+  await expect(model).toBeFocused();
+  await expect(model).toHaveText("Opus 5.5high");
+  await expect.poll(() => sent(log)).toEqual(["/effort high"]);
   await app.close();
 });

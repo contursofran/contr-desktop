@@ -14,6 +14,8 @@ const agents = [
 ].map((t) => ({ ...t, state: "live" }));
 const [cmd, , terminal] = process.argv.slice(2);
 if (cmd === "get") {
+  // FAKE_HC_GONE: a comma list of addresses hc does not list; `get` fails for them.
+  if ((process.env.FAKE_HC_GONE ?? "").split(",").includes(terminal)) process.exit(1);
   const found = agents.find((t) => t.address === terminal);
   const title = process.env.FAKE_HC_TITLE ?? found?.title ?? "";
   process.stdout.write(`${JSON.stringify({ address: terminal, name: "w-7", title, agent: found?.agent, cwd: process.env.FAKE_HC_CWD ?? "" })}\n`);
