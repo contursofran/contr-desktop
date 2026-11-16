@@ -40,6 +40,10 @@ export interface ContrApi {
   openRef(url: string): Promise<void>;
   /** The `contr-status` board: worker states from the orchestration tool, and each issue's PR checks from gh. */
   board(issues: number[]): Promise<Board>;
+  /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
+  replyInfo(): Promise<ReplyInfo>;
+  /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
+  branch(): Promise<string | null>;
   terminal: TerminalApi;
 }
 
@@ -55,6 +59,16 @@ export interface PrChecks {
 export interface Board {
   workers: Record<string, WorkerState>;
   checks: Record<number, PrChecks | null>;
+}
+
+/** The reply box's data. A part the helper does not know is null (or empty). */
+export interface ReplyInfo {
+  agent: string | null;
+  model: string | null;
+  effort: string | null;
+  context: { percent: number; text: string; warn: boolean } | null;
+  models: { value: string; label: string }[];
+  efforts: { value: string; label: string }[];
 }
 
 /** A PR or an issue of the agent's repository, as gh says now. */
@@ -83,3 +97,5 @@ export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
 export const BOARD_CHANNEL = "contr:board";
+export const REPLY_INFO_CHANNEL = "contr:reply-info";
+export const BRANCH_CHANNEL = "contr:branch";

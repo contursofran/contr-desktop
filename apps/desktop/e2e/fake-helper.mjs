@@ -6,6 +6,7 @@
 // `paste-image` answers `image` with FAKE_HELPER_PASTE_IMAGE as the path (null when not set).
 // FAKE_HELPER_SEND_ERROR=<code> makes `send` answer with that error.
 // `working` gives a fixed working line.
+// `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -40,6 +41,18 @@ if (process.env.FAKE_HELPER_ERROR) {
   end(true);
 } else if (cmd === "working") {
   out({ type: "working", text: "Hashing…", detail: "35s · ↓ 1.2k tokens" });
+  end(true);
+} else if (cmd === "model") {
+  const none = process.env.FAKE_HELPER_MODEL === "none";
+  out({ type: "model", agent: "claude", model: none ? null : "claude-opus-5-5", effort: none ? null : "medium" });
+  end(true);
+} else if (cmd === "status") {
+  out({ type: "status", agent: "claude", source: "statusline", tags: [{ kind: "context", percent: 37, text: "ctx 37%", warn: false }] });
+  end(true);
+} else if (cmd === "commands") {
+  const models = [{ value: "claude-opus-5-5", label: "Opus 5.5" }, { value: "claude-sonnet-5", label: "Sonnet 5" }];
+  const efforts = ["low", "medium", "high"];
+  out({ type: "commands", agent: "claude", commands: [{ name: "model", args: models }, { name: "effort", args: efforts }] });
   end(true);
 } else if (cmd === "send") {
   appendFileSync(process.env.FAKE_HELPER_SEND_LOG, `${JSON.stringify({ terminal: arg("terminal"), text: arg("text") })}\n`);

@@ -1,9 +1,10 @@
 import { app, ipcMain, type WebContents } from "electron";
-import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
+import { FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, TITLE_CHANNEL } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
 import { terminalTitle } from "./title";
-import { helperPath } from "./run";
+import { helperPath, runHelper, type HelperLine } from "./run";
+import { replyInfo } from "./reply";
 
 /** The terminal of the chat's agent. The spike shows one chat: CONTR_TERMINAL picks it. */
 export function chatTerminal(env = process.env): string {
@@ -28,5 +29,11 @@ export function setupHelper(appRoot: string): void {
   });
   ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, terminal, text));
   ipcMain.handle(TITLE_CHANNEL, () => terminalTitle(terminal));
+  // `commands` changes seldom: one call per app run.
+  let commands: Promise<HelperLine[]> | undefined;
+  ipcMain.handle(REPLY_INFO_CHANNEL, () => {
+    commands ??= runHelper(helper, ["commands", "--terminal", terminal]);
+    return replyInfo(helper, terminal, commands);
+  });
   ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper, path.join(app.getPath("userData"), "paste")));
 }
