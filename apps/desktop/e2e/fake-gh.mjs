@@ -14,12 +14,25 @@ const table = {
   20: pr(20, "CLOSED"),
   21: issue(21, "OPEN"),
   22: issue(22, "CLOSED", "NOT_PLANNED"),
+  30: issue(30, "OPEN"),
+  31: pr(31, "OPEN"),
+  40: issue(40, "OPEN"),
+  41: pr(41, "OPEN", true),
+  50: issue(50, "OPEN"),
+  51: pr(51, "OPEN"),
+  60: issue(60, "OPEN"),
+  70: pr(70, "MERGED"),
 };
 const args = process.argv.slice(2);
 if (args[0] !== "api" || args[1] !== "graphql") process.exit(1);
 const query = args.find((a) => a.startsWith("query=")) ?? "";
 const numbers = [...query.matchAll(/number: (\d+)/g)].map((m) => Number(m[1]));
 if (process.env.FAKE_GH_LOG) appendFileSync(process.env.FAKE_GH_LOG, `${JSON.stringify(numbers)}\n`);
-const repository = Object.fromEntries(numbers.map((n) => [`n${n}`, table[n] ?? null]));
+// A checks query (contr-status board): each issue's closing PR and the state of its checks.
+const closing = { 30: [31, "SUCCESS"], 40: [41, "PENDING"], 50: [51, "FAILURE"] };
+const prOf = ([number, state]) => ({ closedByPullRequestsReferences: { nodes: [{ number, commits: { nodes: [{ commit: { statusCheckRollup: { state } } }] } }] } });
+const checks = query.includes("closedByPullRequestsReferences");
+const answer = (n) => (checks ? (closing[n] ? prOf(closing[n]) : null) : (table[n] ?? null));
+const repository = Object.fromEntries(numbers.map((n) => [`n${n}`, answer(n)]));
 process.stdout.write(JSON.stringify({ data: { repository } }));
-process.exit(numbers.every((n) => table[n]) ? 0 : 1);
+process.exit(numbers.every((n) => answer(n)) ? 0 : 1);

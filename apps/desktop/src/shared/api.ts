@@ -38,11 +38,27 @@ export interface ContrApi {
   refs(numbers: number[]): Promise<Record<number, RefState | null>>;
   /** Opens a PR or issue in the browser. */
   openRef(url: string): Promise<void>;
+  /** The `contr-status` board: worker states from the orchestration tool, and each issue's PR checks from gh. */
+  board(issues: number[]): Promise<Board>;
   /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
   replyInfo(): Promise<ReplyInfo>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
   branch(): Promise<string | null>;
   terminal: TerminalApi;
+}
+
+/** A worker's mark: the loader, a check, a dot or an empty ring. */
+export type WorkerState = "working" | "done" | "blocked" | "idle";
+
+/** The PR that closes an issue, and its head's checks. null checks: the PR has none. */
+export interface PrChecks {
+  pr: number;
+  checks: "pass" | "pending" | "fail" | null;
+}
+
+export interface Board {
+  workers: Record<string, WorkerState>;
+  checks: Record<number, PrChecks | null>;
 }
 
 /** The reply box's data. A part the helper does not know is null (or empty). */
@@ -80,5 +96,6 @@ export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
 export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
+export const BOARD_CHANNEL = "contr:board";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
 export const BRANCH_CHANNEL = "contr:branch";
