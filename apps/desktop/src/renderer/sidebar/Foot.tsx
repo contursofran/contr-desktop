@@ -1,6 +1,7 @@
 import { Plus, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { UsageRow } from "../../shared/api";
+import { Tip } from "../ui/Tip";
 
 /**
  * The sidebar foot (docs/design/recipe-herdr.md, the foot): one row per plan (name, meter, "41% wk · 4d"),
@@ -38,9 +39,11 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
           Settings
           {ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
         </button>
-        <button type="button" aria-label="Add machine" title="Add machine" className="flex size-7 items-center justify-center self-center rounded-lg text-muted hover:bg-hover">
-          <Plus aria-hidden className="size-4" />
-        </button>
+        <Tip label="Add machine" side="top">
+          <button type="button" aria-label="Add machine" className="flex size-7 items-center justify-center self-center rounded-lg text-muted hover:bg-hover">
+            <Plus aria-hidden className="size-4" />
+          </button>
+        </Tip>
       </div>
     </footer>
   );

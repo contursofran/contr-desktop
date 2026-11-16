@@ -2,6 +2,7 @@ import { Plus, Sparkle, X } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Sidebar, SidebarAgent } from "../../shared/api";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
+import { Tip } from "../ui/Tip";
 
 /** The agent with this terminal anywhere in the sidebar's tree, or undefined. */
 export function findAgent(data: Sidebar, terminal: string): SidebarAgent | undefined {
@@ -63,19 +64,23 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, right
                 const title = tabLabel(data, t, titles);
                 return (
                   <TabOrderItem key={t} value={t} className={`flex h-7 min-w-[72px] touch-none select-none items-center rounded-full text-[13px] data-grabbed:w-0.5 data-grabbed:min-w-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:*:hidden ${shown ? "bg-selected font-semibold text-foreground" : "text-muted hover:bg-hover"}`}>
-                    <button type="button" role="tab" aria-selected={shown} title={title} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-1.5 py-1 pl-2.5 pr-1">
-                      <Sparkle aria-hidden className="size-3.5 shrink-0" />
-                      <span className="max-w-[170px] truncate">{title}</span>
-                    </button>
+                    <Tip label={title}>
+                      <button type="button" role="tab" aria-selected={shown} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-1.5 py-1 pl-2.5 pr-1">
+                        <Sparkle aria-hidden className="size-3.5 shrink-0" />
+                        <span className="max-w-[170px] truncate">{title}</span>
+                      </button>
+                    </Tip>
                     <button type="button" data-tab-close aria-label={`Close ${title}`} onClick={() => onClose(t)} className="mr-1 rounded-full p-0.5 hover:bg-hover">
                       <X aria-hidden className="size-3" />
                     </button>
                   </TabOrderItem>
                 );
               })}
-              <button type="button" aria-label="New tab" disabled title="New tab (not yet)" className="rounded-full p-1.5 text-dim">
-                <Plus aria-hidden className="size-3.5" />
-              </button>
+              <Tip label="New tab (not yet)">
+                <button type="button" aria-label="New tab" aria-disabled="true" className="rounded-full p-1.5 text-dim">
+                  <Plus aria-hidden className="size-3.5" />
+                </button>
+              </Tip>
             </>
           )}
         </TabOrderRoot>
