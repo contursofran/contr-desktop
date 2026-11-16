@@ -28,11 +28,33 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(tabs.getByRole("tab", { name: "Install health check" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await expect(tabs.getByRole("button", { name: "New tab" })).toBeDisabled();
-  // Both titles fit: the tabs grow, nothing is cut.
-  for (const name of ["Chat panel usability audit", "Install health check"]) {
+  // A third tab, then the second one shown again: three tabs, one shown.
+  await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
+  await tabs.getByRole("tab", { name: "Install health check" }).click();
+  const names = ["Chat panel usability audit", "Install health check", "Release notes draft"];
+  await expect(tabs.getByRole("tab")).toHaveText(names);
+  // All titles fit: the tabs grow, nothing is cut.
+  for (const name of names) {
     const label = tabs.getByRole("tab", { name }).locator("span");
     expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   }
+  // Herdr's normal tabs: from the left of the bar, 3 px apart, 29 px tall, 7 px corners; only the shown tab has a × and a fill.
+  await expect(tabs.locator("[data-tab-close]")).toHaveCount(1);
+  await expect(tabs.getByRole("button", { name: "Close Install health check" })).toBeVisible();
+  const box = async (name: string) => (await tabs.getByRole("tab", { name }).locator("..").boundingBox())!;
+  const [first, second] = [await box(names[0]), await box(names[1])];
+  expect(first.height).toBe(29);
+  expect(first.x - (await tabs.locator("..").boundingBox())!.x).toBe(10);
+  expect(Math.round(second.x - (first.x + first.width))).toBe(3);
+  const style = (name: string) => tabs.getByRole("tab", { name }).locator("..").evaluate((e) => {
+    const s = getComputedStyle(e);
+    return { radius: s.borderTopLeftRadius, font: s.fontSize, weight: s.fontWeight, bg: s.backgroundColor };
+  });
+  expect(await style(names[1])).toMatchObject({ radius: "7px", font: "12.8px", weight: "400" });
+  expect((await style(names[0])).bg).toBe("rgba(0, 0, 0, 0)");
+  expect((await style(names[1])).bg).not.toBe("rgba(0, 0, 0, 0)");
+  const plus = (await tabs.getByRole("button", { name: "New tab" }).boundingBox())!;
+  expect([plus.width, plus.height]).toEqual([26, 26]);
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "topbar-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
@@ -52,7 +74,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
 
   // × closes the shown tab and shows the next one.
   await tabs.getByRole("button", { name: "Close Chat panel usability audit" }).click();
-  await expect(tabs.getByRole("tab")).toHaveText(["Install health check"]);
+  await expect(tabs.getByRole("tab")).toHaveText(["Install health check", "Release notes draft"]);
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await app.close();
 });

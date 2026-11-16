@@ -40,9 +40,10 @@ export function nextAfterClose(tabs: string[], closed: string): string {
 
 /**
  * The top strip (docs/design/README.md part 2): the drag area of the hidden title bar.
- * Centered: one tab per open agent and an inert + (new tab comes later). On the right: `right`.
+ * Herdr's normal tab bar (its `tabs` mod): tabs from the left, then an inert + (new tab comes later). On the right: `right`.
  * Drag a tab, or press Alt with Left, Right, Home or End on it, to move it (tab-order.ts).
- * A label grows to 170 px (recipe-herdr.md); tabs shrink only when the bar is full, then it scrolls.
+ * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full.
+ * The sidebar is always shown, so the bar never reaches the macOS window buttons.
  */
 export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, right }: {
   data: Sidebar;
@@ -54,37 +55,40 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, right
   right?: ReactNode;
 }) {
   return (
-    <div className="flex h-10 shrink-0 items-center gap-2 px-3 [-webkit-app-region:drag]">
-      <div className="flex min-w-0 flex-1 justify-center">
-        <TabOrderRoot value={tabs} onValueChange={(order) => onReorder(order)} aria-label="Tabs" className="flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full border border-border bg-raised p-0.5 [-webkit-app-region:no-drag]">
-          {(state) => (
-            <>
+    <div className="flex h-10 shrink-0 items-center gap-[3px] border-b border-border px-2.5 [-webkit-app-region:drag]">
+      <TabOrderRoot value={tabs} onValueChange={(order) => onReorder(order)} aria-label="Tabs" className="flex min-w-0 items-center gap-[3px] [-webkit-app-region:no-drag]">
+        {(state) => (
+          <>
+            <div className="flex min-w-0 items-center gap-[3px] overflow-x-auto">
               {state.order.map((t) => {
-                const shown = t === data.selected;
-                const title = tabLabel(data, t, titles);
-                return (
-                  <TabOrderItem key={t} value={t} className={`flex h-7 min-w-[72px] touch-none select-none items-center rounded-full text-[13px] data-grabbed:w-0.5 data-grabbed:min-w-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:*:hidden ${shown ? "bg-selected font-semibold text-foreground" : "text-muted hover:bg-hover"}`}>
-                    <Tip label={title}>
-                      <button type="button" role="tab" aria-selected={shown} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-1.5 py-1 pl-2.5 pr-1">
-                        <Sparkle aria-hidden className="size-3.5 shrink-0" />
-                        <span className="max-w-[170px] truncate">{title}</span>
-                      </button>
-                    </Tip>
-                    <button type="button" data-tab-close aria-label={`Close ${title}`} onClick={() => onClose(t)} className="mr-1 rounded-full p-0.5 hover:bg-hover">
+              const shown = t === data.selected;
+              const title = tabLabel(data, t, titles);
+              return (
+                <TabOrderItem key={t} value={t} className={`flex h-[29px] shrink-0 touch-none select-none items-center gap-[7px] rounded-[7px] border px-2.5 text-[12.8px] hover:bg-hover data-grabbed:w-0.5 data-grabbed:border-0 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:*:hidden ${shown ? "border-border bg-raised text-foreground" : "border-transparent text-muted"}`}>
+                  <Tip label={title}>
+                    <button type="button" role="tab" aria-selected={shown} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-[7px]">
+                      <Sparkle aria-hidden className="size-3.5 shrink-0" />
+                      <span className="max-w-[170px] truncate">{title}</span>
+                    </button>
+                  </Tip>
+                  {shown && (
+                    <button type="button" data-tab-close aria-label={`Close ${title}`} onClick={() => onClose(t)} className="flex text-dim hover:text-foreground">
                       <X aria-hidden className="size-3" />
                     </button>
-                  </TabOrderItem>
-                );
-              })}
-              <Tip label="New tab (not yet)">
-                <button type="button" aria-label="New tab" aria-disabled="true" className="rounded-full p-1.5 text-dim">
-                  <Plus aria-hidden className="size-3.5" />
-                </button>
-              </Tip>
-            </>
-          )}
-        </TabOrderRoot>
-      </div>
+                  )}
+                </TabOrderItem>
+              );
+            })}
+            </div>
+            <Tip label="New tab (not yet)">
+              <button type="button" aria-label="New tab" aria-disabled="true" className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-dim">
+                <Plus aria-hidden className="size-3.5" />
+              </button>
+            </Tip>
+          </>
+        )}
+      </TabOrderRoot>
+      <div className="flex-1" />
       {right}
     </div>
   );

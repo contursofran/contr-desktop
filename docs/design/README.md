@@ -29,8 +29,14 @@ The target is herdr-contr as the owner uses it on 2026-11-16:
      title, the worker name (`b-219`) in mono, and a menu.
    - Foot: one usage row per plan (Claude, Codex): a meter, the percent and
      the window ("82% wk · 3h"). Then **Settings** and a +.
-2. **Top bar**: one tab per agent or terminal, with its icon, title, a menu
-   and ×; a + for a new tab. On the right: Files and Changes.
+2. **Top bar**: Herdr's normal tab bar (its `tabs` mod). One tab per agent
+   or terminal, from the left, 3 px apart, with a 1 px `border` line under
+   the bar. A tab is 29 px tall, 7 px corners, 10 px side padding, 12.8 px
+   text: its icon (14 px), its title (at most 170 px) and, on the shown tab
+   only, a × (12 px, `dim`). The shown tab has the `raised` fill and a
+   `border` edge; the others have no fill and `muted` text; hover is
+   `hover`. The tab row scrolls sideways when it is full; after it, a + for
+   a new tab (26 px square, 6 px corners). On the right: Files and Changes.
 3. **Chat or Terminal**: a two-way switch at the top right of the work area.
 4. **Chat**: a reading column, centered.
    - The owner's message: a right-aligned bubble, `raised` background.
