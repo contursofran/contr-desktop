@@ -1,0 +1,98 @@
+name: Release
+
+# A release for each commit on main that passes CI: the macOS app (universal .dmg and .zip, unsigned)
+# and the Linux AppImage, with the helper and herdr-contr-orch from herdr-contr's newest release.
+# Tag: build-<commit date>-<short sha>. App version: 0.1.<run number>. See docs/reference/releases.md.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  stamp:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.s.outputs.sha }}
+      tag: ${{ steps.s.outputs.tag }}
+      version: ${{ steps.s.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+      - id: s
+        run: |
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=build-$(git log -1 --format=%cs)-${SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "version=0.1.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: stamp
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            dist: dist
+            files: apps/desktop/release/*.dmg apps/desktop/release/*.zip
+          - os: ubuntu-latest
+            dist: dist:linux
+            files: apps/desktop/release/*.AppImage
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.stamp.outputs.sha }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # herdr-contr is private: HERDR_CONTR_TOKEN is a token that can read its releases.
+      - run: scripts/fetch-helper
+        env:
+          GH_TOKEN: ${{ secrets.HERDR_CONTR_TOKEN }}
+      - run: pnpm ${{ matrix.dist }} -c.extraMetadata.version=${{ needs.stamp.outputs.version }}
+      - if: runner.os == 'macOS'
+        run: scripts/check-bundle
+      - run: mkdir -p dist && cp ${{ matrix.files }} dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ runner.os }}
+          path: dist/
+
+  publish:
+    needs: [stamp, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ needs.stamp.outputs.tag }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Notes
+        run: |
+          {
+            echo "contr ${{ needs.stamp.outputs.version }} from ${{ needs.stamp.outputs.sha }}."
+            echo
+            echo "The macOS app is not signed (no certificate yet). After you unzip or copy it, run"
+            echo "\`xattr -dr com.apple.quarantine /Applications/contr.app\` if macOS blocks it."
+          } > notes.md
+      - run: gh release create "$TAG" dist/* -R "${{ github.repository }}" --target "${{ needs.stamp.outputs.sha }}" -t "$TAG" -F notes.md

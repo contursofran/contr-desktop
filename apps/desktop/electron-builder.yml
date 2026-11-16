@@ -1,0 +1,37 @@
+# Packaging: macOS universal .dmg and .zip, Linux AppImage.
+# No signing certificate yet: the macOS app is unsigned (docs/reference/releases.md).
+appId: dev.contr.desktop
+productName: contr
+directories:
+  output: release
+files:
+  - out/**
+  - "!out/**/*.map"
+  - "!**/node_modules/**"
+publish: null
+mac:
+  target:
+    - target: dmg
+      arch: universal
+    - target: zip
+      arch: universal
+  identity: null
+  category: public.app-category.developer-tools
+  # scripts/fetch-helper puts universal binaries in bin/ at the repository root.
+  extraResources:
+    - from: ../../bin
+      to: bin
+      filter: [herdr-contr-feed, herdr-contr-orch, RELEASE]
+linux:
+  target:
+    - target: AppImage
+      arch: x64
+  category: Development
+  # herdr-contr releases have no Linux herdr-contr-orch: only the helper.
+  extraResources:
+    - from: ../../bin/linux-x64
+      to: bin
+      filter: [herdr-contr-feed]
+    - from: ../../bin
+      to: bin
+      filter: [RELEASE]

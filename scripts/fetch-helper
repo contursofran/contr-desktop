@@ -1,6 +1,8 @@
 #!/bin/sh
 # Downloads the newest herdr-contr release and puts herdr-contr-feed and
-# herdr-contr-orch in bin/ (git ignores it). The app takes CONTR_HELPER over bin/.
+# herdr-contr-orch in bin/ (git ignores it), and the Linux x86_64 helper in
+# bin/linux-x64/. The packaged app bundles them (docs/reference/releases.md).
+# The app takes CONTR_HELPER over bin/.
 # Uses gh while the herdr-contr repository is private.
 set -eu
 repo="${HERDR_CONTR_REPO:-contursofran/herdr-contr}"
@@ -17,5 +19,11 @@ for name in herdr-contr-feed herdr-contr-orch; do
   [ -n "$file" ] || { echo "$name is not in $tag" >&2; exit 1; }
   install -m 755 "$file" "$root/bin/$name"
 done
+# The Linux x86_64 helper, for the AppImage (electron-builder.yml).
+linux="$(find "$work/zip" -type f -path "*remote/x86_64-unknown-linux-musl/herdr-contr-feed" | head -n 1)"
+if [ -n "$linux" ]; then
+  mkdir -p "$root/bin/linux-x64"
+  install -m 755 "$linux" "$root/bin/linux-x64/herdr-contr-feed"
+fi
 echo "$tag" > "$root/bin/RELEASE"
 echo "bin/ has the helper from $tag"

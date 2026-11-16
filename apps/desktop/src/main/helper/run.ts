@@ -1,14 +1,14 @@
 import { execFile } from "node:child_process";
-import path from "node:path";
+import { binPath } from "../bin/path";
 
 export interface HelperLine {
   type: string;
   [field: string]: unknown;
 }
 
-/** The helper path: CONTR_HELPER, else bin/herdr-contr-feed at the repository root. */
+/** The helper path: CONTR_HELPER, else the bundled binary (see binPath). */
 export function helperPath(appRoot: string, env = process.env): string {
-  return env.CONTR_HELPER ?? path.resolve(appRoot, "../../bin/herdr-contr-feed");
+  return binPath("herdr-contr-feed", appRoot, env.CONTR_HELPER);
 }
 
 /**
