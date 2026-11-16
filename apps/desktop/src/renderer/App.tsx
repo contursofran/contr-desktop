@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChatMarkdown } from "./chat/markdown/ChatMarkdown";
 import { applyFeed, emptyFeed } from "./feed/apply";
 
 export function App() {
@@ -15,9 +16,15 @@ export function App() {
       )}
       <ol aria-label="Chat" className="flex-1 overflow-y-auto px-4 pb-4">
         {feed.rows.map((row) => (
-          <li key={row.id} data-kind={row.k} className="whitespace-pre-wrap py-1 text-sm">
-            <span className="text-dim">{row.k}: </span>
-            {rowText(row)}
+          <li key={row.id} data-kind={row.k} className="py-1 text-sm data-[kind=assistant]:whitespace-normal whitespace-pre-wrap">
+            {row.k === "assistant" ? (
+              <ChatMarkdown text={row.text ?? ""} />
+            ) : (
+              <>
+                <span className="text-dim">{row.k}: </span>
+                {rowText(row)}
+              </>
+            )}
           </li>
         ))}
       </ol>

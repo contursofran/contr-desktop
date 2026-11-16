@@ -1,0 +1,16 @@
+import { useEffect, useRef, useState } from "react";
+
+/** Copies text to the clipboard and shows "copied" for 1.2 s. */
+export function useCopy() {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const copy = (text: string) => {
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => setCopied(false), 1200);
+    });
+  };
+  return { copy, copied };
+}

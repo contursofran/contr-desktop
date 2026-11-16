@@ -7,5 +7,5 @@ export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss()],
   build: { outDir: "../../out/renderer", emptyOutDir: true },
-  test: { root: ".", include: ["src/**/*.test.ts"] },
+  test: { root: ".", include: ["src/**/*.test.{ts,tsx}"] },
 });
