@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
+import { setupHelper } from "./helper";
 import { windowOptions } from "./window-options";
 
 function createWindow(): void {
@@ -13,6 +14,7 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
+  setupHelper(app.getAppPath());
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

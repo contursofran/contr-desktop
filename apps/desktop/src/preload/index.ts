@@ -1,4 +1,15 @@
-import { contextBridge } from "electron";
+import { contextBridge, ipcRenderer } from "electron";
+import { FEED_CHANNEL, FEED_READY_CHANNEL, SEND_CHANNEL, type ContrApi, type FeedEvent } from "../shared/api";
 
-// The bridge to the renderer. Later spike steps add the helper feed here.
-contextBridge.exposeInMainWorld("contr", { platform: process.platform });
+const api: ContrApi = {
+  platform: process.platform,
+  onFeed(listener) {
+    const handler = (_event: unknown, feed: FeedEvent) => listener(feed);
+    ipcRenderer.on(FEED_CHANNEL, handler);
+    ipcRenderer.send(FEED_READY_CHANNEL);
+    return () => ipcRenderer.off(FEED_CHANNEL, handler);
+  },
+  send: (text) => ipcRenderer.invoke(SEND_CHANNEL, text),
+};
+
+contextBridge.exposeInMainWorld("contr", api);
