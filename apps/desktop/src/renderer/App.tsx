@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { Row } from "./chat/rows/Row";
 import { StatusLine } from "./chat/rows/StatusLine";
+import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 
 export function App() {
   const [feed, setFeed] = useState(emptyFeed);
+  const [title, setTitle] = useState("");
+  useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   // The top strip is the drag area of the hidden title bar.
   return (
@@ -23,6 +26,7 @@ export function App() {
         ))}
       </ol>
       <StatusLine working={feed.working} />
+      <ReplyBox title={title} />
     </main>
   );
 }

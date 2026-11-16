@@ -23,4 +23,6 @@ when it does that job better. Until then, herdr-contr stays the daily app.
 `scripts/fetch-helper` downloads the newest herdr-contr release into `bin/`
 (it needs `gh`). The app runs `bin/herdr-contr-feed`, or the program that
 `CONTR_HELPER` names, for the terminal that `CONTR_TERMINAL` names (default
-`t1`). Tests use `apps/desktop/e2e/fake-helper.mjs`.
+`t1`). The reply box takes the terminal's title from `hc get --json` (or the
+program that `CONTR_HC` names). Tests use `apps/desktop/e2e/fake-helper.mjs` and
+`fake-hc.mjs`.
