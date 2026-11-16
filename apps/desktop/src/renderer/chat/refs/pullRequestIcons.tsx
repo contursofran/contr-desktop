@@ -30,31 +30,31 @@ export interface PullRequestStatePresentation {
 export const PULL_REQUEST_STATE_PRESENTATION = {
   open: {
     label: "Open",
-    toneClassName: "text-ref-open",
+    toneClassName: "text-pr-open",
     Icon: PullRequestGlyph.pullRequest,
   },
   draft: {
     label: "Draft",
-    toneClassName: "text-muted",
+    toneClassName: "text-pr-draft",
     Icon: PullRequestGlyph.draft,
   },
   closed: {
     label: "Closed",
-    toneClassName: "text-ref-closed",
+    toneClassName: "text-pr-closed",
     Icon: PullRequestGlyph.closed,
   },
   merged: {
     label: "Merged",
-    toneClassName: "text-ref-merged",
+    toneClassName: "text-pr-merged",
     Icon: PullRequestGlyph.merged,
   },
 } as const satisfies Record<Extract<RefState, { kind: "pr" }>["state"], PullRequestStatePresentation>;
 
 /** Ours: issues, with GitHub's icons and colors. */
 export const ISSUE_STATE_PRESENTATION = {
-  open: { label: "Open", toneClassName: "text-ref-open", Icon: CircleDotIcon },
-  closed: { label: "Closed", toneClassName: "text-ref-merged", Icon: CircleCheckIcon },
-  "not-planned": { label: "Not planned", toneClassName: "text-muted", Icon: CircleSlashIcon },
+  open: { label: "Open", toneClassName: "text-issue-open", Icon: CircleDotIcon },
+  closed: { label: "Closed", toneClassName: "text-issue-done", Icon: CircleCheckIcon },
+  "not-planned": { label: "Not planned", toneClassName: "text-issue-notplanned", Icon: CircleSlashIcon },
 } as const satisfies Record<Extract<RefState, { kind: "issue" }>["state"], PullRequestStatePresentation>;
 
 export function refPresentation(ref: RefState): PullRequestStatePresentation {

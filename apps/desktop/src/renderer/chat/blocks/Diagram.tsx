@@ -10,7 +10,7 @@ const STATE_COLOR: Record<FlowState, string> = {
   done: "var(--color-done)",
   running: "var(--color-working)",
   waiting: "var(--color-blocked)",
-  failed: "var(--color-ref-closed)",
+  failed: "var(--color-pr-closed)",
   info: "var(--color-muted)",
 };
 

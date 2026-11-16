@@ -59,8 +59,18 @@ The target is herdr-contr as the owner uses it on 2026-11-16:
 
 ## Colors
 
-Light and dark, from theme tokens. The dark theme's values are in
-`recipe-herdr.md` ("What you see"): canvas `#202020`, raised `#262626`, hover
-`#2e2e2e`, selected `#383838`, border `#363636`, muted `#9a9a9a`, dim
-`#707070`, foreground `#ededed`. The status colors: working blue `#007aff`,
-done green `#34c759`, blocked orange `#ff9500`.
+Light and dark, from theme tokens (`apps/desktop/src/renderer/index.css`). The
+values are herdr-contr's themes: dark `herdr-app/themes/herdr-contr-mac.json`,
+light `herdr-contr-mac-light.json` (`colors`, plus `foreground`). The terminal
+takes `background`, `foreground`, `selection`, `cursor` and `ansi` from the same
+files. The values in `recipe-herdr.md` are older; the theme files win.
+
+- `chrome`: the sidebar and the top bar, and the fill of small controls
+  (the Chat | Terminal switch, the tool-call chips). `canvas`: the work area.
+  `raised`: the reply box, cards, menus, the owner's bubble.
+- Agent icons: the program's own picture (Claude Code, Codex) in its own
+  colors; Herdr's program table gives them `tint: false`. Another kind is a
+  one-color glyph: in its state's color in the sidebar, `muted` in a tab.
+- The loader: herdr-contr's braille frames, 80 ms each, in Menlo. In
+  `working` on a tab, in a tool call and in a board; in `foreground` in the
+  status line and on a sidebar row.
