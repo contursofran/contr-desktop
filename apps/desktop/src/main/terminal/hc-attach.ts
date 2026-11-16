@@ -24,6 +24,8 @@ export class HcAttach {
   private framed = false;
   private channel = 0;
   private ended = false;
+  /** Keys typed before the attach reply: sent when the channel opens. */
+  private pending: string[] = [];
 
   constructor(target: AttachTarget, cols: number, rows: number, private on: AttachEvents) {
     const args = ["connect", ...(target.session ? ["--session", target.session] : [])];
@@ -36,6 +38,7 @@ export class HcAttach {
 
   input(text: string): void {
     if (this.channel) this.proc.stdin.write(encode(this.channel, KIND_DATA, Buffer.from(text)));
+    else this.pending.push(text);
   }
 
   resize(cols: number, rows: number): void {
@@ -74,6 +77,7 @@ export class HcAttach {
         if (m.id !== 1) continue;
         if (m.error || !m.result) return this.finish(m.error?.message ?? "attach failed");
         this.channel = m.result.channel;
+        for (const text of this.pending.splice(0)) this.input(text);
       } else if (f.channel === this.channel) {
         if (f.kind === KIND_DATA) this.on.data(f.payload);
         else if (f.kind === KIND_CLOSE) return this.finish("the terminal stream ended");
