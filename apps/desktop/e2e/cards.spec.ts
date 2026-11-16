@@ -27,7 +27,18 @@ async function open(name: string, env: Record<string, string> = {}) {
 // Sends a key to the page's DOM (no OS-level keys: e2e must not take the owner's input).
 const key = (page: Page, k: string) => page.evaluate((k) => (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })), k);
 
+// The card sits between the chat and the reply box: the last chat row is fully visible above it.
+async function lastRowAboveCard(page: Page) {
+  const list = await page.getByRole("list", { name: "Chat" }).boundingBox();
+  const last = await page.locator('ol[aria-label="Chat"] > li').last().boundingBox();
+  const cardBox = await page.locator("section").last().boundingBox();
+  expect(last && list && cardBox).toBeTruthy();
+  expect(last!.y + last!.height).toBeLessThanOrEqual(cardBox!.y + 1);
+  expect(last!.y + last!.height).toBeLessThanOrEqual(list!.y + list!.height + 1);
+}
+
 async function shoot(page: Page, name: string) {
+  await lastRowAboveCard(page);
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.screenshot({ path: path.join(shots, `${name}-${scheme}.png`) });

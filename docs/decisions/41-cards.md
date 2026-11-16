@@ -15,3 +15,4 @@
 - Approval: the buttons stay off after `sent`, `unconfirmed`, `answered` and
   `changed` (the next `card` read shows the new prompt), and come
   back after `busy`, `failed` and `no-identity`.
+- The card is in the layout between the chat list and the reply box. The chat list gets shorter and stays at its end when a card appears or grows, unless the owner scrolled up.
