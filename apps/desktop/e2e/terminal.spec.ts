@@ -42,7 +42,7 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
     },
   });
   const page = await app.firstWindow();
-  await expect(page.locator("ol[aria-label=Chat] > li")).toHaveCount(15);
+  await expect(page.locator("ol[aria-label=Chat] > li")).toHaveCount(16);
   await page.getByRole("button", { name: "Terminal" }).click();
   const term = page.getByTestId("terminal");
   await expect(term).toContainText("200");
