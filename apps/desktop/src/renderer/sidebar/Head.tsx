@@ -7,8 +7,9 @@ const STATE: Record<string, string> = { unreachable: "unreachable", "needs-login
 const icon = "flex size-7 items-center justify-center rounded-lg text-muted hover:bg-hover [-webkit-app-region:no-drag]";
 
 /**
- * The sidebar head (docs/design/recipe-herdr.md, the head): the app name, the machine switch, search and the
- * sidebar toggle. Search, the toggle and "Add machine…" do nothing yet. The pick does not filter the Projects
+* The sidebar head (docs/design/recipe-herdr.md, the head): the app name, the machine switch, search and the
+ * sidebar toggle on the first row, the machine switch on its own row under it, so the
+ * machine name reads in full (decision: the PR of issue 50). Search, the toggle and "Add machine…" do nothing yet. The pick does not filter the Projects
  * list yet: the app reads agents of this computer only.
  */
 export function Head() {
@@ -31,17 +32,21 @@ export function Head() {
     </li>
   );
   return (
-    <header className={`relative flex h-[46px] shrink-0 items-center gap-1 pr-2.5 [-webkit-app-region:drag] ${window.contr.platform === "darwin" ? "pl-[76px]" : "pl-5"}`}>
-      <span className="text-sm font-semibold">contr</span>
-      <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label="Machine" onClick={() => setOpen((o) => !o)} className="flex h-[26px] min-w-0 items-center gap-1 rounded-md px-1.5 text-xs text-muted hover:bg-hover [-webkit-app-region:no-drag]">
-        <span className="truncate">{shown ?? "This computer"}</span>
-        <ChevronDown aria-hidden className="size-3 shrink-0" />
-      </button>
-      <span className="flex-1" />
-      <button type="button" aria-label="Search" title="Search" className={icon}><Search aria-hidden className="size-4" /></button>
-      <button type="button" aria-label="Hide sidebar" title="Hide sidebar" className={icon}><PanelLeft aria-hidden className="size-4" /></button>
+    <header className="relative shrink-0">
+      <div className={`flex h-[46px] items-center gap-1 pr-2.5 [-webkit-app-region:drag] ${window.contr.platform === "darwin" ? "pl-[76px]" : "pl-5"}`}>
+        <span className="text-sm font-semibold">contr</span>
+        <span className="flex-1" />
+        <button type="button" aria-label="Search" title="Search" className={icon}><Search aria-hidden className="size-4" /></button>
+        <button type="button" aria-label="Hide sidebar" title="Hide sidebar" className={icon}><PanelLeft aria-hidden className="size-4" /></button>
+      </div>
+      <div className="flex px-3 pb-1">
+        <button type="button" aria-haspopup="menu" aria-expanded={open} aria-label="Machine" onClick={() => setOpen((o) => !o)} className="flex h-[26px] min-w-0 max-w-full items-center gap-1 rounded-md px-1.5 text-xs text-muted hover:bg-hover">
+          <span data-testid="machine-label" className="truncate">{shown ?? "This computer"}</span>
+          <ChevronDown aria-hidden className="size-3 shrink-0" />
+        </button>
+      </div>
       {open && (
-        <ul role="menu" aria-label="Machines" className="absolute top-10 left-3 z-10 w-[240px] rounded-xl border border-border bg-raised p-1 shadow-lg [-webkit-app-region:no-drag]">
+        <ul role="menu" aria-label="Machines" className="absolute top-[76px] left-3 z-10 w-[240px] rounded-xl border border-border bg-raised p-1 shadow-lg [-webkit-app-region:no-drag]">
           {row(null, "This computer")}
           {machines.map((m) => row(m.name, m.name, m.state))}
           <li role="separator" className="my-1 border-t border-border" />
