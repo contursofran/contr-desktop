@@ -34,6 +34,8 @@ export interface ContrApi {
   title(): Promise<string>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
+  /** Opens the native file picker for an image (png, jpeg, gif, webp). `path` is null when the owner cancels. */
+  pickImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
   /** PR and issue states of the agent's repository, from gh. null: gh does not know the number. */
   refs(numbers: number[]): Promise<Record<number, RefState | null>>;
   /** Opens a PR or issue in the browser. */
@@ -140,6 +142,7 @@ export const FEED_CHANNEL = "contr:feed";
 export const FEED_READY_CHANNEL = "contr:feed-ready";
 export const SEND_CHANNEL = "contr:send";
 export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
+export const PICK_IMAGE_CHANNEL = "contr:pick-image";
 export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
