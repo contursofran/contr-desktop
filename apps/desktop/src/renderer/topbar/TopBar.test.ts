@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Sidebar } from "../../shared/api";
 import { findAgent, nextAfterClose, openTab } from "./TopBar";
 
-const agent = (terminal: string, title: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, title, name: null, state: "idle" as const, workers });
+const agent = (terminal: string, title: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, title, name: null, kind: null, issue: null, state: "idle" as const, workers });
 
 describe("top bar tabs", () => {
   it("opens the selected agent's tab once, at the end", () => {

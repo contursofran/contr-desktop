@@ -9,12 +9,14 @@ interface HcTerminal {
   parent?: unknown;
   state?: unknown;
   status?: unknown;
+  agent?: unknown;
 }
 
 interface OrchAgent {
   name?: unknown;
   address?: unknown;
   title?: unknown;
+  issue?: unknown;
 }
 
 function str(v: unknown): string | null {
@@ -66,6 +68,8 @@ export function buildProjects({ hc, orch, titles, projectOf }: ListInput): Sideb
       title: str(o?.title) ?? titles.get(address) ?? name ?? address,
       name,
       state: toState(t.status),
+      kind: str(t.agent),
+      issue: str(o?.issue),
       workers: [],
       parent: str(t.parent),
       cwd: str(t.cwd) ?? "",
@@ -81,7 +85,7 @@ export function buildProjects({ hc, orch, titles, projectOf }: ListInput): Sideb
     }
   }
   const clean = (a: SidebarAgent & { parent?: unknown; cwd?: unknown }): SidebarAgent => ({
-    terminal: a.terminal, title: a.title, name: a.name, state: a.state, workers: a.workers.map(clean),
+    terminal: a.terminal, title: a.title, name: a.name, state: a.state, kind: a.kind, issue: a.issue, workers: a.workers.map(clean),
   });
   return [...projects].map(([name, list]) => ({ name, agents: list.map(clean) }));
 }

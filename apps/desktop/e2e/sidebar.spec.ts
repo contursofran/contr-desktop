@@ -27,10 +27,18 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ })).toHaveText(/Orchestrating · 3 workers/);
   await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ })).toHaveAttribute("aria-current", "true");
   await expect(desktop.getByRole("button", { name: /Flow and sequence diagrams/ })).toContainText("b-30");
-  await expect(desktop.getByRole("button", { name: /Release notes draft/ })).toBeVisible();
+  const flow = desktop.getByRole("button", { name: /Flow and sequence diagrams/ });
+  await expect(flow).toHaveAttribute("title", "b-30 · #30 · Flow and sequence diagrams");
+  await expect(flow.locator("[data-icon]")).toHaveAttribute("data-icon", "claude-code");
+  await expect(desktop.getByRole("button", { name: /Virtual list/ })).toHaveAttribute("title", "b-50 · Virtual list");
+  const notes = desktop.getByRole("button", { name: /Release notes draft/ });
+  await expect(notes.locator("[data-age]")).toHaveText("<1m");
+  await expect(notes).toHaveCSS("font-weight", "600");
+  await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ }).locator("[data-age]")).toHaveCount(0);
   const herdr = nav.getByRole("region", { name: "herdr-contr" });
   await expect(herdr.getByRole("button")).toHaveCount(1);
   await expect(herdr.getByRole("button")).toContainText("Install health check");
+  await expect(herdr.getByRole("button").locator("[data-icon]")).toHaveAttribute("data-icon", "codex");
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "sidebar-dark.png") });
@@ -39,6 +47,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
 
   await herdr.getByRole("button", { name: "Install health check" }).click();
   await expect(herdr.getByRole("button", { name: "Install health check" })).toHaveAttribute("aria-current", "true");
+  await expect(notes).toHaveCSS("font-weight", "600");
   const box = page.getByRole("textbox", { name: "Reply to Install health check" });
   await box.fill("hello");
   await box.press("Enter");
