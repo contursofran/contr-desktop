@@ -2,6 +2,7 @@ import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { chatTerminal, setupHelper } from "./helper";
 import { handleImageScheme, registerImageScheme } from "./localImages";
+import { registerBoardIpc } from "./board/ipc";
 import { registerRefsIpc } from "./refs/ipc";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
@@ -27,6 +28,7 @@ void app.whenReady().then(() => {
   setupHelper(app.getAppPath());
   registerTerminalIpc();
   registerRefsIpc(chatTerminal());
+  registerBoardIpc(app.getAppPath(), chatTerminal());
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
