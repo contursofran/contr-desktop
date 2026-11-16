@@ -76,3 +76,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## UI SDK agent skill
+
+`.claude/skills/ui-sdk/` is copied from vercel-labs/ui (https://github.com/vercel-labs/ui),
+commit 564de0b, under the Apache License 2.0
+(https://www.apache.org/licenses/LICENSE-2.0).
