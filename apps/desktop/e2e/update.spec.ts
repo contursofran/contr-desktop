@@ -20,11 +20,18 @@ const base = {
 const DMG = Buffer.alloc(64 * 1024, 7);
 const ZIP = readFileSync(fakeApp("9.1.42").zip);
 
-/** A fake GitHub: /release (the release JSON, its .zip broken), /release-zip, /release-dmg (no .zip), /dmg (a small fake .dmg), /zip (a fake app), /broken (HTTP 500). */
+/** What /live gives: the release `version`, or HTTP 500 when `fail`; while `hold` is set, the answer waits for it. */
+const live: { version: string; fail: boolean; hold: Promise<void> | null } = { version: "0.0.0", fail: false, hold: null };
+
+/** A fake GitHub: /live (see `live`), /release (the release JSON, its .zip broken), /release-zip, /release-dmg (no .zip), /dmg (a small fake .dmg), /zip (a fake app), /broken (HTTP 500). */
 async function fakeGitHub(): Promise<{ server: Server; url: string }> {
-  const server = createServer((req, res) => {
+  const server = createServer(async (req, res) => {
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-    if (req.url === "/release") {
+    if (req.url === "/live") {
+      await live.hold;
+      if (live.fail) res.statusCode = 500;
+      res.end(JSON.stringify({ body: `contr ${live.version} from abc.`, assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }] }));
+    } else if (req.url === "/release") {
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ name: "build-2026-11-16-abc1234", body: "contr 9.1.42 from abc1234.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }, { name: "contr-mac-universal.zip", browser_download_url: `${url}/broken` }] }));
     } else if (req.url === "/release-bad-dmg") {
@@ -60,6 +67,7 @@ test("dev and e2e with no release URL show Development build and no Update butto
   await expect(view.getByLabel("Current version")).toHaveText("0.0.0");
   await expect(view.getByLabel("Newest version")).toHaveText("Development build");
   await expect(view.getByRole("button", { name: "Update" })).toHaveCount(0);
+  await expect(view.getByRole("button", { name: "Check now" })).toHaveCount(0);
   await expect(page.getByLabel("Update ready")).toHaveCount(0);
   await app.close();
 });
@@ -134,5 +142,63 @@ test("a read-only app folder or a release with no .zip falls back to the .dmg", 
     await app.close();
   }
   chmodSync(install, 0o755);
+  server.close();
+});
+
+test("Check now and the app menu's Check for Updates… show a new release with no restart", async () => {
+  const { server, url } = await fakeGitHub();
+  Object.assign(live, { version: "0.0.0", fail: false, hold: null });
+  const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/live` });
+  const page = await app.firstWindow();
+  await page.emulateMedia({ colorScheme: "dark" });
+  const view = await openSettings(page);
+  const check = view.getByRole("button", { name: "Check now" });
+  await expect(view.getByLabel("Newest version")).toHaveText("Up to date");
+  await expect(view.getByLabel("Last check")).toHaveText("Checked just now");
+  await expect(view.getByRole("button", { name: "Update" })).toHaveCount(0);
+  await expect(check).toBeEnabled();
+  await page.screenshot({ path: path.join(shots, "check-uptodate-dark.png") });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.screenshot({ path: path.join(shots, "check-uptodate-light.png") });
+
+  // A newer release B: while the check waits, the button says Checking… and is disabled.
+  let release = () => {};
+  live.version = "9.1.42";
+  live.hold = new Promise<void>((r) => (release = r));
+  await check.click();
+  const checking = view.getByRole("button", { name: "Checking…" });
+  await expect(checking).toBeDisabled();
+  release();
+  live.hold = null;
+  await expect(view.getByLabel("Newest version")).toHaveText("9.1.42");
+  await expect(view.getByRole("button", { name: "Update" })).toBeVisible();
+  await expect(page.locator("aside > footer").getByLabel("Update ready")).toBeVisible();
+  await expect(view.getByLabel("Last check")).toHaveText("Checked just now");
+  await page.screenshot({ path: path.join(shots, "check-available-light.png") });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(shots, "check-available-dark.png") });
+
+  // A failed check shows its error; the button works again, and a passed check clears the error.
+  live.fail = true;
+  await check.click();
+  await expect(view.getByRole("alert")).toHaveText("Update check failed: HTTP 500");
+  await expect(check).toBeEnabled();
+  live.fail = false;
+  await check.click();
+  await expect(view.getByRole("alert")).toHaveCount(0);
+
+  // Each open of the Settings view checks once.
+  live.version = "9.1.50";
+  await page.getByRole("button", { name: "Inbox" }).click();
+  await expect(view).toHaveCount(0);
+  await expect((await openSettings(page)).getByLabel("Newest version")).toHaveText("9.1.50");
+
+  // The app menu's item, clicked through the main process: it shows Settings and checks.
+  live.version = "9.2.0";
+  await page.getByRole("button", { name: "Inbox" }).click();
+  await expect(view).toHaveCount(0);
+  await app.evaluate(({ Menu }) => Menu.getApplicationMenu()?.getMenuItemById("check-updates")?.click());
+  await expect(page.getByRole("region", { name: "Settings" }).getByLabel("Newest version")).toHaveText("9.2.0");
+  await app.close();
   server.close();
 });

@@ -10,6 +10,7 @@ import { inboxBadge, registerOwnerIpc } from "./owner/ipc";
 import { windowTitle } from "./owner/owner";
 import { registerSettingsIpc } from "./settings/ipc";
 import { registerUpdateIpc } from "./update/ipc";
+import { setAppMenu } from "./menu";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 import { syncShellPath } from "./shell/path";
@@ -46,7 +47,7 @@ void app.whenReady().then(() => {
   registerFootIpc(app.getAppPath());
   registerOwnerIpc(app.getAppPath());
   registerSettingsIpc(app.getAppPath());
-  registerUpdateIpc();
+  setAppMenu(registerUpdateIpc().check, e2e);
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

@@ -103,6 +103,10 @@ export interface ContrApi {
   downloadUpdate(): Promise<void>;
   /** Quits, swaps in the checked new app and opens it. */
   restartToUpdate(): Promise<void>;
+  /** Reads the newest release now. A call while a check runs waits for that check. */
+  checkUpdate(): Promise<void>;
+  /** Calls the listener when the app menu's "Check for Updates…" asks to show Settings. Returns the unsubscribe. */
+  onOpenSettings(listener: () => void): () => void;
   terminal: TerminalApi;
 }
 
@@ -288,9 +292,16 @@ export interface UpdateState {
   ready: boolean;
   /** The message of a failed check or download. */
   error: string | null;
+  /** A check of the newest release runs now. */
+  checking: boolean;
+  /** The time (ms) of the last finished check, passed or failed; null before the first one. */
+  checked: number | null;
 }
 
 export const UPDATE_CHANNEL = "contr:update";
 export const UPDATE_EVENT = "contr:update-event";
 export const UPDATE_DOWNLOAD_CHANNEL = "contr:update-download";
 export const UPDATE_RESTART_CHANNEL = "contr:update-restart";
+export const UPDATE_CHECK_CHANNEL = "contr:update-check";
+/** Main to renderer: show the Settings view (the app menu's "Check for Updates…"). */
+export const OPEN_SETTINGS_EVENT = "contr:open-settings";
