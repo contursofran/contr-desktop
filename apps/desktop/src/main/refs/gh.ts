@@ -53,17 +53,17 @@ export function ghRefs(cwd: string, numbers: number[], gh = process.env.CONTR_GH
 }
 
 /** Keeps each number's state for a minute: at most one gh call per number per minute. */
-export class RefCache {
-  private entries = new Map<number, { at: number; state: Promise<RefState | null> }>();
+export class RefCache<T = RefState | null> {
+  private entries = new Map<number, { at: number; state: Promise<T | null> }>();
 
   constructor(
-    private fetch: (numbers: number[]) => Promise<Map<number, RefState | null>>,
+    private fetch: (numbers: number[]) => Promise<Map<number, T | null>>,
     private now = () => Date.now(),
     private ttlMs = 60_000,
   ) {}
 
   /** The states of these numbers. One batched fetch for the numbers that are missing or older than a minute. */
-  async get(numbers: number[]): Promise<Record<number, RefState | null>> {
+  async get(numbers: number[]): Promise<Record<number, T | null>> {
     const now = this.now();
     const stale = [...new Set(numbers)].filter((n) => {
       const e = this.entries.get(n);
@@ -73,7 +73,7 @@ export class RefCache {
       const batch = this.fetch(stale);
       for (const n of stale) this.entries.set(n, { at: now, state: batch.then((m) => m.get(n) ?? null) });
     }
-    const out: Record<number, RefState | null> = {};
+    const out: Record<number, T | null> = {};
     for (const n of numbers) out[n] = await this.entries.get(n)!.state;
     return out;
   }
