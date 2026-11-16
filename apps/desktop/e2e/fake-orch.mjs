@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A fake herdr-contr-orch for tests. `agents ls --all --json` lists four workers of the chat's agent (t7), one in
-// each state, three of them live, and a b-30 of another agent (t12) that the board must not show.
+// each state, three of them live, and a b-30 of another agent (t12) that the board must not show: it has no hc terminal, so it is not live (#57).
 // The live ones of t7 are the hc terminals t8 to t10 of fake-hc.mjs.
 const workers = [
   { name: "b-30", parent: "t12", live: true, status: "blocked" },

@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
+import { isLiveAgent, liveWorkerParents } from "../workers/live";
 import type { SidebarAgent, SidebarProject, WorkerState } from "../../shared/api";
 
 interface HcTerminal {
@@ -50,10 +51,11 @@ export interface ListInput {
 
 /**
  * Groups the live agents by project. An agent is a live hc terminal with a `status` (a shell has none).
- * A terminal whose hc `parent` is listed shows under it as a worker; the orchestration tool gives its name and work.
+ * A live worker (`liveWorkerParents`, the status line's rule) whose parent is listed shows under it; the orchestration tool gives its name and work.
  */
 export function buildProjects({ hc, orch, titles, projectOf }: ListInput): SidebarProject[] {
-  const terms = parseList<HcTerminal>(hc, "terminals").filter((t) => str(t.address) && t.state === "live" && t.status != null);
+  const terms = parseList<HcTerminal>(hc, "terminals").filter(isLiveAgent);
+  const parents = liveWorkerParents(hc, orch);
   const named = new Map<string, OrchAgent>();
   for (const a of parseList<OrchAgent>(orch)) if (str(a.address)) named.set(a.address as string, a);
   const agents = new Map<string, SidebarAgent & { parent: string | null; cwd: string }>();
@@ -67,7 +69,7 @@ export function buildProjects({ hc, orch, titles, projectOf }: ListInput): Sideb
       name,
       state: toState(t.status),
       workers: [],
-      parent: str(t.parent),
+      parent: parents.get(address) ?? null,
       cwd: str(t.cwd) ?? "",
     });
   }

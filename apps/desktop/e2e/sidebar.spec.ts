@@ -32,6 +32,8 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(herdr.getByRole("button")).toHaveCount(1);
   await expect(herdr.getByRole("button")).toContainText("Install health check");
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
+  // #57: the status line counts the same workers as the rows under the agent (t7: three; the 5 rows hold t7, t11 and its 3 workers).
+  await expect(page.getByLabel("Status")).toContainText("Orchestrating · 3 workers");
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "sidebar-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
@@ -39,6 +41,12 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
 
   await herdr.getByRole("button", { name: "Install health check" }).click();
   await expect(herdr.getByRole("button", { name: "Install health check" })).toHaveAttribute("aria-current", "true");
+  // #57: the tool lists a live b-30 under t12 with no hc terminal: no worker row and no worker count.
+  await expect(herdr.getByRole("button")).toHaveCount(1);
+  await expect(page.getByLabel("Status")).toBeVisible();
+  await expect(page.getByLabel("Status")).not.toContainText("Orchestrating");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(shots, "worker-count-dark.png") });
   const box = page.getByRole("textbox", { name: "Reply to Install health check" });
   await box.fill("hello");
   await box.press("Enter");
