@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// A fake hc for tests. `get --json <terminal>` gives FAKE_HC_TITLE (else the terminal's title below) and FAKE_HC_CWD.
+// A fake hc for tests. `get --json <terminal>` gives FAKE_HC_TITLE (else the terminal's title below), its `agent` and FAKE_HC_CWD.
 // `machine ls --json` gives two machines when FAKE_HC_AGENTS=1, else none.
 // `ls --json` lists (with hc's `agent` kind) the agents below when FAKE_HC_AGENTS=1, else none. `events` ends at once: the app polls.
 const agents = [
@@ -13,8 +13,9 @@ const agents = [
 ].map((t) => ({ ...t, state: "live" }));
 const [cmd, , terminal] = process.argv.slice(2);
 if (cmd === "get") {
-  const title = process.env.FAKE_HC_TITLE ?? agents.find((t) => t.address === terminal)?.title ?? "";
-  process.stdout.write(`${JSON.stringify({ address: terminal, name: "w-7", title, cwd: process.env.FAKE_HC_CWD ?? "" })}\n`);
+  const found = agents.find((t) => t.address === terminal);
+  const title = process.env.FAKE_HC_TITLE ?? found?.title ?? "";
+  process.stdout.write(`${JSON.stringify({ address: terminal, name: "w-7", title, agent: found?.agent, cwd: process.env.FAKE_HC_CWD ?? "" })}\n`);
 } else if (cmd === "machine") {
   const machines = [
     { name: "aerum-pc", state: "connected" },

@@ -18,3 +18,25 @@ export function terminalTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc
     execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readTitle(String(stdout ?? ""), terminal)));
   });
 }
+
+/** Program names by hc `agent` kind. */
+const PROGRAMS: Record<string, string> = { "claude-code": "Claude Code", codex: "Codex" };
+
+/** A tab's title from `hc get --json`: its `title`, else the program name from `agent`, else "Terminal". Never the address. */
+export function readTabTitle(json: string): string {
+  try {
+    const t = JSON.parse(json) as { title?: unknown; agent?: unknown };
+    if (typeof t.title === "string" && t.title !== "") return t.title;
+    if (typeof t.agent === "string" && PROGRAMS[t.agent]) return PROGRAMS[t.agent];
+  } catch {
+    // Not JSON: hc failed.
+  }
+  return "Terminal";
+}
+
+/** Reads a tab's title once with `hc get --json` (read-only). CONTR_HC picks the hc program. */
+export function tabTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string> {
+  return new Promise((resolve) => {
+    execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readTabTitle(String(stdout ?? ""))));
+  });
+}

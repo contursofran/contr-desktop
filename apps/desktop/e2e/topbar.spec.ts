@@ -26,6 +26,11 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(tabs.getByRole("tab", { name: "Install health check" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await expect(tabs.getByRole("button", { name: "New tab" })).toBeDisabled();
+  // Both titles fit: the tabs grow, nothing is cut.
+  for (const name of ["Chat panel usability audit", "Install health check"]) {
+    const label = tabs.getByRole("tab", { name }).locator("span");
+    expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  }
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "topbar-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
@@ -49,3 +54,24 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await app.close();
 });
+
+for (const [name, env, label] of [
+  ["its hc title", {}, "Chat panel usability audit"],
+  ["the program name", { FAKE_HC_TITLE: "" }, "Claude Code"],
+] as const) {
+  test(`a tab with no sidebar entry shows ${name}, never the terminal id`, async () => {
+    const app = await launchApp({
+      CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+      FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+      CONTR_TERMINAL: "t7",
+      CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+      CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
+      CONTR_GIT: path.join(e2e, "fake-git.mjs"),
+      ...env,
+    });
+    const page = await app.firstWindow();
+    const tabs = page.getByRole("tablist", { name: "Tabs" });
+    await expect(tabs.getByRole("tab")).toHaveText([label]);
+    await app.close();
+  });
+}
