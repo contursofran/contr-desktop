@@ -9,7 +9,9 @@ to `main` (or by hand, `workflow_dispatch`). It:
    app version `0.1.<run number>`.
 2. Builds the app in two jobs: macOS (`pnpm dist`, universal `.dmg` and
    `.zip`) and Linux (`pnpm dist:linux`, x86_64 AppImage). Only the macOS
-   build uses a macOS runner. The macOS job runs `scripts/check-bundle`.
+   build uses a macOS runner. The macOS job runs `scripts/check-bundle`, then
+   unpacks the `.zip` with `ditto` and runs `codesign --verify --deep` on the
+   app. When the check fails, the release fails.
 3. Publishes one GitHub release with the files and short notes. The file
    names do not change between releases: `contr-mac-universal.dmg`,
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
@@ -44,12 +46,17 @@ old app, such as `~/.local/bin/contr`: the old Claude Code plugin ran
 
 ## Signing
 
-The app is not signed and not notarized: there is no Apple certificate
-(owner decision, D97). The first time, open it with right-click > Open
+There is no Apple certificate (owner decision, D97): the app is ad-hoc
+signed (`mac.identity: "-"` in `apps/desktop/electron-builder.yml`) and not
+notarized. electron-builder signs the whole universal bundle after the merge,
+so the app in the `.zip` and the `.dmg` passes `codesign --verify --deep`. The
+Update button needs this (#87). The hardened runtime is off: with an ad-hoc
+signature it needs an extra entitlement, and only notarization needs it. The
+first time, open it with right-click > Open
 (or run `xattr -dr com.apple.quarantine /Applications/contr.app`). The
 release notes say this too.
 
-Squirrel.Mac and electron-updater need a signed app, so the Update button
+Squirrel.Mac and electron-updater need an app signed with a certificate, so the Update button
 installs the new app with its own swap script (see The Update button).
 
 ## Build locally
@@ -59,6 +66,11 @@ scripts/fetch-helper
 pnpm dist               # apps/desktop/release/
 scripts/check-bundle    # both binaries are there and herdr-contr-orch runs
 ```
+
+To check the signature as the release does: unpack
+`apps/desktop/release/contr-mac-universal.zip` with `ditto -x -k` into a temp
+folder and run `codesign --verify --deep --strict --verbose=2` on its
+`contr.app`.
 
 ## The Update button
 
@@ -84,7 +96,9 @@ When the folder is not writable or the release has no `.zip`, a press
 downloads the `.dmg` into Downloads and opens it; the owner drags contr to
 Applications. A failed check or download shows its message.
 
-Dev and e2e builds show "Development build" and check nothing. e2e tests set
+Dev and e2e builds show "Development build" and check nothing. The e2e test of
+the `.zip` install builds its `.zip` with electron-builder and
+`electron-builder.yml`, so a change to the signing options shows there. e2e tests set
 `CONTR_UPDATE_URL` (a fake release JSON) and `CONTR_DOWNLOADS` (a scratch
 folder) and `CONTR_INSTALL_DIR` (a scratch folder in place of the running
 app's folder, never `/Applications`); with `CONTR_E2E=1` nothing is opened,

@@ -11,4 +11,5 @@ This replaces D97's "the owner drags contr to Applications".
   app runs. On any failure it puts the old app back and opens it.
 - When the app's folder is not writable or the release has no `.zip`, the
   button downloads the `.dmg` and opens it, as before.
-- The app stays unsigned (D97): no Squirrel.Mac or electron-updater.
+- The app has no certificate (D97; ad-hoc signed since #87): no Squirrel.Mac or
+  electron-updater.

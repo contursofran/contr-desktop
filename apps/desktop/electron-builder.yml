@@ -1,5 +1,5 @@
 # Packaging: macOS universal .dmg and .zip, Linux AppImage.
-# No signing certificate yet: the macOS app is unsigned (docs/reference/releases.md).
+# No signing certificate yet: the macOS app is ad-hoc signed (docs/reference/releases.md).
 appId: dev.contr.desktop
 productName: contr
 directories:
@@ -15,7 +15,12 @@ mac:
       arch: universal
     - target: zip
       arch: universal
-  identity: null
+  # Ad-hoc signature ("-"), no certificate: the whole bundle passes `codesign --verify --deep`, which the
+  # Update button and its swap script need. electron-builder signs the universal app after the merge.
+  identity: "-"
+  # Hardened runtime with an ad-hoc signature needs the disable-library-validation entitlement; the app
+  # is not notarized, so it does not need the hardened runtime.
+  hardenedRuntime: false
   # A stable name: the Update button (part 2) takes contr-mac-universal.dmg from the newest release.
   artifactName: contr-mac-universal.${ext}
   category: public.app-category.developer-tools
