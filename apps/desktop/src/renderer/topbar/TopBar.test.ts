@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Sidebar } from "../../shared/api";
-import { findAgent, nextAfterClose, openTab } from "./TopBar";
+import { findAgent, nextAfterClose, openTab, tabLabel } from "./TopBar";
 
 const agent = (terminal: string, title: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, title, name: null, kind: null, issue: null, state: "idle" as const, workers });
 
@@ -20,5 +20,11 @@ describe("top bar tabs", () => {
     const data: Sidebar = { selected: "", projects: [{ name: "p", cwd: "", branch: null, ahead: 0, behind: 0, favicon: null, agents: [agent("t7", "Orch", [agent("t8", "Worker")])] }] };
     expect(findAgent(data, "t8")?.title).toBe("Worker");
     expect(findAgent(data, "t9")).toBeUndefined();
+  });
+  it("labels a tab with the sidebar title, else the title from hc, never the terminal id", () => {
+    const data: Sidebar = { selected: "", projects: [{ name: "p", agents: [agent("t7", "Orch")] }] };
+    expect(tabLabel(data, "t7", { t7: "Other" })).toBe("Orch");
+    expect(tabLabel(data, "t9", { t9: "Claude Code" })).toBe("Claude Code");
+    expect(tabLabel(data, "t9", {})).toBe("");
   });
 });

@@ -51,6 +51,8 @@ export interface ContrApi {
   send(text: string): Promise<{ ok: boolean; message?: string }>;
   /** The title of the chat's terminal (hc `title`, else its name, else its address). */
   title(): Promise<string>;
+  /** A tab's title for a terminal with no sidebar entry: hc `title`, else the program name, else "Terminal". Never the address. */
+  tabTitle(terminal: string): Promise<string>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
   /** Opens the native file picker for an image (png, jpeg, gif, webp). `path` is null when the owner cancels. */
@@ -180,6 +182,7 @@ export const SEND_CHANNEL = "contr:send";
 export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
 export const PICK_IMAGE_CHANNEL = "contr:pick-image";
 export const TITLE_CHANNEL = "contr:title";
+export const TAB_TITLE_CHANNEL = "contr:tab-title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
 export const APPROVE_CHANNEL = "contr:approve";
