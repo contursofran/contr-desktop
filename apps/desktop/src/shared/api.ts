@@ -34,6 +34,20 @@ export interface ContrApi {
   title(): Promise<string>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
+  terminal: TerminalApi;
+}
+
+/** The Terminal side: the agent's hc terminal. */
+export interface TerminalApi {
+  /** Attaches at this size. Returns the terminal, or an error to show. */
+  attach(cols: number, rows: number): Promise<{ terminal?: string; error?: string }>;
+  /** Keys and paste, as the terminal's bytes. */
+  input(text: string): void;
+  resize(cols: number, rows: number): void;
+  /** Listens to the terminal's bytes. Returns a function that stops listening. */
+  onData(listener: (bytes: Uint8Array) => void): () => void;
+  /** Listens for the end of the stream. Returns a function that stops listening. */
+  onEnd(listener: (reason: string) => void): () => void;
 }
 
 export const FEED_CHANNEL = "contr:feed";
