@@ -30,6 +30,28 @@
 .chat-markdown li.task-list-item input[type="checkbox"] {
   margin-inline: -1.25rem 0.35em;
   vertical-align: middle;
+  /* Draw the box from theme tokens: the native disabled box is too pale. */
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 0.9em;
+  height: 0.9em;
+  border: 1px solid var(--color-muted);
+  border-radius: 0.2em;
+  background: var(--color-canvas);
+}
+.chat-markdown li.task-list-item input[type="checkbox"]:checked {
+  border-color: var(--color-working);
+  background: var(--color-working);
+}
+.chat-markdown li.task-list-item input[type="checkbox"]:checked::before {
+  content: "";
+  width: 0.25em;
+  height: 0.5em;
+  margin-top: -0.1em;
+  border: solid var(--color-canvas);
+  border-width: 0 0.12em 0.12em 0;
+  transform: rotate(45deg);
 }
 .chat-markdown a:not([data-slot="context-chip"]) { color: var(--color-working); text-decoration: none; }
 .chat-markdown a:not([data-slot="context-chip"]):hover { text-decoration: underline; }
