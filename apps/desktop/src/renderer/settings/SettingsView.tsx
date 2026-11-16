@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Settings, ThemeChoice } from "../../shared/api";
+import type { Settings, ThemeChoice, UpdateState } from "../../shared/api";
 
 const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: "system", label: "System" },
@@ -7,7 +7,7 @@ const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: "light", label: "Light" },
 ];
 
-/** The Settings view in the main pane: the theme choice and the helper path. All colors from the theme tokens. */
+/** The Settings view in the main pane: the theme choice, the updates and the helper path. All colors from the theme tokens. */
 export function SettingsView() {
   const [data, setData] = useState<Settings>();
   useEffect(() => {
@@ -40,6 +40,7 @@ export function SettingsView() {
             </div>
           </div>
         </div>
+        <Updates />
         <div className="flex flex-col gap-2">
           <h2 className="text-xs font-medium text-muted">Helper</h2>
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-raised px-4 py-3">
@@ -49,5 +50,40 @@ export function SettingsView() {
         </div>
       </div>
     </section>
+  );
+}
+
+/** The Updates section: this version, the newest one, and the Update button (downloads the .dmg and opens it). */
+function Updates() {
+  const [u, setU] = useState<UpdateState>();
+  useEffect(() => {
+    void window.contr.update().then(setU);
+    return window.contr.onUpdate(setU);
+  }, []);
+  const newest = u?.dev ? "Development build" : (u?.latest ?? "Checking…");
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="text-xs font-medium text-muted">Updates</h2>
+      <div className="flex flex-col gap-2 rounded-xl border border-border bg-raised px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[13px]">Version</span>
+          <span aria-label="Current version" className="font-mono text-[11px] text-muted">{u?.current}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-[13px]">Newest</span>
+          <span className="flex items-center gap-3">
+            <span aria-label="Newest version" className="font-mono text-[11px] text-muted">{newest}</span>
+            {u?.available && (
+              <button type="button" disabled={u.progress !== null} onClick={() => void window.contr.downloadUpdate()} className="rounded-md bg-working px-3 py-1 text-xs text-white disabled:opacity-60">
+                {u.progress !== null ? `Downloading ${u.progress}%` : "Update"}
+              </button>
+            )}
+          </span>
+        </div>
+        {u?.progress != null && <progress aria-label="Download" max={100} value={u.progress} className="h-1 w-full" />}
+        {u?.downloaded && <span role="status" className="text-xs text-muted">Opened {u.downloaded}. Drag contr to Applications.</span>}
+        {u?.error && <span role="alert" className="text-xs text-blocked">{u.error}</span>}
+      </div>
+    </div>
   );
 }

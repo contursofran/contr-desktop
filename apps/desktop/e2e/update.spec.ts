@@ -1,0 +1,93 @@
+import { expect, test } from "@playwright/test";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { createServer, type Server } from "node:http";
+import type { AddressInfo } from "node:net";
+import os from "node:os";
+import path from "node:path";
+import { launchApp } from "./launch";
+
+const e2e = import.meta.dirname;
+const shots = path.resolve(e2e, "../../../tmp/shots");
+const base = {
+  CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+  FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+  CONTR_TERMINAL: "t7",
+  CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+  FAKE_HC_AGENTS: "1",
+  CONTR_GIT: path.join(e2e, "fake-git.mjs"),
+};
+const DMG = Buffer.alloc(64 * 1024, 7);
+
+/** A fake GitHub: /release (the release JSON), /dmg (a small fake .dmg), /broken (HTTP 500). */
+async function fakeGitHub(): Promise<{ server: Server; url: string }> {
+  const server = createServer((req, res) => {
+    const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    if (req.url === "/release") {
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({ name: "build-2026-11-16-abc1234", body: "contr 9.1.42 from abc1234.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }, { name: "contr-mac-universal.zip", browser_download_url: `${url}/broken` }] }));
+    } else if (req.url === "/release-bad-dmg") {
+      res.end(JSON.stringify({ body: "contr 9.1.42 from abc.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/broken` }] }));
+    } else if (req.url === "/dmg") {
+      res.setHeader("content-length", String(DMG.length));
+      res.end(DMG);
+    } else {
+      res.statusCode = 500;
+      res.end();
+    }
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  return { server, url: `http://127.0.0.1:${(server.address() as AddressInfo).port}` };
+}
+
+const openSettings = async (page: import("@playwright/test").Page) => {
+  await page.locator("aside > footer").getByRole("button", { name: "Settings" }).click();
+  return page.getByRole("region", { name: "Settings" });
+};
+
+test("dev and e2e with no release URL show Development build and no Update button", async () => {
+  const app = await launchApp(base);
+  const page = await app.firstWindow();
+  const view = await openSettings(page);
+  await expect(view.getByLabel("Current version")).toHaveText("0.0.0");
+  await expect(view.getByLabel("Newest version")).toHaveText("Development build");
+  await expect(view.getByRole("button", { name: "Update" })).toHaveCount(0);
+  await expect(page.getByLabel("Update ready")).toHaveCount(0);
+  await app.close();
+});
+
+test("a newer release shows the dot and the Update button; a press downloads the .dmg", async () => {
+  const { server, url } = await fakeGitHub();
+  const downloads = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-downloads-"));
+  const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/release`, CONTR_DOWNLOADS: downloads });
+  const page = await app.firstWindow();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("aside > footer").getByLabel("Update ready")).toBeVisible();
+  const view = await openSettings(page);
+  await expect(view.getByLabel("Current version")).toHaveText("0.0.0");
+  await expect(view.getByLabel("Newest version")).toHaveText("9.1.42");
+  await page.screenshot({ path: path.join(shots, "update-dark.png") });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.screenshot({ path: path.join(shots, "update-light.png") });
+  await view.getByRole("button", { name: "Update" }).click();
+  const file = path.join(downloads, "contr-mac-universal.dmg");
+  await expect(view.getByRole("status")).toHaveText(`Opened ${file}. Drag contr to Applications.`);
+  expect(readFileSync(file).equals(DMG)).toBe(true);
+  await page.screenshot({ path: path.join(shots, "update-done-light.png") });
+  await app.close();
+  server.close();
+});
+
+test("a failed check and a failed download show their message", async () => {
+  const { server, url } = await fakeGitHub();
+  let app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/nothing` });
+  let view = await openSettings(await app.firstWindow());
+  await expect(view.getByRole("alert")).toHaveText("Update check failed: HTTP 500");
+  await app.close();
+
+  app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/release-bad-dmg`, CONTR_DOWNLOADS: mkdtempSync(path.join(os.tmpdir(), "contr-e2e-downloads-")) });
+  view = await openSettings(await app.firstWindow());
+  await view.getByRole("button", { name: "Update" }).click();
+  await expect(view.getByRole("alert")).toHaveText("Download failed: HTTP 500");
+  await app.close();
+  server.close();
+});
