@@ -62,7 +62,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, right
                 const shown = t === data.selected;
                 const title = tabLabel(data, t, titles);
                 return (
-                  <TabOrderItem key={t} value={t} className={`flex h-7 min-w-[72px] touch-none select-none items-center rounded-full text-[13px] data-grabbed:opacity-40 ${shown ? "bg-selected font-semibold text-foreground" : "text-muted hover:bg-hover"}`}>
+                  <TabOrderItem key={t} value={t} className={`flex h-7 min-w-[72px] touch-none select-none items-center rounded-full text-[13px] data-grabbed:w-0.5 data-grabbed:min-w-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:*:hidden ${shown ? "bg-selected font-semibold text-foreground" : "text-muted hover:bg-hover"}`}>
                     <button type="button" role="tab" aria-selected={shown} title={title} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-1.5 py-1 pl-2.5 pr-1">
                       <Sparkle aria-hidden className="size-3.5 shrink-0" />
                       <span className="max-w-[170px] truncate">{title}</span>

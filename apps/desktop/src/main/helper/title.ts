@@ -34,9 +34,9 @@ export function readTabTitle(json: string): string {
   return "Terminal";
 }
 
-/** Reads a tab's title once with `hc get --json` (read-only). CONTR_HC picks the hc program. */
-export function tabTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string> {
+/** Reads a tab's title once with `hc get --json` (read-only); null when hc does not list the terminal. CONTR_HC picks the hc program. */
+export function tabTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string | null> {
   return new Promise((resolve) => {
-    execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readTabTitle(String(stdout ?? ""))));
+    execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (error, stdout) => resolve(error ? null : readTabTitle(String(stdout ?? ""))));
   });
 }

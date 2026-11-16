@@ -78,7 +78,7 @@ for (const [name, env, label] of [
   });
 }
 
-test("a tab moves by drag and by Alt with the arrows, and the order stays after a restart", async () => {
+test("a tab moves by drag and by Alt with the arrows, the order stays after a restart, and a gone terminal's tab does not", async () => {
   test.setTimeout(60_000);
   const dataDir = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-data-"));
   const env = {
@@ -104,10 +104,15 @@ test("a tab moves by drag and by Alt with the arrows, and the order stays after 
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2 - 10, from.y + from.height / 2, { steps: 3 });
   await page.mouse.move(to.x + 10, to.y + to.height / 2, { steps: 10 });
-  await expect(tabs.locator("[data-grabbed]")).toHaveCount(1);
+  // The dragged tab's place shows as a 2 px line where it will drop.
+  const line = tabs.locator("[data-grabbed]");
+  await expect(line).toHaveCount(1);
+  expect((await line.boundingBox())!.width).toBeLessThanOrEqual(3);
+  // The copy under the pointer moves down, so the screenshot shows the line.
+  await page.mouse.move(to.x + 10, to.y + to.height / 2 + 40, { steps: 3 });
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
-    await page.screenshot({ path: path.join(shots, `tab-drag-${scheme}.png`) });
+    await page.screenshot({ path: path.join(shots, `tab-drag-${scheme}.png`), clip: { x: 0, y: 0, width: page.viewportSize()?.width ?? 1200, height: 120 } });
   }
   await page.mouse.up();
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
@@ -128,7 +133,16 @@ test("a tab moves by drag and by Alt with the arrows, and the order stays after 
   page = await app.firstWindow();
   tabs = page.getByRole("tablist", { name: "Tabs" });
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
-  await tabs.getByRole("button", { name: `Close ${a}` }).click();
-  await expect(tabs.getByRole("tab")).toHaveText([b]);
+  await app.close();
+
+  // A saved tab whose terminal hc no longer lists does not open again.
+  app = await launchApp({ ...env, FAKE_HC_AGENTS: "0", FAKE_HC_GONE: "t12" }, dataDir);
+  page = await app.firstWindow();
+  tabs = page.getByRole("tablist", { name: "Tabs" });
+  await expect(tabs.getByRole("tab")).toHaveText([a]);
+  await app.close();
+  app = await launchApp(env, dataDir);
+  page = await app.firstWindow();
+  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText([a]);
   await app.close();
 });

@@ -52,7 +52,7 @@ export interface ContrApi {
   /** The title of the chat's terminal (hc `title`, else its name, else its address). */
   title(): Promise<string>;
   /** A tab's title for a terminal with no sidebar entry: hc `title`, else the program name, else "Terminal". Never the address. */
-  tabTitle(terminal: string): Promise<string>;
+  tabTitle(terminal: string): Promise<string | null>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
   /** Opens the native file picker for an image (png, jpeg, gif, webp). `path` is null when the owner cancels. */

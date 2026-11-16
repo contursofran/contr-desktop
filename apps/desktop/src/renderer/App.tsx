@@ -36,7 +36,11 @@ export function App() {
     for (const t of tabs) {
       if (findAgent(sidebar, t) || t in titles) continue;
       setTitles((m) => ({ ...m, [t]: "" }));
-      void window.contr.tabTitle(t).then((title) => setTitles((m) => ({ ...m, [t]: title })));
+      void window.contr.tabTitle(t).then((title) => {
+        // hc does not list the terminal: a saved tab of a gone agent closes.
+        if (title === null) setTabs((open) => open.filter((x) => x !== t));
+        else setTitles((m) => ({ ...m, [t]: title }));
+      });
     }
   }, [tabs, sidebar, titles]);
   // The Inbox in the main pane (D95) until an agent is selected.
