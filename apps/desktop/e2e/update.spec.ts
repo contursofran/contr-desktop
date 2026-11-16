@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { Arch, build, Platform } from "electron-builder";
-import { chmodSync, createReadStream, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, createReadStream, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
@@ -20,15 +20,16 @@ const base = {
 };
 const DMG = Buffer.alloc(64 * 1024, 7);
 const require = createRequire(import.meta.url);
+let project = "";
 let zip = "";
 
 /**
  * Builds the release .zip as `pnpm dist` does: electron-builder with electron-builder.yml, so the app is signed
  * with the release's signing options (#87). Only the content and the build speed differ: a small main file,
- * one arch, no compression and the local Electron.
+ * the local arch, no compression and the local Electron.
  */
 async function releaseZip(version: string): Promise<string> {
-  const project = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-release-"));
+  project = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-release-"));
   writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "desktop", version, main: "main.js" }));
   writeFileSync(path.join(project, "main.js"), "process.exit(0);\n");
   // The scratch project has no dependencies; a lockfile makes electron-builder list them with npm, not with
@@ -36,7 +37,7 @@ async function releaseZip(version: string): Promise<string> {
   writeFileSync(path.join(project, "package-lock.json"), JSON.stringify({ name: "desktop", version, lockfileVersion: 3, packages: {} }));
   await build({
     projectDir: project,
-    targets: Platform.MAC.createTarget(["zip"], Arch.arm64),
+    targets: Platform.MAC.createTarget(["zip"], process.arch === "x64" ? Arch.x64 : Arch.arm64),
     config: {
       extends: path.resolve(e2e, "../electron-builder.yml"),
       directories: { output: path.join(project, "release") },
@@ -55,6 +56,10 @@ test.beforeAll(async () => {
   test.skip(process.platform !== "darwin", "macOS only: codesign and ditto");
   test.setTimeout(180_000);
   zip = await releaseZip("9.1.42");
+});
+
+test.afterAll(() => {
+  if (project) rmSync(project, { recursive: true, force: true });
 });
 
 /** A fake GitHub: /release (the release JSON, its .zip broken), /release-zip, /release-dmg (no .zip), /dmg (a small fake .dmg), /zip (the app as the release build makes it), /broken (HTTP 500). */
