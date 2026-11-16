@@ -255,7 +255,7 @@ export type ThemeChoice = "system" | "dark" | "light";
 /** What the Settings view shows. */
 export interface Settings {
   theme: ThemeChoice;
-  /** The helper's path (CONTR_HELPER, else bin/herdr-contr-feed at the repository root). */
+  /** The helper's path (CONTR_HELPER, else the bundled binary: Resources/bin when packaged, bin/ in dev). */
   helper: string;
 }
 
