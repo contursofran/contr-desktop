@@ -34,7 +34,7 @@ test("the machine switch opens with keys and the mouse, picks, and gives focus b
   test.setTimeout(60_000);
   const { app, page } = await start();
   const trigger = page.locator("aside > header").getByRole("button", { name: "Machine" });
-  const menu = page.getByRole("menu", { name: "Machines" });
+  const menu = page.getByRole("menu", { name: "Machine" });
   await expect(trigger).toHaveText("This computer");
 
   await trigger.focus();

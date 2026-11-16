@@ -41,7 +41,7 @@ export function Head() {
             <span data-testid="machine-label" className="truncate">{shown ?? "This computer"}</span>
             <ChevronDown aria-hidden className="size-3 shrink-0" />
           </MenuTrigger>
-          <MenuContent aria-label="Machines" side="bottom" align="start" sideOffset={4} className="m-0 w-[240px] rounded-xl border border-border bg-raised p-1 text-foreground shadow-lg [-webkit-app-region:no-drag]">
+          <MenuContent side="bottom" align="start" sideOffset={4} className="m-0 w-[240px] rounded-xl border border-border bg-raised p-1 text-foreground shadow-lg [-webkit-app-region:no-drag]">
             <MenuRadioGroup value={shown ?? ""} onValueChange={(v) => setPicked(v ? String(v) : null)}>
               {row(null, "This computer")}
               {machines.map((m) => row(m.name, m.name, m.state))}
