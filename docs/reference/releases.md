@@ -89,3 +89,7 @@ Dev and e2e builds show "Development build" and check nothing. e2e tests set
 folder) and `CONTR_INSTALL_DIR` (a scratch folder in place of the running
 app's folder, never `/Applications`); with `CONTR_E2E=1` nothing is opened,
 swapped or quit.
+
+## PATH in the packaged app
+
+An app opened from Finder or the Dock gets the short macOS PATH. At start, the packaged app (not dev, not e2e) reads PATH from the login shell (`$SHELL -ilc`, or `/bin/zsh`, 3 s timeout), puts it first, keeps the current PATH, and adds `~/.local/bin`, `/opt/homebrew/bin` and `/usr/local/bin`. So it finds `hc` and `gh`. It logs the result once (`contr: PATH=...`). Code: `apps/desktop/src/main/shell/path.ts`.

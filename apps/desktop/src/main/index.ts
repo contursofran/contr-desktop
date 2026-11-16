@@ -12,9 +12,13 @@ import { registerSettingsIpc } from "./settings/ipc";
 import { registerUpdateIpc } from "./update/ipc";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
+import { syncShellPath } from "./shell/path";
 
 /** e2e runs set CONTR_E2E=1: the window never shows, so it takes neither the owner's focus nor the screen. */
 const e2e = process.env.CONTR_E2E === "1";
+
+// Before any hc, gh, helper or orch call: an app opened from Finder has the short macOS PATH.
+if (app.isPackaged && !e2e) console.log(`contr: PATH=${syncShellPath()}`);
 
 function createWindow(): void {
   const win = new BrowserWindow(
