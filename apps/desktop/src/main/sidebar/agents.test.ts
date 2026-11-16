@@ -11,7 +11,7 @@ const hc = JSON.stringify({
     { address: "t6", cwd: "/w/lib", state: "finished", status: "done" },
   ],
 });
-const orch = JSON.stringify([{ name: "b-2", address: "t2", title: "Fix it", issue: "12" }]);
+const orch = JSON.stringify([{ name: "b-2", address: "t2", parent: "t1", live: true, title: "Fix it", issue: "12" }]);
 
 describe("buildProjects", () => {
   it("groups live agents by project and puts workers under their parent", () => {
@@ -41,5 +41,13 @@ describe("projectFromCommonDir", () => {
     expect(projectFromCommonDir("/w/app-wt/x", "/w/app/.git")).toBe("app");
     expect(projectFromCommonDir("/w/bare", "/w/bare.git")).toBe("bare");
     expect(projectFromCommonDir("/w/plain", null)).toBe("plain");
+  });
+});
+
+describe("buildProjects workers", () => {
+  it("shows a stopped worker (tool live false) as an agent of its own, not under its parent", () => {
+    const stopped = JSON.stringify([{ name: "b-2", address: "t2", parent: "t1", live: false }]);
+    const out = buildProjects({ hc, orch: stopped, titles: new Map(), projectOf: (c) => c.split("/")[2] });
+    expect(out.flatMap((p) => p.agents.map((a) => [a.terminal, a.workers.length]))).toEqual([["t1", 0], ["t2", 1], ["t4", 0]]);
   });
 });

@@ -12,6 +12,7 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
     FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/blocks-session.jsonl"),
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
     CONTR_GH: path.join(e2e, "fake-gh.mjs"),
     CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
     CONTR_REPO_DIR: e2e,

@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
+import { run } from "../sidebar/agents";
+import { countLiveWorkers } from "../workers/live";
 import type { PrChecks, WorkerState } from "../../shared/api";
 
 /** The orchestration tool: CONTR_ORCH, else bin/herdr-contr-orch at the repository root (scripts/fetch-helper). */
@@ -48,19 +50,10 @@ export function readWorkers(json: string, parent?: string): Record<string, Worke
   return out;
 }
 
-/** The number of live workers whose parent is this agent's hc address. */
-export function countWorkers(json: string, parent: string): number {
-  return parseList(json).filter((w) => w?.live === true && w.parent === parent).length;
-}
-
-/** One read-only tool run: the board's worker states and the agent's live worker count. */
-export function orchBoard(orch: string, parent: string): Promise<{ workers: Record<string, WorkerState>; orchestrating: number }> {
-  return new Promise((resolve) => {
-    execFile(orch, ["agents", "ls", "--all", "--json"], { timeout: 10_000 }, (_error, stdout) => {
-      const json = String(stdout ?? "");
-      resolve({ workers: readWorkers(json, parent), orchestrating: countWorkers(json, parent) });
-    });
-  });
+/** One read-only run of the tool and of hc: the board's worker states and the agent's live worker count (the sidebar's rule). */
+export async function orchBoard(orch: string, hc: string, parent: string): Promise<{ workers: Record<string, WorkerState>; orchestrating: number }> {
+  const [json, hcJson] = await Promise.all([run(orch, ["agents", "ls", "--all", "--json"]), run(hc, ["ls", "--json"])]);
+  return { workers: readWorkers(json, parent), orchestrating: countLiveWorkers(hcJson, json, parent) };
 }
 
 /** Runs the tool read-only: `agents ls --all --json`. A missing or failed tool gives no workers. */
