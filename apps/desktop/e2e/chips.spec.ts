@@ -42,7 +42,7 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   await expect(row.getByText("#99 is not known")).toBeVisible();
   // Colors come from the theme tokens.
   const color = (n: number) => chips.nth(n).evaluate((e) => getComputedStyle(e).color);
-  expect([await color(0), await color(1), await color(3)]).toEqual(["rgb(163, 113, 247)", "rgb(63, 185, 80)", "rgb(248, 81, 73)"]);
+  expect([await color(0), await color(1), await color(3)]).toEqual(["rgb(171, 125, 248)", "rgb(63, 185, 80)", "rgb(248, 81, 73)"]);
   // gh: one batched call, never twice for a number within a minute.
   const calls = readFileSync(ghLog, "utf8").trim().split("\n").map((l) => JSON.parse(l) as number[]);
   expect(calls.flat().sort((a, b) => a - b)).toEqual([...new Set(calls.flat())].sort((a, b) => a - b));

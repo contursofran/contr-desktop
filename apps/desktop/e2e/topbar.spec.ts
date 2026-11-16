@@ -35,7 +35,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(tabs.getByRole("tab")).toHaveText(names);
   // All titles fit: the tabs grow, nothing is cut.
   for (const name of names) {
-    const label = tabs.getByRole("tab", { name }).locator("span");
+    const label = tabs.getByRole("tab", { name }).locator("[data-title]");
     expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   }
   // Herdr's normal tabs: from the left of the bar, 3 px apart, 29 px tall, 7 px corners; only the shown tab has a × and a fill.

@@ -1,30 +1,28 @@
-import { Bot, ChevronDown, ChevronRight, Folder, Inbox } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder, Inbox } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../../shared/api";
 import { StateMark } from "../chat/blocks/Marks";
+import { Spinner } from "../chat/rows/Spinner";
 import { Foot } from "./Foot";
 import { Head } from "./Head";
 import { Tip } from "../ui/Tip";
 import { type Changes, duration, load, save, tip, track } from "./ages";
-import claude from "./icons/claude.svg?raw";
-import codex from "./icons/codex.svg?raw";
+import { AgentIcon as ProgramIcon } from "../ui/AgentIcon";
 
-/** The SVG text as a one-color glyph: each fill takes the current color, as Herdr's tinted `svg()` does. */
-const glyph = (raw: string) => raw.replace(/<!--[\s\S]*?-->/g, "").replace(/fill="#[0-9a-fA-F]+"/g, 'fill="currentColor"').replace(/ (width|height)="1em"/g, ' $1="100%"');
-const ICONS: Record<string, string> = { "claude-code": glyph(claude), codex: glyph(codex) };
 const TINT: Record<string, string> = { working: "var(--color-working)", done: "var(--color-done)", blocked: "var(--color-blocked)" };
 
-/** The agent's icon from hc's `agent` kind, a one-color glyph in its state's color (muted when idle); a bot for another kind. */
+/** The agent's icon (herdr-contr-spaces `agentIcon(a.program, size, t[a.status] ?? t.muted)`): a one-color glyph takes its state's color. */
 function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
-  const color = TINT[agent.state] ?? "var(--color-muted)";
-  const src = agent.kind ? ICONS[agent.kind] : undefined;
-  if (!src) return <Bot aria-hidden data-icon="agent" className="shrink-0" style={{ width: size, height: size, color }} />;
-  return <span aria-hidden data-icon={agent.kind} className="flex shrink-0" style={{ width: size, height: size, color }} dangerouslySetInnerHTML={{ __html: src }} />;
+  return <ProgramIcon kind={agent.kind} size={size} color={TINT[agent.state] ?? "var(--color-muted)"} />;
 }
 
-/** The mark shows only while the agent works or waits (docs/design/recipe-herdr.md, Projects list). */
-function Mark({ agent }: { agent: SidebarAgent }) {
-  return agent.state === "working" || agent.state === "blocked" ? <StateMark state={agent.state} label={agent.state} /> : null;
+/**
+ * The mark shows only while the agent works or waits (docs/design/recipe-herdr.md, Projects list).
+ * Working: herdr-contr-spaces `mark()` draws the loader in `foreground`, at the icon's size.
+ */
+function Mark({ agent, size }: { agent: SidebarAgent; size: number }) {
+  if (agent.state === "working") return <Spinner size={size} className="text-foreground" />;
+  return agent.state === "blocked" ? <StateMark state="blocked" label="blocked" /> : null;
 }
 
 function count(a: SidebarAgent): number {
@@ -47,7 +45,7 @@ function Worker({ agent, selected, depth, onSelect }: { agent: SidebarAgent; sel
           <AgentIcon agent={agent} size={13} />
           <span className="min-w-0 flex-1 truncate">{agent.title}</span>
           {showName && <span className="max-w-[72px] shrink truncate font-mono text-[10px] text-dim">{agent.name}</span>}
-          <Mark agent={agent} />
+          <Mark agent={agent} size={12} />
         </button>
       </Tip>
       {agent.workers.length > 0 && <Workers agents={agent.workers} selected={selected} depth={depth + 1} onSelect={onSelect} />}
@@ -84,7 +82,7 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
           {since !== null && agent.state !== "working" && (
             <span data-age className="shrink-0 self-start font-[Menlo,monospace] text-[11px] leading-[18px] font-normal text-muted">{duration(since)}</span>
           )}
-          <Mark agent={agent} />
+          <Mark agent={agent} size={15} />
         </button>
       </Tip>
       {n > 0 && <Workers agents={agent.workers} selected={selected} depth={0} onSelect={onSelect} />}
@@ -184,7 +182,7 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
     });
   const age = useMemo(() => (terminal: string) => (changes[terminal] ? Math.max(0, now - changes[terminal].at) : null), [changes, now]);
   return (
-    <aside className="flex w-[250px] shrink-0 flex-col border-r border-border bg-canvas">
+    <aside className="flex w-[250px] shrink-0 flex-col border-r border-border bg-chrome">
     <Head />
     <nav aria-label="Projects" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5">
       <InboxRow count={inbox} shown={inboxShown} onOpen={onInbox} />
