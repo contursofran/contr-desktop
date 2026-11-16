@@ -1,4 +1,4 @@
-import type { FeedEvent, FeedRow } from "../../shared/api";
+import type { FeedEvent, FeedRow, Working } from "../../shared/api";
 import { runHelper, type HelperLine } from "./run";
 
 /** `feed` is one call per command, so we call it again on a timer. The helper has no watch mode yet. */
@@ -37,6 +37,9 @@ export function startFeed(helper: string, terminal: string, emit: (event: FeedEv
     if (answer.event?.type === "error") cursor = undefined;
     else cursor = answer.cursor ?? cursor;
     if (answer.event) emit(answer.event);
+    const working = await readWorking(helper, terminal);
+    if (stopped) return;
+    if (working) emit({ type: "working", working });
     timer = setTimeout(() => void tick(), FEED_INTERVAL_MS);
   };
   void tick();
@@ -44,6 +47,14 @@ export function startFeed(helper: string, terminal: string, emit: (event: FeedEv
     stopped = true;
     clearTimeout(timer);
   };
+}
+
+/** Calls `working` for the status line. Null when the helper gives an error or no `working` line. */
+export async function readWorking(helper: string, terminal: string): Promise<Working | null> {
+  const line = (await runHelper(helper, ["working", "--terminal", terminal])).find((l) => l.type === "working");
+  if (!line) return null;
+  const str = (v: unknown) => (typeof v === "string" && v ? v : null);
+  return { text: str(line.text), detail: str(line.detail) };
 }
 
 /** Types a message into the terminal with the helper's `send` command. */
@@ -54,4 +65,13 @@ export async function sendText(helper: string, terminal: string, text: string): 
   const changed = lines.find((l) => l.type === "changed");
   if (changed) return { ok: false, message: String(changed.message ?? "the terminal changed") };
   return { ok: true };
+}
+
+/** Saves the clipboard's image as a PNG in `dir` with the helper's `paste-image` command. */
+export async function pasteImage(helper: string, dir: string): Promise<{ ok: boolean; path?: string | null; message?: string }> {
+  const lines = await runHelper(helper, ["paste-image", "--dir", dir]);
+  const error = lines.find((l) => l.type === "error");
+  if (error) return { ok: false, message: String(error.message) };
+  const image = lines.find((l) => l.type === "image");
+  return { ok: true, path: typeof image?.path === "string" ? image.path : null };
 }

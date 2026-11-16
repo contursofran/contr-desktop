@@ -15,7 +15,14 @@ export interface FeedRow {
 /** What main sends after each helper call. */
 export type FeedEvent =
   | { type: "splice"; at: number; rows: FeedRow[]; agent?: string; model?: string }
-  | { type: "error"; code: string; message: string };
+  | { type: "error"; code: string; message: string }
+  | { type: "working"; working: Working };
+
+/** The agent's working line (helper `working`). `text` is null when the agent does not work. */
+export interface Working {
+  text: string | null;
+  detail: string | null;
+}
 
 export interface ContrApi {
   platform: string;
@@ -23,8 +30,28 @@ export interface ContrApi {
   onFeed(listener: (event: FeedEvent) => void): () => void;
   /** Types a message into the agent's terminal and presses Enter. */
   send(text: string): Promise<{ ok: boolean; message?: string }>;
+  /** The title of the chat's terminal (hc `title`, else its name, else its address). */
+  title(): Promise<string>;
+  /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
+  pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
+  terminal: TerminalApi;
+}
+
+/** The Terminal side: the agent's hc terminal. */
+export interface TerminalApi {
+  /** Attaches at this size. Returns the terminal, or an error to show. */
+  attach(cols: number, rows: number): Promise<{ terminal?: string; error?: string }>;
+  /** Keys and paste, as the terminal's bytes. */
+  input(text: string): void;
+  resize(cols: number, rows: number): void;
+  /** Listens to the terminal's bytes. Returns a function that stops listening. */
+  onData(listener: (bytes: Uint8Array) => void): () => void;
+  /** Listens for the end of the stream. Returns a function that stops listening. */
+  onEnd(listener: (reason: string) => void): () => void;
 }
 
 export const FEED_CHANNEL = "contr:feed";
 export const FEED_READY_CHANNEL = "contr:feed-ready";
 export const SEND_CHANNEL = "contr:send";
+export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
+export const TITLE_CHANNEL = "contr:title";

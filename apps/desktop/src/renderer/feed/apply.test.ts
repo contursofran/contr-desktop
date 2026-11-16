@@ -29,3 +29,11 @@ describe("applyFeed", () => {
     expect(applyFeed(s1, { type: "splice", at: 1, rows: [] }).error).toBeNull();
   });
 });
+
+describe("applyFeed working", () => {
+  it("sets the working line and keeps it over a splice", () => {
+    const s1 = applyFeed(emptyFeed, { type: "working", working: { text: "Hashing…", detail: "3s" } });
+    expect(s1.working).toEqual({ text: "Hashing…", detail: "3s" });
+    expect(applyFeed(s1, { type: "splice", at: 0, rows: [row("a")] }).working?.text).toBe("Hashing…");
+  });
+});
