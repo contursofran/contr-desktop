@@ -1,0 +1,5 @@
+contr-desktop
+
+This app contains code adapted from t3code
+(https://github.com/pingdotgg/t3code) at commit `b5554ac8114f2ce7ce8b5973690ccb8cbb248efd`, licensed under the MIT
+License, Copyright (c) 2026 T3 Tools Inc. See `THIRD_PARTY_NOTICES.md`.

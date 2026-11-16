@@ -1,0 +1,13 @@
+{
+  "name": "contr-desktop-root",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "dev": "pnpm --filter desktop dev",
+    "build": "pnpm --filter desktop build",
+    "typecheck": "pnpm --filter desktop typecheck",
+    "lint": "pnpm --filter desktop lint",
+    "test": "pnpm --filter desktop test",
+    "e2e": "pnpm --filter desktop e2e"
+  }
+}

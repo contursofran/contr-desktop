@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+/* Theme tokens. Dark values from docs/design/README.md, Colors. Light comes later. */
+@theme {
+  --color-canvas: #202020;
+  --color-raised: #262626;
+  --color-hover: #2e2e2e;
+  --color-selected: #383838;
+  --color-border: #363636;
+  --color-muted: #9a9a9a;
+  --color-dim: #707070;
+  --color-foreground: #ededed;
+  --color-working: #007aff;
+  --color-done: #34c759;
+  --color-blocked: #ff9500;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-canvas);
+}
