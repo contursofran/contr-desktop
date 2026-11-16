@@ -1,39 +1,54 @@
 @layer ui-sdk;
 @import "tailwindcss";
 
-/* Theme tokens. Dark values from docs/design/README.md, Colors. Light values follow
-   the system appearance below. */
+/* Theme tokens: herdr-contr's themes (herdr-app/themes in herdr-contr), dark from
+   herdr-contr-mac.json and light from herdr-contr-mac-light.json, `colors` plus `foreground`.
+   As in herdr-contr's mods: `chrome` is the sidebar and top bar, `canvas` the work area. */
 @theme {
   --color-canvas: #202020;
+  --color-chrome: #1c1c1c;
   --color-raised: #262626;
   --color-hover: #2e2e2e;
   --color-selected: #383838;
   --color-border: #363636;
   --color-muted: #9a9a9a;
-  --color-dim: #707070;
-  --color-foreground: #ededed;
-  --color-working: #007aff;
-  --color-done: #34c759;
-  --color-blocked: #ff9500;
-  /* PR and issue chips: GitHub's state colors. */
-  --color-ref-open: #3fb950;
-  --color-ref-merged: #a371f7;
-  --color-ref-closed: #f85149;
+  --color-dim: #6a6a6a;
+  --color-foreground: #dedede;
+  --color-accent: #0a84ff;
+  --color-working: #0a84ff;
+  --color-done: #30d158;
+  --color-blocked: #ff9f0a;
+  --color-pr-open: #3fb950;
+  --color-pr-draft: #9198a1;
+  --color-pr-merged: #ab7df8;
+  --color-pr-closed: #f85149;
+  --color-issue-open: #3fb950;
+  --color-issue-done: #ab7df8;
+  --color-issue-notplanned: #9198a1;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-canvas: #ffffff;
-    --color-raised: #f5f5f5;
-    --color-hover: #ebebeb;
-    --color-selected: #e0e0e0;
-    --color-border: #dedede;
-    --color-muted: #6e6e6e;
-    --color-dim: #8e8e8e;
+    --color-canvas: #ececec;
+    --color-chrome: #f5f5f5;
+    --color-raised: #ffffff;
+    --color-hover: #e2e2e2;
+    --color-selected: #d8d8d8;
+    --color-border: #d1d1d1;
+    --color-muted: #6e6e73;
+    --color-dim: #a1a1a6;
     --color-foreground: #1d1d1f;
-    --color-ref-open: #1a7f37;
-    --color-ref-merged: #8250df;
-    --color-ref-closed: #cf222e;
+    --color-accent: #007aff;
+    --color-working: #007aff;
+    --color-done: #34c759;
+    --color-blocked: #ff9500;
+    --color-pr-open: #1a7f37;
+    --color-pr-draft: #59636e;
+    --color-pr-merged: #8250df;
+    --color-pr-closed: #d1242f;
+    --color-issue-open: #1a7f37;
+    --color-issue-done: #8250df;
+    --color-issue-notplanned: #59636e;
   }
 }
 
@@ -46,11 +61,11 @@
   --ui-muted-foreground: var(--color-muted);
   --ui-border: var(--color-border);
   --ui-input: var(--color-border);
-  --ui-primary: var(--color-working);
-  --ui-primary-foreground: #ffffff;
-  --ui-destructive: var(--color-ref-closed);
-  --ui-ring: var(--color-working);
-  --ui-ring-border: var(--color-working);
+  --ui-primary: var(--color-accent);
+  --ui-primary-foreground: var(--color-canvas);
+  --ui-destructive: var(--color-pr-closed);
+  --ui-ring: var(--color-accent);
+  --ui-ring-border: var(--color-accent);
 }
 
 html,

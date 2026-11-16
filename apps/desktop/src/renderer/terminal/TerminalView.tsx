@@ -2,11 +2,16 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef, useState } from "react";
+import { useColorScheme } from "../chat/markdown/useColorScheme";
+import { terminalTheme } from "./theme";
 
 // The agent's hc terminal in xterm.js. Keys and paste go to hc; the size follows the view.
 export function TerminalView() {
   const host = useRef<HTMLDivElement>(null);
   const [note, setNote] = useState<string | null>(null);
+  const shown = useRef<Terminal>(null);
+  const scheme = useColorScheme();
+  const first = useRef(scheme);
 
   useEffect(() => {
     const el = host.current!;
@@ -15,8 +20,9 @@ export function TerminalView() {
       fontSize: 13,
       scrollback: 10000,
       macOptionIsMeta: true,
-      theme: { background: "#202020", foreground: "#ededed", cursor: "#ededed", selectionBackground: "#383838" },
+      theme: terminalTheme(first.current),
     });
+    shown.current = term;
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.open(el);
@@ -35,8 +41,14 @@ export function TerminalView() {
       offEnd();
       ro.disconnect();
       term.dispose();
+      shown.current = null;
     };
   }, []);
+
+  // The colors follow the system appearance, as the theme tokens do.
+  useEffect(() => {
+    if (shown.current) shown.current.options.theme = terminalTheme(scheme);
+  }, [scheme]);
 
   return (
     <div className="relative min-h-0 flex-1 px-3 pb-3">

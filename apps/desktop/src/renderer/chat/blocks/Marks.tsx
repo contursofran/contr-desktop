@@ -7,7 +7,7 @@ import { Tip } from "../../ui/Tip";
 export function StateMark({ state, label }: { state: WorkerState; label: string }) {
   const box = "inline-flex size-[14px] shrink-0 items-center justify-center";
   const icon =
-    state === "working" ? <Spinner className="text-[13px] leading-none text-[var(--color-working)]" />
+    state === "working" ? <Spinner size={13} className="text-working" />
     : state === "done" ? <Check className="size-[13px] text-[var(--color-done)]" />
     : state === "blocked" ? <span className="size-[9px] rounded-full bg-[var(--color-blocked)]" />
     : <span className="size-[12px] rounded-full border border-[var(--color-dim)]" />;

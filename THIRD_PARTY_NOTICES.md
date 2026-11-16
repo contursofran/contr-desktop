@@ -51,6 +51,8 @@ Files:
 - `apps/desktop/src/renderer/sidebar/icons/claude.svg` (from `icons/claudecode-color.svg`)
 - `apps/desktop/src/renderer/sidebar/icons/codex.svg` (from `icons/codex-color.svg`)
 
+These two files are byte for byte the same as `defaults/icons/claude.svg` and `defaults/icons/codex.svg` in the Herdr app (herdrdev/herdr-app, Apache-2.0), which takes them from LobeHub icons (MIT) too. herdr-contr draws these files, so the app uses the same icons.
+
 The Claude Code and Codex marks are trademarks of their owners. The app uses them only to name the program that an agent runs.
 
 ```

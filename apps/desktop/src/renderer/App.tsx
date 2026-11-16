@@ -83,13 +83,13 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
       type="button"
       aria-pressed={side === s}
       onClick={() => onSide(s)}
-      className={`rounded px-2.5 py-0.5 text-xs ${side === s ? "bg-selected text-foreground" : "text-muted hover:bg-hover"}`}
+      className={`rounded px-2.5 py-0.5 text-xs ${side === s ? "bg-raised text-foreground" : "text-muted hover:bg-hover"}`}
     >
       {label}
     </button>
   );
   return (
-    <div role="group" aria-label="Chat or Terminal" className="flex shrink-0 gap-0.5 rounded-md border border-border bg-raised p-0.5 [-webkit-app-region:no-drag]">
+    <div role="group" aria-label="Chat or Terminal" className="flex shrink-0 gap-0.5 rounded-md border border-border bg-chrome p-0.5 [-webkit-app-region:no-drag]">
       {tab("chat", "Chat")}
       {tab("terminal", "Terminal")}
     </div>

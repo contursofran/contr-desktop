@@ -43,7 +43,7 @@ test("Settings opens from the foot, sets the theme from the tokens, and keeps it
   await page.screenshot({ path: path.join(shots, "settings-dark.png") });
 
   await theme.getByRole("radio", { name: "Light" }).click();
-  await expect.poll(() => canvas(page)).toBe("rgb(255, 255, 255)");
+  await expect.poll(() => canvas(page)).toBe("rgb(236, 236, 236)");
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
   await page.screenshot({ path: path.join(shots, "settings-light.png") });
   await app.close();
@@ -54,7 +54,7 @@ test("Settings opens from the foot, sets the theme from the tokens, and keeps it
   await page.emulateMedia({ colorScheme: null });
   await expect(page.getByRole("region", { name: "contr-desktop" })).toBeVisible();
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
-  await expect.poll(() => canvas(page)).toBe("rgb(255, 255, 255)");
+  await expect.poll(() => canvas(page)).toBe("rgb(236, 236, 236)");
   await expect(page.getByText("Run it with:")).toBeVisible();
   await page.screenshot({ path: path.join(shots, "settings-chat-light.png") });
   await page.locator("aside > footer").getByRole("button", { name: "Settings" }).click();
