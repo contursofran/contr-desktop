@@ -15,8 +15,8 @@ to `main` (or by hand, `workflow_dispatch`). It:
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
    button finds the `.dmg` of the newest release by this name.
 
-The workflow needs the secret `HERDR_CONTR_TOKEN`: a token that can read
-the releases of the private herdr-contr repository.
+The workflow reads the releases of herdr-contr, a public repository, with
+its own token. It needs no secret.
 
 ## Where the binaries come from
 

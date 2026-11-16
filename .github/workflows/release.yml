@@ -61,10 +61,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # herdr-contr is private: HERDR_CONTR_TOKEN is a token that can read its releases.
+      # herdr-contr is public: the workflow token can read its releases.
       - run: scripts/fetch-helper
         env:
-          GH_TOKEN: ${{ secrets.HERDR_CONTR_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
       - run: pnpm ${{ matrix.dist }} -c.extraMetadata.version=${{ needs.stamp.outputs.version }}
       - if: runner.os == 'macOS'
         run: scripts/check-bundle

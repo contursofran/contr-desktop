@@ -3,7 +3,7 @@
 # herdr-contr-orch in bin/ (git ignores it), and the Linux x86_64 helper in
 # bin/linux-x64/. The packaged app bundles them (docs/reference/releases.md).
 # The app takes CONTR_HELPER over bin/.
-# Uses gh while the herdr-contr repository is private.
+# Uses gh to read herdr-contr's releases (a public repository).
 set -eu
 repo="${HERDR_CONTR_REPO:-contursofran/herdr-contr}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
