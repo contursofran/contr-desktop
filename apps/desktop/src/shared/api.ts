@@ -95,6 +95,12 @@ export interface ContrApi {
   settings(): Promise<Settings>;
   /** Saves the theme choice and shows it at once. */
   setTheme(theme: ThemeChoice): Promise<ThemeChoice>;
+  /** The update state now. */
+  update(): Promise<UpdateState>;
+  /** Calls the listener on each change of the update state. Returns the unsubscribe. */
+  onUpdate(listener: (state: UpdateState) => void): () => void;
+  /** Downloads the newest .dmg into Downloads and opens it. */
+  downloadUpdate(): Promise<void>;
   terminal: TerminalApi;
 }
 
@@ -261,3 +267,25 @@ export interface Settings {
 
 export const SETTINGS_CHANNEL = "contr:settings";
 export const THEME_CHANNEL = "contr:theme";
+
+/** The Update section in Settings and the dot on the foot's Settings button. */
+export interface UpdateState {
+  /** This app's version (app.getVersion()). */
+  current: string;
+  /** True in dev and e2e with no fake release URL: nothing is checked. */
+  dev: boolean;
+  /** The newest release's version, once a check passed. */
+  latest: string | null;
+  /** The newest release is newer than this app and has the .dmg. */
+  available: boolean;
+  /** 0 to 100 while the .dmg downloads, else null. */
+  progress: number | null;
+  /** The downloaded .dmg's path, once it is opened. */
+  downloaded: string | null;
+  /** The message of a failed check or download. */
+  error: string | null;
+}
+
+export const UPDATE_CHANNEL = "contr:update";
+export const UPDATE_EVENT = "contr:update-event";
+export const UPDATE_DOWNLOAD_CHANNEL = "contr:update-download";

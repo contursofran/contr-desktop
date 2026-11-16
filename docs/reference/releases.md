@@ -52,3 +52,18 @@ scripts/fetch-helper
 pnpm dist               # apps/desktop/release/
 scripts/check-bundle    # both binaries are there and herdr-contr-orch runs
 ```
+
+## The Update button
+
+Settings > Updates shows this app's version and the newest release's version.
+A packaged app reads `releases/latest` of contursofran/contr-desktop (no
+token) at start and every 6 hours. The version comes from the release notes
+("contr 0.1.<run> from <sha>."), because the tag holds no version. When the
+newest one is newer and has `contr-mac-universal.dmg`, Settings shows an
+Update button and the foot's Settings button a dot. A press downloads the
+`.dmg` into Downloads, with progress, and opens it; the owner drags contr to
+Applications. A failed check or download shows its message.
+
+Dev and e2e builds show "Development build" and check nothing. e2e tests set
+`CONTR_UPDATE_URL` (a fake release JSON) and `CONTR_DOWNLOADS` (a scratch
+folder); with `CONTR_E2E=1` the `.dmg` is not opened.

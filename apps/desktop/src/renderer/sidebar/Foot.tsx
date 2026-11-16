@@ -4,10 +4,15 @@ import type { UsageRow } from "../../shared/api";
 
 /**
  * The sidebar foot (docs/design/recipe-herdr.md, the foot): one row per plan (name, meter, "41% wk · 4d"),
- * then Settings and the add machine button. Settings opens the Settings view; + does nothing yet.
+ * then Settings and the add machine button. Settings opens the Settings view and has a dot (`accent`) when an update is ready; + does nothing yet.
  */
 export function Foot({ onSettings, settingsShown }: { onSettings: () => void; settingsShown: boolean }) {
   const [rows, setRows] = useState<UsageRow[]>([]);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    void window.contr.update().then((u) => setReady(u.available));
+    return window.contr.onUpdate((u) => setReady(u.available));
+  }, []);
   useEffect(() => {
     void window.contr.usage().then(setRows);
     return window.contr.onUsage(setRows);
@@ -31,6 +36,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
         <button type="button" aria-pressed={settingsShown} onClick={onSettings} className={`flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] hover:bg-hover ${settingsShown ? "bg-selected text-foreground" : "text-muted"}`}>
           <Settings aria-hidden className="size-4" />
           Settings
+          {ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
         </button>
         <button type="button" aria-label="Add machine" title="Add machine" className="flex size-7 items-center justify-center self-center rounded-lg text-muted hover:bg-hover">
           <Plus aria-hidden className="size-4" />
