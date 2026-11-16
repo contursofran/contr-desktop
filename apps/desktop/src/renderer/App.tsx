@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Card } from "./chat/card/Card";
+import { OwnerCards, useOwnerItems } from "./chat/owner/OwnerCards";
 import { ChatList } from "./chat/list/ChatList";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
 import { useBoard } from "./chat/blocks/useBoard";
@@ -50,7 +51,7 @@ export function App() {
       <Sidebar data={sidebar} onSelect={select} />
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} right={sidebar.selected && <Switch side={side} onSide={setSide} />} />
-        {sidebar.selected && <Chat key={sidebar.selected} side={side} />}
+        {sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
       </main>
     </div>
   );
@@ -76,13 +77,14 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
   );
 }
 
-function Chat({ side }: { side: Side }) {
+function Chat({ terminal, side }: { terminal: string; side: Side }) {
   const [feed, setFeed] = useState(emptyFeed);
   const [title, setTitle] = useState("");
   useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   const board = useBoard(NO_ISSUES);
   const workers = board?.orchestrating ?? 0;
+  const owner = useOwnerItems(terminal);
   const [draft, setDraft] = useState<Draft>();
   const orchestrate = () => setDraft((d) => ({ text: ORCHESTRATE_COMMAND, id: (d?.id ?? 0) + 1 }));
   if (side === "terminal") return <TerminalView />;
@@ -94,6 +96,7 @@ function Chat({ side }: { side: Side }) {
         </p>
       )}
       <ChatList rows={feed.rows} />
+      <OwnerCards items={owner} />
       {feed.card && <Card card={feed.card} />}
       <StatusLine
         working={feed.working}

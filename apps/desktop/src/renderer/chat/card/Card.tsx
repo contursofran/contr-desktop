@@ -124,7 +124,7 @@ function Question({ request, question }: { request: string; question: QuestionCa
 }
 
 /** Card keys work while focus is in the chat, not while the owner types in the reply box. */
-function useKeys(onKey: (key: string) => void) {
+export function useKeys(onKey: (key: string) => void) {
   const ref = useRef(onKey);
   ref.current = onKey;
   useEffect(() => {
