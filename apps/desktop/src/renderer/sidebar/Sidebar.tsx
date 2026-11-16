@@ -1,4 +1,4 @@
-import { Bot, ChevronDown, ChevronRight, Folder } from "lucide-react";
+import { Bot, ChevronDown, ChevronRight, Folder, Inbox } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../../shared/api";
 import { StateMark } from "../chat/blocks/Marks";
@@ -138,8 +138,23 @@ function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProj
   );
 }
 
-/** The head, the Projects list (one row per project, its agents under it, an orchestrator's workers under it) and the foot. */
-export function Sidebar({ data, onSelect }: { data: SidebarData; onSelect: (terminal: string) => void }) {
+/** The Inbox row above Projects (D95): "Inbox · N", quiet with no count when nothing is open. Selected as an agent row is. */
+function InboxRow({ count, shown, onOpen }: { count: number; shown: boolean; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-current={shown || undefined}
+      onClick={onOpen}
+      className={`mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] ${shown ? "bg-raised font-medium text-foreground ring-1 ring-border" : count > 0 ? "font-semibold text-foreground hover:bg-hover" : "text-muted hover:bg-hover"}`}
+    >
+      <Inbox aria-hidden className="size-[15px] shrink-0" />
+      <span>{count > 0 ? `Inbox · ${count}` : "Inbox"}</span>
+    </button>
+  );
+}
+
+/** The head, the Inbox row, the Projects list (one row per project, its agents under it, an orchestrator's workers under it) and the foot. */
+export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox }: { data: SidebarData; onSelect: (terminal: string) => void; inbox: number; inboxShown: boolean; onInbox: () => void }) {
   const [changes, setChanges] = useState<Changes>(load);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -169,13 +184,14 @@ export function Sidebar({ data, onSelect }: { data: SidebarData; onSelect: (term
     <aside className="flex w-[250px] shrink-0 flex-col border-r border-border bg-canvas">
     <Head />
     <nav aria-label="Projects" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5">
+      <InboxRow count={inbox} shown={inboxShown} onOpen={onInbox} />
       <h2 className="px-2.5 pt-1.5 pb-1 text-xs font-medium text-muted">Projects</h2>
       {data.projects.map((p) => (
         <section key={p.name} aria-label={p.name} className="mb-2.5">
           <ProjectRow project={p} shown={contains(p.agents, data.selected)} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />
           {!closed.has(p.name) && (
             <ul className="flex flex-col gap-0.5">
-              {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
+              {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={inboxShown ? "" : data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
             </ul>
           )}
         </section>
