@@ -35,6 +35,13 @@ the repository root. `CONTR_HELPER` and `CONTR_ORCH` override both.
 herdr-contr releases have no Linux `herdr-contr-orch`, so the AppImage has
 only the helper.
 
+## Name
+
+The app is `contr.app`. It replaces the older Go contr app of the same name
+(owner decision, D102). Remove a `contr` command link that points into the
+old app, such as `~/.local/bin/contr`: the old Claude Code plugin ran
+`contr hook stop`, and the new app is not a command-line tool.
+
 ## Signing
 
 The app is not signed and not notarized: there is no Apple certificate
