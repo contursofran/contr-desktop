@@ -6,6 +6,7 @@ export const CANVAS_DARK = "#202020";
 export function windowOptions(
   platform: NodeJS.Platform,
   preload: string,
+  hidden = false,
 ): BrowserWindowConstructorOptions {
   return {
     width: 1200,
@@ -13,6 +14,7 @@ export function windowOptions(
     show: false,
     backgroundColor: CANVAS_DARK,
     titleBarStyle: platform === "darwin" ? "hiddenInset" : "hidden",
-    webPreferences: { preload, contextIsolation: true, sandbox: true },
+    // A hidden window (e2e) still paints and runs timers, so screenshots and spinners work.
+    webPreferences: { preload, contextIsolation: true, sandbox: true, ...(hidden && { backgroundThrottling: false }) },
   };
 }
