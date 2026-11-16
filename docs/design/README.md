@@ -1,0 +1,60 @@
+# The design to aim for
+
+The target is herdr-contr as the owner uses it on 2026-11-16:
+
+![herdr-contr on 2026-11-16](herdr-contr-2026-11-16.png)
+
+## Sources
+
+| Source | What it holds |
+|---|---|
+| `herdr-contr-2026-11-16.png` | the screen as it is now. This wins when a text below disagrees |
+| `recipe-herdr.md` | herdr-contr's RECIPE.md: each part in words, with sizes, colors and behavior. Some parts are older than the screenshot (the sidebar is now Herdr's own, reworked) |
+| `chat-blocks.md` | what the chat must draw from an agent's Markdown: remarks, live chips, `contr-status`, `contr-queue`, `contr-flow`, `contr-seq` |
+| Canvas: redesign | https://claude.ai/artifact/9bmbRdJc8qDMSRXm6obEb3 |
+| Canvas: design system | https://claude.ai/artifact/45Kp6p9DoVg3iEMx9Qh7QH |
+| Canvas: "Native · final" | https://claude.ai/artifact/LU6P91EHVmV8mWQp7qkZUN |
+
+## The parts, left to right
+
+1. **Sidebar** (about 340 px on the screenshot):
+   - Head: the app name, the machine switch ("This computer"), search, and
+     the sidebar toggle.
+   - **Projects**, with a + on the right. One row per project: its icon (the
+     repo's favicon, else a folder), its name and branch, and a count on the
+     right. Under it, one row per agent: the agent icon (ours), its title and
+     its age.
+   - An orchestrator row is two lines: its title, then "Orchestrating · N
+     workers". Its workers sit under it, indented behind a thin line: icon,
+     title, the worker name (`b-219`) in mono, and a menu.
+   - Foot: one usage row per plan (Claude, Codex): a meter, the percent and
+     the window ("82% wk · 3h"). Then **Settings** and a +.
+2. **Top bar**: one tab per agent or terminal, with its icon, title, a menu
+   and ×; a + for a new tab. On the right: Files and Changes.
+3. **Chat or Terminal**: a two-way switch at the top right of the work area.
+4. **Chat**: a reading column, centered.
+   - The owner's message: a right-aligned bubble, `raised` background.
+   - The agent's text: Markdown. Lists, tables, code with a language label
+     and Copy, inline code.
+   - Live chips: `#229` with a state dot (open, merged, closed); worker names;
+     file paths.
+   - Tool calls fold into chips: "Ran 2 commands", "Used a connector", each
+     with a chevron that opens it.
+   - After each turn: the time, "Worked 35s · 3 tools".
+   - `contr-status` and `contr-queue` blocks as a board and a queue (herdr-contr
+     shows them as code today: herdr-contr #230).
+5. **Status line** above the reply box: a spinner, the verb ("Hashing…"), the
+   time and the tokens; on the right, "Orchestrating · 3 workers".
+6. **Reply box**: "Reply to <title>". Under it: a + (attach), the model
+   button (agent icon, "Opus 5.5", effort "medium", chevron), and on the right
+   the context ring with its percent, the branch, and the send button.
+7. **Cards** above the reply box when an agent asks for permission or asks a
+   question: the choices as buttons, with keys.
+
+## Colors
+
+Light and dark, from theme tokens. The dark theme's values are in
+`recipe-herdr.md` ("What you see"): canvas `#202020`, raised `#262626`, hover
+`#2e2e2e`, selected `#383838`, border `#363636`, muted `#9a9a9a`, dim
+`#707070`, foreground `#ededed`. The status colors: working blue `#007aff`,
+done green `#34c759`, blocked orange `#ff9500`.
