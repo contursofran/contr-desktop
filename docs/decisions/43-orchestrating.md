@@ -4,6 +4,6 @@
   `herdr-contr-orch agents ls --all --json` entries whose `parent` is that
   address.
 - The status line shows "Orchestrating · N workers" when N live workers
-  exist. The design gives no text for zero workers, so it shows nothing.
+  exist. With none, a Claude Code agent shows a quiet "Orchestrate" (#47).
 - The `contr-status` board matches a row by name and parent. A name with no
   entry under the agent falls back to the name only.

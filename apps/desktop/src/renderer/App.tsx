@@ -1,9 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Card } from "./chat/card/Card";
 import { ChatList } from "./chat/list/ChatList";
-import { StatusLine, orchestratingText } from "./chat/rows/StatusLine";
+import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
 import { useBoard } from "./chat/blocks/useBoard";
-import { ReplyBox } from "./chat/reply/ReplyBox";
+import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { Sidebar } from "./sidebar/Sidebar";
@@ -82,6 +82,9 @@ function Chat({ side }: { side: Side }) {
   useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   const board = useBoard(NO_ISSUES);
+  const workers = board?.orchestrating ?? 0;
+  const [draft, setDraft] = useState<Draft>();
+  const orchestrate = () => setDraft((d) => ({ text: ORCHESTRATE_COMMAND, id: (d?.id ?? 0) + 1 }));
   if (side === "terminal") return <TerminalView />;
   return (
     <>
@@ -92,8 +95,12 @@ function Chat({ side }: { side: Side }) {
       )}
       <ChatList rows={feed.rows} />
       {feed.card && <Card card={feed.card} />}
-      <StatusLine working={feed.working} right={orchestratingText(board?.orchestrating ?? 0)} />
-      <ReplyBox title={title} />
+      <StatusLine
+        working={feed.working}
+        right={orchestratingText(workers)}
+        onOrchestrate={board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
+      />
+      <ReplyBox title={title} draft={draft} />
     </>
   );
 }
