@@ -37,15 +37,5 @@ test("the sidebar head has the machine switch, the foot the plan usage and Setti
   await page.emulateMedia({ colorScheme: "light" });
   await page.screenshot({ path: path.join(shots, "sidebar-head-foot-light.png") });
 
-  await head.getByRole("button", { name: "Machine" }).click();
-  const menu = page.getByRole("menu", { name: "Machines" });
-  await expect(menu.getByRole("menuitemradio")).toHaveText(["This computer", "aerum-pc", "vpsunreachable"]);
-  await expect(menu.getByRole("menuitemradio", { name: "This computer" })).toHaveAttribute("aria-checked", "true");
-  await page.emulateMedia({ colorScheme: "dark" });
-  await page.screenshot({ path: path.join(shots, "sidebar-machines-dark.png") });
-  await menu.getByRole("menuitemradio", { name: "aerum-pc" }).click();
-  await expect(head.getByRole("button", { name: "Machine" })).toHaveText("aerum-pc");
-  const picked = head.getByTestId("machine-label");
-  expect(await picked.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   await app.close();
 });

@@ -35,9 +35,9 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ })).toHaveAttribute("aria-current", "true");
   await expect(desktop.getByRole("button", { name: /Flow and sequence diagrams/ })).toContainText("b-30");
   const flow = desktop.getByRole("button", { name: /Flow and sequence diagrams/ });
-  await expect(flow).toHaveAttribute("title", "b-30 · #30 · Flow and sequence diagrams");
+  await expect(flow).toHaveAccessibleDescription("b-30 · #30 · Flow and sequence diagrams");
   await expect(flow.locator("[data-icon]")).toHaveAttribute("data-icon", "claude-code");
-  await expect(desktop.getByRole("button", { name: /Virtual list/ })).toHaveAttribute("title", "b-50 · Virtual list");
+  await expect(desktop.getByRole("button", { name: /Virtual list/ })).toHaveAccessibleDescription("b-50 · Virtual list");
   const notes = desktop.getByRole("button", { name: /Release notes draft/ });
   await expect(notes.locator("[data-age]")).toHaveText("<1m");
   await expect(notes).toHaveCSS("font-weight", "600");
