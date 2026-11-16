@@ -15,6 +15,6 @@ if (cmd === "get") {
   const title = process.env.FAKE_HC_TITLE ?? agents.find((t) => t.address === terminal)?.title ?? "";
   process.stdout.write(`${JSON.stringify({ address: terminal, name: "w-7", title, cwd: process.env.FAKE_HC_CWD ?? "" })}\n`);
 } else if (cmd === "ls") {
-  const list = process.env.FAKE_HC_AGENTS === "1" ? agents.map(({ title: _title, ...t }) => t) : [];
+  const list = process.env.FAKE_HC_AGENTS === "1" ? agents.map((t) => ({ ...t, title: undefined })) : [];
   process.stdout.write(JSON.stringify({ terminals: list }));
 } else process.exit(1);
