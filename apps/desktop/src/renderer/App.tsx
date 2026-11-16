@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "./chat/card/Card";
-import { Row } from "./chat/rows/Row";
+import { ChatList } from "./chat/list/ChatList";
 import { StatusLine } from "./chat/rows/StatusLine";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
@@ -13,35 +13,8 @@ export function App() {
   const [title, setTitle] = useState("");
   useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
-  const [side, setSide] = useState<Side>("chat");
-  // The chat stays at its end while the owner has not scrolled up: when rows come in,
-  // and when the list gets shorter because a card appears or grows.
-  const list = useRef<HTMLOListElement>(null);
-  const atEnd = useRef(true);
-  const toEnd = () => {
-    const el = list.current;
-    if (el && atEnd.current) el.scrollTop = el.scrollHeight;
-  };
-  useLayoutEffect(toEnd, [feed.rows, feed.card, side]);
-  useEffect(() => {
-    const el = list.current;
-    if (!el) return;
-    // Rows can grow after they render (code, diagrams), so each row is watched too.
-    const seen = new ResizeObserver(toEnd);
-    const watch = () => {
-      seen.disconnect();
-      seen.observe(el);
-      for (const row of Array.from(el.children)) seen.observe(row);
-    };
-    watch();
-    const added = new MutationObserver(watch);
-    added.observe(el, { childList: true });
-    return () => {
-      added.disconnect();
-      seen.disconnect();
-    };
-  }, [side]);
   // The top strip is the drag area of the hidden title bar. The Chat / Terminal switch sits at its right.
+  const [side, setSide] = useState<Side>("chat");
   const tab = (s: Side, label: string) => (
     <button
       type="button"
@@ -67,21 +40,7 @@ export function App() {
               {feed.error.code}: {feed.error.message}
             </p>
           )}
-          <ol
-            ref={list}
-            aria-label="Chat"
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              atEnd.current = el.scrollHeight - el.scrollTop - el.clientHeight < 4;
-            }}
-            className="min-h-0 flex-1 overflow-y-auto px-4 pb-4"
-          >
-            {feed.rows.map((row) => (
-              <li key={row.id} data-kind={row.k} className="mx-auto w-full max-w-3xl py-1">
-                <Row row={row} />
-              </li>
-            ))}
-          </ol>
+          <ChatList rows={feed.rows} />
           {feed.card && <Card card={feed.card} />}
           <StatusLine working={feed.working} />
           <ReplyBox title={title} />

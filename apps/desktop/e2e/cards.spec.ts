@@ -30,7 +30,7 @@ const key = (page: Page, k: string) => page.evaluate((k) => (document.activeElem
 // The card sits between the chat and the reply box: the last chat row is fully visible above it.
 async function lastRowAboveCard(page: Page) {
   const list = await page.getByRole("list", { name: "Chat" }).boundingBox();
-  const last = await page.locator('ol[aria-label="Chat"] > li').last().boundingBox();
+  const last = await page.locator('[aria-label="Chat"] [role=listitem]').last().boundingBox();
   const cardBox = await page.locator("section").last().boundingBox();
   expect(last && list && cardBox).toBeTruthy();
   expect(last!.y + last!.height).toBeLessThanOrEqual(cardBox!.y + 1);
