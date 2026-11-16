@@ -59,6 +59,8 @@ export interface PrChecks {
 export interface Board {
   workers: Record<string, WorkerState>;
   checks: Record<number, PrChecks | null>;
+  /** Live workers whose parent is the chat's agent (its hc address in CONTR_TERMINAL). */
+  orchestrating: number;
 }
 
 /** The reply box's data. A part the helper does not know is null (or empty). */

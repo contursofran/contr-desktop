@@ -9,6 +9,7 @@ export function orchPath(appRoot: string, env = process.env): string {
 
 interface OrchWorker {
   name?: unknown;
+  parent?: unknown;
   live?: unknown;
   status?: unknown;
 }
@@ -20,22 +21,46 @@ function toState(w: OrchWorker): WorkerState {
   return "idle";
 }
 
-/** Each worker's state from `agents ls --all --json`. A name listed twice keeps its live entry. */
-export function readWorkers(json: string): Record<string, WorkerState> {
-  let list: unknown;
+function parseList(json: string): OrchWorker[] {
   try {
-    list = JSON.parse(json);
+    const list: unknown = JSON.parse(json);
+    return Array.isArray(list) ? (list as OrchWorker[]) : [];
   } catch {
-    return {};
+    return [];
   }
+}
+
+/**
+ * Each worker's state from `agents ls --all --json`. A name listed twice keeps its live entry.
+ * With `parent`, a name that has an entry under that parent uses only those entries
+ * (names such as `b-10` repeat across projects); other names fall back to all entries.
+ */
+export function readWorkers(json: string, parent?: string): Record<string, WorkerState> {
+  const list = parseList(json);
+  const mine = new Set(list.filter((w) => parent !== undefined && w?.parent === parent).map((w) => w.name));
   const out: Record<string, WorkerState> = {};
-  if (!Array.isArray(list)) return out;
-  for (const w of list as OrchWorker[]) {
+  for (const w of list) {
+    if (mine.has(w?.name) && w.parent !== parent) continue;
     if (typeof w?.name !== "string") continue;
     if (out[w.name] && out[w.name] !== "done" && w.live !== true) continue;
     out[w.name] = toState(w);
   }
   return out;
+}
+
+/** The number of live workers whose parent is this agent's hc address. */
+export function countWorkers(json: string, parent: string): number {
+  return parseList(json).filter((w) => w?.live === true && w.parent === parent).length;
+}
+
+/** One read-only tool run: the board's worker states and the agent's live worker count. */
+export function orchBoard(orch: string, parent: string): Promise<{ workers: Record<string, WorkerState>; orchestrating: number }> {
+  return new Promise((resolve) => {
+    execFile(orch, ["agents", "ls", "--all", "--json"], { timeout: 10_000 }, (_error, stdout) => {
+      const json = String(stdout ?? "");
+      resolve({ workers: readWorkers(json, parent), orchestrating: countWorkers(json, parent) });
+    });
+  });
 }
 
 /** Runs the tool read-only: `agents ls --all --json`. A missing or failed tool gives no workers. */

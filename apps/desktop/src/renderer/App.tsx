@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Row } from "./chat/rows/Row";
-import { StatusLine } from "./chat/rows/StatusLine";
+import { StatusLine, orchestratingText } from "./chat/rows/StatusLine";
+import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 
 type Side = "chat" | "terminal";
+
+const NO_ISSUES: number[] = [];
 
 export function App() {
   const [feed, setFeed] = useState(emptyFeed);
@@ -14,6 +17,7 @@ export function App() {
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   // The top strip is the drag area of the hidden title bar. The Chat / Terminal switch sits at its right.
   const [side, setSide] = useState<Side>("chat");
+  const board = useBoard(NO_ISSUES);
   const tab = (s: Side, label: string) => (
     <button
       type="button"
@@ -46,7 +50,7 @@ export function App() {
               </li>
             ))}
           </ol>
-          <StatusLine working={feed.working} />
+          <StatusLine working={feed.working} right={orchestratingText(board?.orchestrating ?? 0)} />
           <ReplyBox title={title} />
         </>
       ) : (

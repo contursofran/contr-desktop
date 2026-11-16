@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checksQuery, readChecks, readWorkers } from "./board";
+import { checksQuery, countWorkers, readChecks, readWorkers } from "./board";
 
 describe("readWorkers", () => {
   it("maps the tool's status to a mark, and keeps the live entry of a name", () => {
@@ -14,6 +14,26 @@ describe("readWorkers", () => {
       { name: "f", live: true, status: "idle" },
     ]);
     expect(readWorkers(json)).toEqual({ a: "working", b: "blocked", c: "idle", d: "done", e: "working", f: "idle" });
+  });
+  it("matches a name under the agent's parent, and falls back to the name only", () => {
+    const json = JSON.stringify([
+      { name: "b-10", parent: "t9", live: true, status: "blocked" },
+      { name: "b-10", parent: "t1", live: true, status: "working" },
+      { name: "b-20", parent: "t9", live: true, status: "idle" },
+    ]);
+    expect(readWorkers(json, "t1")).toEqual({ "b-10": "working", "b-20": "idle" });
+    expect(readWorkers(json, "t9")).toEqual({ "b-10": "blocked", "b-20": "idle" });
+  });
+  it("counts the live workers of the agent", () => {
+    const json = JSON.stringify([
+      { name: "a", parent: "t1", live: true },
+      { name: "b", parent: "t1", live: false },
+      { name: "c", parent: "t9", live: true },
+      { name: "d", parent: "t1", live: true },
+    ]);
+    expect(countWorkers(json, "t1")).toBe(2);
+    expect(countWorkers(json, "t2")).toBe(0);
+    expect(countWorkers("", "t1")).toBe(0);
   });
   it("gives no workers when the tool fails", () => {
     expect(readWorkers("")).toEqual({});
