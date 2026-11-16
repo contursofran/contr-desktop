@@ -13,6 +13,8 @@
     "e2e": "pnpm build && playwright test"
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "electron": "^45.3.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
