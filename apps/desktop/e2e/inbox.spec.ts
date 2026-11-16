@@ -7,7 +7,7 @@ import { launchApp } from "./launch";
 const e2e = import.meta.dirname;
 const shots = path.resolve(e2e, "../../../tmp/shots");
 
-async function open(ids?: string[]) {
+async function open(ids?: string[], env: Record<string, string> = {}) {
   const file = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "open.json");
   copyFileSync(path.join(e2e, "fixtures/owner/open.json"), file);
   if (ids) writeFileSync(file, JSON.stringify(JSON.parse(readFileSync(file, "utf8")).filter((i: { id: string }) => ids.includes(i.id))));
@@ -20,6 +20,7 @@ async function open(ids?: string[]) {
     CONTR_GIT: path.join(e2e, "fake-git.mjs"),
     CONTR_TERMINAL: "t7",
     FAKE_ORCH_OWNER: file,
+    ...env,
   });
   const page = await app.firstWindow();
   const runs = () => readFileSync(`${file}.log`, "utf8").trim().split("\n");
@@ -81,5 +82,39 @@ test("the Inbox row is quiet with no count when nothing is open", async () => {
   const row = page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /^Inbox/ });
   await expect(row).toHaveText("Inbox");
   await expect.poll(() => count(app)).toEqual(["contr", 0]);
+  await app.close();
+});
+
+test("an agent blocked on a prompt is an Inbox item; a press opens its card, and the item closes when it goes on", async () => {
+  test.setTimeout(60_000);
+  const dir = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-"));
+  const status = path.join(dir, "status.json");
+  const log = path.join(dir, "answers.jsonl");
+  writeFileSync(status, JSON.stringify({ t11: "blocked" }));
+  const { app, page } = await open(["D9"], {
+    FAKE_HC_STATUS: status,
+    FAKE_HELPER_CARD: path.join(e2e, "fixtures/cards/question.json"),
+    FAKE_HELPER_ANSWER_LOG: log,
+  });
+  const row = page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /^Inbox/ });
+  await expect(row).toHaveText("Inbox · 2");
+  await expect.poll(() => count(app)).toEqual(["contr · Inbox 2", 2]);
+  await row.click();
+  const list = page.getByRole("region", { name: "Inbox" });
+  await expect(list.locator("[data-item]")).toHaveText([/^Release notes draftWaits on a prompt$/, /^Install health checkD9 · The coordinator asks/]);
+  await shoot(page, "inbox-blocked");
+
+  await list.locator('[data-item="t11"]').getByRole("button").click();
+  await expect(list).toHaveCount(0);
+  const card = page.getByRole("region", { name: "Question" });
+  await expect(card).toContainText("Where should the draft text be kept?");
+  await card.getByRole("button", { name: /localStorage/ }).click();
+  await expect(card).toContainText("Answer sent. Waiting for the agent.");
+  expect(JSON.parse(readFileSync(log, "utf8").trim())).toMatchObject({ cmd: "answer", terminal: "t11", answers: [{ picks: [1] }] });
+
+  // hc says the agent goes on: the item closes.
+  writeFileSync(status, JSON.stringify({ t11: "working" }));
+  await expect(row).toHaveText("Inbox · 1", { timeout: 20_000 });
+  await expect.poll(() => count(app), { timeout: 20_000 }).toEqual(["contr · Inbox 1", 1]);
   await app.close();
 });
