@@ -38,7 +38,21 @@ export interface ContrApi {
   refs(numbers: number[]): Promise<Record<number, RefState | null>>;
   /** Opens a PR or issue in the browser. */
   openRef(url: string): Promise<void>;
+  /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
+  replyInfo(): Promise<ReplyInfo>;
+  /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
+  branch(): Promise<string | null>;
   terminal: TerminalApi;
+}
+
+/** The reply box's data. A part the helper does not know is null (or empty). */
+export interface ReplyInfo {
+  agent: string | null;
+  model: string | null;
+  effort: string | null;
+  context: { percent: number; text: string; warn: boolean } | null;
+  models: { value: string; label: string }[];
+  efforts: { value: string; label: string }[];
 }
 
 /** A PR or an issue of the agent's repository, as gh says now. */
@@ -66,3 +80,5 @@ export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
 export const TITLE_CHANNEL = "contr:title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
+export const REPLY_INFO_CHANNEL = "contr:reply-info";
+export const BRANCH_CHANNEL = "contr:branch";
