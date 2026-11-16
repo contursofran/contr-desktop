@@ -1,7 +1,8 @@
-import { _electron as electron, expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { launchApp } from "./launch";
 
 const shots = path.resolve(import.meta.dirname, "../../../tmp/shots");
 const fakeHelper = path.resolve(import.meta.dirname, "fake-helper.mjs");
@@ -9,10 +10,13 @@ const fakeHc = path.resolve(import.meta.dirname, "fake-hc.mjs");
 const fixture = path.resolve(import.meta.dirname, "fixtures/claude-session.jsonl");
 
 function launch(env: Record<string, string> = {}) {
-  return electron.launch({
-    args: ["."],
-    cwd: path.resolve(import.meta.dirname, ".."),
-    env: { ...process.env, CONTR_HELPER: fakeHelper, FAKE_HELPER_FIXTURE: fixture, CONTR_TERMINAL: "t7", CONTR_HC: fakeHc, FAKE_HC_TITLE: "Chat panel usability audit", ...env },
+  return launchApp({
+    CONTR_HELPER: fakeHelper,
+    FAKE_HELPER_FIXTURE: fixture,
+    CONTR_TERMINAL: "t7",
+    CONTR_HC: fakeHc,
+    FAKE_HC_TITLE: "Chat panel usability audit",
+    ...env,
   });
 }
 
