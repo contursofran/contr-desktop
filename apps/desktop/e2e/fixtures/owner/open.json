@@ -1,0 +1,7 @@
+[
+  { "kind": "question", "id": "D7", "coordinator": "hc:t7", "title": "Inbox order", "from": "b-15", "question": "Which items show first in the inbox?", "options": ["Newest first", "Oldest first"], "impacts": ["New work shows at once; old items wait.", "Matches the design; nothing waits forever."], "recommended": 1, "refs": ["#15", "docs/design/recipe-herdr.md"] },
+  { "kind": "question", "id": "D8", "coordinator": "hc:t7", "title": "Dock badge", "from": "b-16", "question": "Does the Dock badge count to-dos?", "options": ["Yes", "No"], "impacts": ["", ""], "recommended": 0, "refs": [] },
+  { "kind": "question", "id": "D9", "coordinator": "hc:t12", "title": "Other", "from": "b-30", "question": "Not for this chat.", "options": ["Ok"] },
+  { "kind": "todo", "id": "T3", "coordinator": "hc:t7", "from": "b-15", "todo_kind": "do", "text": "Log in to the **staging** server, then run `pnpm e2e` in `apps/desktop`.\n\nIf it fails, run `pnpm e2e` again with:\n\n```sh\nCONTR_E2E=1 pnpm e2e --repeat-each 3\n```" },
+  { "kind": "todo", "id": "T4", "coordinator": "hc:t7", "from": "b-16", "todo_kind": "know", "text": "The CI cache is now keyed on the lockfile." }
+]

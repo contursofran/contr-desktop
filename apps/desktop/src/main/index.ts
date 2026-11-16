@@ -6,6 +6,7 @@ import { registerBoardIpc } from "./board/ipc";
 import { registerRefsIpc } from "./refs/ipc";
 import { registerSidebarIpc } from "./sidebar/ipc";
 import { registerFootIpc } from "./foot/ipc";
+import { registerOwnerIpc } from "./owner/ipc";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 
@@ -33,6 +34,7 @@ void app.whenReady().then(() => {
   registerBoardIpc(app.getAppPath(), chatTerminal);
   registerSidebarIpc(app.getAppPath());
   registerFootIpc(app.getAppPath());
+  registerOwnerIpc(app.getAppPath());
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

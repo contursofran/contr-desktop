@@ -83,6 +83,14 @@ export interface ContrApi {
   onUsage(listener: (rows: UsageRow[]) => void): () => void;
   /** hc's other machines (`hc machine ls --json`). */
   machines(): Promise<Machine[]>;
+  /** The open owner questions and to-dos (`owner open --json`). */
+  owner(): Promise<OwnerItems>;
+  /** Listens to changes of the open owner items. Returns a function that stops listening. */
+  onOwner(listener: (items: OwnerItems) => void): () => void;
+  /** Answers an owner question (`owner answer <id> <answer>`). */
+  ownerAnswer(id: string, answer: string): Promise<OwnerResult>;
+  /** Marks an owner to-do done (`owner done <id>`). */
+  ownerDone(id: string): Promise<OwnerResult>;
   terminal: TerminalApi;
 }
 
@@ -196,3 +204,40 @@ export const SELECT_CHANNEL = "contr:select";
 export const USAGE_CHANNEL = "contr:usage";
 export const USAGE_EVENT = "contr:usage-event";
 export const MACHINES_CHANNEL = "contr:machines";
+
+export const OWNER_CHANNEL = "contr:owner";
+export const OWNER_EVENT = "contr:owner-event";
+export const OWNER_ANSWER_CHANNEL = "contr:owner-answer";
+export const OWNER_DONE_CHANNEL = "contr:owner-done";
+
+/** An open owner question from `herdr-contr-orch owner open --json`. Options have the recommended one first. */
+export interface OwnerQuestion {
+  id: string;
+  /** The hc address of the coordinator that asked, with no `hc:` prefix. */
+  coordinator: string;
+  title: string;
+  from: string;
+  question: string;
+  options: { label: string; impact: string; recommended: boolean }[];
+  refs: string[];
+}
+
+/** An open owner to-do (`kind: "todo"`). */
+export interface OwnerTodo {
+  id: string;
+  coordinator: string;
+  from: string;
+  text: string;
+  know: boolean;
+}
+
+export interface OwnerItems {
+  questions: OwnerQuestion[];
+  todos: OwnerTodo[];
+}
+
+/** The result of `owner answer` or `owner done`. `ok` false: the run failed and nothing changed. `note`: why, or "saved, coordinator not reached". */
+export interface OwnerResult {
+  ok: boolean;
+  note: string | null;
+}
