@@ -130,7 +130,7 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
           type="submit"
           aria-label="Send"
           disabled={message === "" || sending}
-          className="rounded-full bg-foreground px-3 py-0.5 text-sm text-canvas disabled:bg-hover disabled:text-dim"
+          className="rounded-full bg-foreground px-3 py-0.5 text-sm text-canvas disabled:bg-hover disabled:text-faint"
         >
           ↑
         </button>

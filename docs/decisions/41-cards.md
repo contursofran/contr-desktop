@@ -7,8 +7,10 @@
   has no event for a prompt on screen.
 - The keys go through `approve` and `answer` only. The app never types raw
   keys for a card: the helper's guard checks the prompt first.
-- Card keys (1-9, Enter) work while focus is in the chat. They do nothing
-  while focus is in the reply box, the own-answer box or another field.
+- Card keys (1-9, Enter) work from anywhere in the window (owner, #101). They
+  do nothing while focus is in the reply box, the own-answer box, another
+  field or an open menu. Enter on a focused button or link presses that
+  control. The choices have `aria-keyshortcuts`.
 - Approval: 1 allows once, 2 denies. A question: 1-9 picks an option (a
   one-choice pick moves on), the number after the options goes to the
   own-answer box, Enter goes on or sends.

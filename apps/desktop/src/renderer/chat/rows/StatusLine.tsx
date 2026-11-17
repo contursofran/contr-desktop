@@ -2,6 +2,7 @@ import { Spinner } from "./Spinner";
 import type { Working } from "../../../shared/api";
 
 /** The status line above the reply box: spinner, verb, then time and tokens. `right` is the orchestrator text.
+ * In a narrow line the verb stays whole and the detail truncates with an ellipsis.
  * `onOrchestrate`: with no `right` text, a quiet "Orchestrate" at the right that calls it. */
 export function StatusLine({
   working,
@@ -18,8 +19,8 @@ export function StatusLine({
       {working?.text && (
         <>
           <Spinner size={14} className="shrink-0 text-foreground" />
-          <span className="min-w-0 shrink truncate text-[13px] text-foreground">{working.text}</span>
-          {working.detail && <span className="min-w-0 shrink-[2] truncate font-mono text-[11px]">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
+          <span className="shrink-0 whitespace-nowrap text-[13px] text-foreground">{working.text}</span>
+          {working.detail && <span className="min-w-0 shrink truncate font-mono text-[11px]">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
         </>
       )}
       {right ? (

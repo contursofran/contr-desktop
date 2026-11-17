@@ -125,7 +125,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
             })}
             </div>
             <Tip label="New tab (not yet)">
-              <button type="button" aria-label="New tab" aria-disabled="true" className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-dim">
+              <button type="button" aria-label="New tab" aria-disabled="true" className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-faint">
                 <Plus aria-hidden className="size-3.5" />
               </button>
             </Tip>
