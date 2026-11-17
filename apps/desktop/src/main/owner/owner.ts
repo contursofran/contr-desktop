@@ -9,14 +9,30 @@ const local = (address: unknown): string => str(address).replace(/^hc:/, "");
  * An item with no id, no coordinator or no text gives nothing. Output that is not a JSON list gives no items.
  */
 export function parseOwnerOpen(json: string): OwnerItems {
-  let list: unknown;
+  return itemsOf(jsonList(json) ?? []);
+}
+
+function jsonList(json: string): unknown[] | null {
   try {
-    list = JSON.parse(json);
+    const list: unknown = JSON.parse(json);
+    return Array.isArray(list) ? list : null;
   } catch {
-    list = null;
+    return null;
   }
+}
+
+/**
+ * One read of `owner open --json` (stdout, and why the run failed or null).
+ * A failed run or output that is not a JSON list keeps `last`, the last good list, and gives why; it is not "nothing is open".
+ */
+export function readOwnerOpen(last: OwnerItems, out: string, error: string | null): { items: OwnerItems; error: string | null } {
+  if (error) return { items: last, error };
+  const list = jsonList(out);
+  return list ? { items: itemsOf(list), error: null } : { items: last, error: "herdr-contr-orch gave no JSON list" };
+}
+
+function itemsOf(list: unknown[]): OwnerItems {
   const out: OwnerItems = { questions: [], todos: [] };
-  if (!Array.isArray(list)) return out;
   for (const [order, raw] of (list as Record<string, unknown>[]).entries()) {
     const id = str(raw?.id);
     const coordinator = local(raw?.coordinator);

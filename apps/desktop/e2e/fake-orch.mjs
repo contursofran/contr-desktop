@@ -6,6 +6,7 @@
 // `owner open --json` prints the list in FAKE_ORCH_OWNER (a file; none: an empty list). `owner answer <id> <answer>` and
 // `owner done <id>` remove the item from that file. FAKE_ORCH_OWNER_FAIL=1 makes them fail with a message and change nothing;
 // FAKE_ORCH_OWNER_UNREACHED=1 makes them remove the item and say "coordinator not reached".
+// While the file in FAKE_ORCH_OWNER_BAD exists, `owner open --json` prints its text (a read that gives no JSON list).
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const workers = [
@@ -23,7 +24,8 @@ if (args === "agents ls --all --json") {
   const list = process.env.FAKE_ORCH_LIST ? JSON.parse(readFileSync(process.env.FAKE_ORCH_LIST, "utf8")) : workers;
   process.stdout.write(JSON.stringify(process.env.FAKE_ORCH_NONE === "1" ? [] : list));
 } else if (args === "owner open --json") {
-  process.stdout.write(JSON.stringify(open()));
+  const bad = process.env.FAKE_ORCH_OWNER_BAD;
+  process.stdout.write(bad && existsSync(bad) ? readFileSync(bad, "utf8") : JSON.stringify(open()));
 } else if (argv[0] === "owner" && (argv[1] === "answer" || argv[1] === "done") && argv[2]) {
   if (process.env.FAKE_ORCH_OWNER_FAIL === "1") {
     process.stderr.write(`owner ${argv[1]}: the owner file is locked\n`);
