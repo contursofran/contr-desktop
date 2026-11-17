@@ -1,0 +1,133 @@
+{
+ "hidden_finished": 0,
+ "terminals": [
+  {
+   "address": "t5b",
+   "cwd": "/work/farm-game",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "status": "done",
+   "title": "Context not appearing",
+   "where": "tools / 1",
+   "foreground": {
+    "cwd": "/work/tools",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t6p",
+   "cwd": "/work/farm-web",
+   "state": "live",
+   "turn": 1,
+   "agent": "zsh",
+   "where": "farm-game / 2",
+   "foreground": {
+    "cwd": "/work/farm-web",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t7k",
+   "cwd": "/work/tools",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "status": "working",
+   "title": "Tab styling",
+   "where": "desk-app / 1",
+   "foreground": {
+    "cwd": "/work/desk-app",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t81",
+   "cwd": "/work/farm-web",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "status": "done",
+   "title": "Orchestrate the farm",
+   "where": "farm-game / 1",
+   "foreground": {
+    "cwd": "/work/farm-game",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t97",
+   "cwd": "/work/desk-app-wt/agent/13",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "name": "b-13",
+   "parent": "t7k",
+   "status": "working",
+   "where": "desk-app / 1",
+   "foreground": {
+    "cwd": "/work/desk-app-wt/agent/13",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t9h",
+   "cwd": "/work/desk-app-wt/agent/16",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "name": "b-16",
+   "parent": "t7k",
+   "status": "done",
+   "where": "desk-app / 1",
+   "foreground": {
+    "cwd": "/work/desk-app-wt/agent/16",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t9k",
+   "cwd": "/work/farm-game-wt/walker-7",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "name": "b-7",
+   "parent": "t81",
+   "status": "working",
+   "where": "farm-game / 1",
+   "foreground": {
+    "cwd": "/work/farm-game-wt/walker-7",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t9m",
+   "cwd": "/work/farm-game-wt/art-8",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "name": "c-8",
+   "parent": "t81",
+   "status": "working",
+   "where": "farm-game / 1",
+   "foreground": {
+    "cwd": "/work/farm-game-wt/art-8",
+    "name": "2.1.0"
+   }
+  },
+  {
+   "address": "t9n",
+   "cwd": "/work/farm-game-wt/plan-9",
+   "state": "live",
+   "turn": 1,
+   "agent": "claude-code",
+   "name": "p-9",
+   "parent": "t81",
+   "where": "farm-game / 1",
+   "foreground": {
+    "cwd": "/work/farm-game-wt/plan-9",
+    "name": "2.1.0"
+   }
+  }
+ ]
+}

@@ -12,6 +12,9 @@ const agents = [
   { address: "t12", cwd: "/work/herdr-contr", status: "working", agent: "codex", title: "Install health check" },
   { address: "t13", name: "term-1", cwd: "/work/herdr-contr" },
 ].map((t) => ({ ...t, state: "live" }));
+// FAKE_HC_LIST: a JSON file { terminals: [...] } used in place of the list above, for `ls` and `get`. `get` gives an entry
+// as it is (with its `foreground`, whose `cwd` is the agent's session folder); `ls` gives it without `foreground` and `title`.
+const listed = process.env.FAKE_HC_LIST ? JSON.parse(readFileSync(process.env.FAKE_HC_LIST, "utf8")).terminals : null;
 const [cmd, , terminal] = process.argv.slice(2);
 // FAKE_HC_DOWN: a file path. While the file is there, each command fails as an hc with no core does.
 if (process.env.FAKE_HC_DOWN && existsSync(process.env.FAKE_HC_DOWN)) {
@@ -22,7 +25,11 @@ if (cmd === "connect" && process.env.FAKE_HC_CONNECT === "1") connect();
 else if (cmd === "get") {
   // FAKE_HC_GONE: a comma list of addresses hc does not list; `get` fails for them.
   if ((process.env.FAKE_HC_GONE ?? "").split(",").includes(terminal)) process.exit(1);
-  const found = agents.find((t) => t.address === terminal);
+  const found = (listed ?? agents).find((t) => t.address === terminal);
+  if (listed) {
+    process.stdout.write(`${JSON.stringify(found ?? { address: terminal })}\n`);
+    process.exit(0);
+  }
   const title = process.env.FAKE_HC_TITLE ?? found?.title ?? "";
   process.stdout.write(`${JSON.stringify({ address: terminal, name: found?.name ?? terminal, title, agent: found?.agent, cwd: process.env.FAKE_HC_CWD ?? "" })}\n`);
 } else if (cmd === "machine") {
@@ -35,7 +42,9 @@ else if (cmd === "get") {
 } else if (cmd === "ls") {
   // FAKE_HC_STATUS: a JSON file { address: status } that a test rewrites to change an agent's status.
   const status = process.env.FAKE_HC_STATUS ? JSON.parse(readFileSync(process.env.FAKE_HC_STATUS, "utf8")) : {};
-  const list = process.env.FAKE_HC_AGENTS === "1" ? agents.map((t) => ({ ...t, status: status[t.address] ?? t.status, title: undefined })) : [];
+  const list = listed
+    ? listed.map((t) => ({ ...t, foreground: undefined, title: undefined }))
+    : process.env.FAKE_HC_AGENTS === "1" ? agents.map((t) => ({ ...t, status: status[t.address] ?? t.status, title: undefined })) : [];
   process.stdout.write(JSON.stringify({ terminals: list }));
 } else process.exit(1);
 

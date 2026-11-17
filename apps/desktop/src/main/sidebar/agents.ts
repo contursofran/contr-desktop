@@ -47,20 +47,24 @@ export interface ListInput {
   orch: string;
   /** Each terminal's own title (hc `get`), by address. */
   titles: Map<string, string>;
+  /** Each agent's session folder (`readSessionFolder`), by address. Without one, the terminal's `cwd` is used. */
+  folders?: Map<string, string>;
   /** The project of a working folder. */
   projectOf: (cwd: string) => string;
 }
 
 /**
- * Groups the live agents by project. An agent is a live hc terminal with a `status` (a shell has none).
- * A live worker (`liveWorkerParents`, the status line's rule) whose parent is listed shows under it; the orchestration tool gives its name and work.
+ * Groups the live agents by the project of their session folder (the terminal's `cwd` moves with a `cd`; the session's does not).
+ * An agent is a live hc terminal with a `status` (a shell has none).
+ * A live worker (`liveWorkerParents`, the status line's rule) whose parent is listed shows under it, with or without a `status`;
+ * the orchestration tool gives its name and work.
  */
-export function buildProjects({ hc, orch, titles, projectOf }: ListInput): SidebarProject[] {
-  const terms = parseList<HcTerminal>(hc, "terminals").filter(isLiveAgent);
+export function buildProjects({ hc, orch, titles, folders, projectOf }: ListInput): SidebarProject[] {
   const parents = liveWorkerParents(hc, orch);
+  const terms = parseList<HcTerminal>(hc, "terminals").filter((t) => isLiveAgent(t) || parents.has(t.address as string));
   const named = new Map<string, OrchAgent>();
   for (const a of parseList<OrchAgent>(orch)) if (str(a.address)) named.set(a.address as string, a);
-  const agents = new Map<string, SidebarAgent & { parent: string | null; cwd: string }>();
+  const agents = new Map<string, SidebarAgent & { parent: string | null; cwd: string; agent: boolean }>();
   for (const t of terms) {
     const address = t.address as string;
     const o = named.get(address);
@@ -74,7 +78,9 @@ export function buildProjects({ hc, orch, titles, projectOf }: ListInput): Sideb
       issue: str(o?.issue),
       workers: [],
       parent: parents.get(address) ?? null,
-      cwd: str(t.cwd) ?? "",
+      cwd: folders?.get(address) ?? str(t.cwd) ?? "",
+      // A worker with no status shows only under its parent.
+      agent: isLiveAgent(t),
     });
   }
   const projects = new Map<string, SidebarAgent[]>();
@@ -82,13 +88,13 @@ export function buildProjects({ hc, orch, titles, projectOf }: ListInput): Sideb
   for (const a of agents.values()) {
     const parent = a.parent ? agents.get(a.parent) : undefined;
     if (parent) parent.workers.push(a);
-    else {
+    else if (a.agent) {
       const p = a.cwd ? projectOf(a.cwd) : "Other";
       projects.set(p, [...(projects.get(p) ?? []), a]);
       if (!cwds.has(p)) cwds.set(p, a.cwd);
     }
   }
-  const clean = (a: SidebarAgent & { parent?: unknown; cwd?: unknown }): SidebarAgent => ({
+  const clean = (a: SidebarAgent & { parent?: unknown; cwd?: unknown; agent?: unknown }): SidebarAgent => ({
     terminal: a.terminal, title: a.title, name: a.name, state: a.state, kind: a.kind, issue: a.issue, workers: a.workers.map(clean),
   });
   return [...projects].map(([name, list]) => ({ name, agents: list.map(clean), cwd: cwds.get(name) ?? "", branch: null, ahead: 0, behind: 0, favicon: null }));
@@ -101,7 +107,15 @@ export function projectFromCommonDir(cwd: string, commonDir: string | null): str
   return path.basename(path.basename(dir) === ".git" ? path.dirname(dir) : dir.replace(/\.git$/, ""));
 }
 
-/** Runs a program read-only and gives its stdout ("" on failure). */
+/** An agent's session folder from `hc get --json`: the folder of the program in front (`foreground.cwd`, the agent itself), which a `cd` in its shell does not move; null when hc gives none. */
+export function readSessionFolder(json: string): string | null {
+  try {
+    return str((JSON.parse(json) as { foreground?: { cwd?: unknown } | null }).foreground?.cwd);
+  } catch {
+    return null;
+  }
+}
+
 /** Runs `hc ls --json` and keeps why it failed: stderr, else the error message ("spawn hc ENOENT"). `error` is null when hc exited 0. */
 export function runHcList(hc: string): Promise<{ out: string; error: string | null }> {
   return new Promise((resolve) => {
@@ -121,6 +135,7 @@ export function readHcList(out: string, error: string | null): { terms: HcTermin
   }
 }
 
+/** Runs a program read-only and gives its stdout ("" on failure). */
 export function run(program: string, args: string[], cwd?: string): Promise<string> {
   return new Promise((resolve) => {
     execFile(program, args, { cwd, timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (_e, stdout) => resolve(String(stdout ?? "")));
