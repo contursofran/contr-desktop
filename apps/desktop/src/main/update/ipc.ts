@@ -5,10 +5,11 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { Transform } from "node:stream";
-import { UPDATE_CHANNEL, UPDATE_CHECK_CHANNEL, UPDATE_DOWNLOAD_CHANNEL, UPDATE_EVENT, UPDATE_RESTART_CHANNEL, type UpdateState } from "../../shared/api";
+import { CHANGELOG_CHANNEL, UPDATE_CHANNEL, UPDATE_CHECK_CHANNEL, UPDATE_DOWNLOAD_CHANNEL, UPDATE_EVENT, UPDATE_RESTART_CHANNEL, type UpdateState } from "../../shared/api";
+import { changeLogSource } from "./changelog";
 import { afterCheck, singleFlight } from "./check";
 import { bundleOf, startSwap, unpack, writable } from "./install";
-import { DMG, newer, parseRelease, RELEASE_URL, ZIP } from "./release";
+import { DMG, getJson, newer, parseRelease, RELEASE_URL, RELEASES_URL, ZIP } from "./release";
 
 /**
  * GitHub has no release event for an app: the newest release is read at start, every 6 hours, each time the
@@ -23,12 +24,17 @@ const CHECK_MS = 6 * 60 * 60_000;
  * and "Restart to update" swaps it in. Else a press downloads the .dmg into Downloads and opens it.
  * CONTR_INSTALL_DIR replaces the folder of the running app, CONTR_DOWNLOADS the Downloads folder.
  * With CONTR_E2E=1 nothing is opened, swapped or quit.
+ * Settings > Change log reads the newest releases (docs/decisions/121-change-log.md) with each check;
+ * CONTR_RELEASES_URL points it at a fake releases list (e2e). With CONTR_E2E=1, CONTR_VERSION replaces this app's
+ * version, so a test can mark a release "Installed".
  */
 export function registerUpdateIpc(): { check: () => Promise<void> } {
   const url = process.env.CONTR_UPDATE_URL ?? (app.isPackaged ? RELEASE_URL : null);
   const e2e = process.env.CONTR_E2E === "1";
   const target = process.env.CONTR_INSTALL_DIR ? path.join(process.env.CONTR_INSTALL_DIR, "contr.app") : app.isPackaged ? bundleOf(app.getPath("exe")) : null;
-  const state: UpdateState = { current: app.getVersion(), dev: url === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null };
+  const log = changeLogSource(process.env.CONTR_RELEASES_URL ?? (app.isPackaged ? RELEASES_URL : null));
+  const current = (e2e && process.env.CONTR_VERSION) || app.getVersion();
+  const state: UpdateState = { current, dev: url === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null };
   let release: { version: string; dmgUrl: string | null; zipUrl: string | null } | null = null;
   let next: string | null = null;
   const set = (change: Partial<UpdateState>) => {
@@ -39,12 +45,11 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
   const zipUrl = (r = release) => (r?.zipUrl && target && writable(path.dirname(target)) ? r.zipUrl : null);
   /** One check at a time (singleFlight); see afterCheck for a check while a download runs or is ready. */
   const check = singleFlight(async () => {
+    void log.load();
     if (!url) return;
     set({ checking: true });
     try {
-      const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const found = parseRelease(await res.json());
+      const found = parseRelease(await getJson(url));
       const { take, change } = afterCheck(state, found.version, zipUrl(found) !== null || found.dmgUrl !== null, newer(found.version, state.current), Date.now());
       if (take) release = found;
       set(change);
@@ -100,6 +105,7 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
   ipcMain.handle(UPDATE_DOWNLOAD_CHANNEL, () => download());
   ipcMain.handle(UPDATE_RESTART_CHANNEL, () => restart());
   ipcMain.handle(UPDATE_CHECK_CHANNEL, () => check());
+  ipcMain.handle(CHANGELOG_CHANNEL, (_e, again: boolean) => log.get(again === true));
   void check();
   if (url) setInterval(() => void check(), CHECK_MS);
   return { check };
