@@ -67,6 +67,7 @@ export async function startCore(
       homeHelper: existsSync(helper),
       order: coreOrder(stampOfTag(readBundleTag(bundle)), parseStamp(readInstalled(found.root)?.build)),
     });
+    core = { ...core, shared: pick.shared };
     let ready = pick.source === "home" && pick.action === "none";
     if (pick.action === "install" && !wouldHideOldRoot(found.root, home, existsSync)) {
       const orch = path.join(bundle, "herdr-contr-orch");
@@ -74,7 +75,7 @@ export async function startCore(
       if (done.ok) ready = true;
       else core = { ...core, error: coreInstallFailed(done.message) };
     }
-    if (ready) core = (await helperStarts(helper)) ? { source: "home", root: found.root, error: null } : { ...core, error: CORE_NOT_START };
+    if (ready) core = (await helperStarts(helper)) ? { source: "home", root: found.root, error: null, shared: pick.shared } : { ...core, error: CORE_NOT_START };
   }
   setCore(core);
   return core;

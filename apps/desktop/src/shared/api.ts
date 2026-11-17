@@ -112,6 +112,12 @@ export interface ContrApi {
    * `again` reads them now (Retry). Each update check reads them again.
    */
   changeLog(again?: boolean): Promise<ChangeLog>;
+  /** The core's state now (Settings > Core). */
+  core(): Promise<CoreState>;
+  /** Calls the listener on each change of the core's state. Returns the unsubscribe. */
+  onCore(listener: (state: CoreState) => void): () => void;
+  /** Runs the helper's `update check` for the core's root; `force` asks GitHub again (Check now). A call while a check runs waits for it. */
+  checkCore(force?: boolean): Promise<void>;
   /** Calls the listener when the app menu's "Check for Updates…" asks to show Settings. Returns the unsubscribe. */
   onOpenSettings(listener: () => void): () => void;
   terminal: TerminalApi;
@@ -321,6 +327,24 @@ export const UPDATE_DOWNLOAD_CHANNEL = "contr:update-download";
 export const UPDATE_RESTART_CHANNEL = "contr:update-restart";
 export const UPDATE_CHECK_CHANNEL = "contr:update-check";
 export const CHANGELOG_CHANNEL = "contr:changelog";
+
+/** Settings > Core and the dot on the foot's Settings button. The UpdateState fields mean the same for the core. */
+export interface CoreState extends UpdateState {
+  /** The root folder, or null when the core logic is off (dev, e2e with no CONTR_CORE_HOME). */
+  root: string | null;
+  /** The copy that the app runs now. */
+  source: "home" | "bundle";
+  /** The root is shared with the Herdr app and the owner did not say yes: the app changes nothing there. */
+  shared: boolean;
+  /** An update install runs now. */
+  installing: boolean;
+  /** The version of the last update done in this run, else null. */
+  updated: string | null;
+}
+
+export const CORE_CHANNEL = "contr:core";
+export const CORE_EVENT = "contr:core-event";
+export const CORE_CHECK_CHANNEL = "contr:core-check";
 
 /** One release in Settings > Change log. */
 export interface ChangeLogRelease {

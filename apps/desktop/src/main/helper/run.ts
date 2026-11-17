@@ -13,12 +13,12 @@ export function helperPath(appRoot: string, env = process.env): string {
 
 /**
  * Runs one helper command. The helper answers and exits (one call per command).
- * The timeout is 30 s unless `options.timeout` says another.
+ * The timeout is 30 s unless `options.timeout` says another. `options.env` replaces the environment (default: the app's).
  * A broken answer (no header or no end) gives an `error` line with code `helper`.
  */
-export function runHelper(helper: string, args: string[], options: { timeout?: number } = {}): Promise<HelperLine[]> {
+export function runHelper(helper: string, args: string[], options: { timeout?: number; env?: NodeJS.ProcessEnv } = {}): Promise<HelperLine[]> {
   return new Promise((resolve) => {
-    execFile(helper, args, { timeout: options.timeout ?? 30_000, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
+    execFile(helper, args, { timeout: options.timeout ?? 30_000, env: options.env, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
       const lines = parseLines(stdout ?? "");
       if (lines[0]?.type !== "header" || lines.at(-1)?.type !== "end") {
         const message = err ? err.message : "the helper gave no header and end line";
