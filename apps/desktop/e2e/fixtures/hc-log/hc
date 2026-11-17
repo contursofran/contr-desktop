@@ -1,0 +1,4 @@
+#!/bin/sh
+# CONTR_HC for e2e: logs each call's arguments to FAKE_HC_LOG, then runs the fake hc.
+echo "$*" >> "$FAKE_HC_LOG"
+exec node "$(dirname "$0")/../../fake-hc.mjs" "$@"

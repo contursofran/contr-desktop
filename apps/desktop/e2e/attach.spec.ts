@@ -112,3 +112,53 @@ test("the × removes one attachment with Enter or Space, files stay with their a
   expect(JSON.parse(readFileSync(sendLog, "utf8"))).toEqual({ terminal: "t7", text: `two files\n${image}` });
   await app.close();
 });
+
+test("a pasted picture is a picture, a picture that does not load is a chip, text pastes as text, and pictures alone can be sent", async () => {
+  test.setTimeout(60_000);
+  const dir = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-"));
+  const sendLog = path.join(dir, "send.jsonl");
+  // A PNG path with no file behind it: the picker gives it, and the picture cannot load.
+  const gone = path.join(dir, "gone.png");
+  const app = await launchApp({
+    CONTR_HELPER: path.resolve(import.meta.dirname, "fake-helper.mjs"),
+    FAKE_HELPER_FIXTURE: path.resolve(import.meta.dirname, "fixtures/claude-session.jsonl"),
+    CONTR_TERMINAL: "t7",
+    CONTR_HC: path.resolve(import.meta.dirname, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
+    FAKE_HELPER_SEND_LOG: sendLog,
+    FAKE_HELPER_PASTE_IMAGE: image,
+    CONTR_E2E_PICK_IMAGE: gone,
+  });
+  const page = await app.firstWindow();
+  const box = page.getByRole("textbox", { name: "Reply to Chat panel usability audit" });
+  const items = page.getByRole("list", { name: "Attachments" }).getByRole("listitem");
+  const paste = (type: string) =>
+    box.evaluate((el, type) => {
+      const data = new DataTransfer();
+      if (type === "text/plain") data.setData(type, "plain words");
+      else data.items.add(new File(["x"], "x.png", { type }));
+      el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+    }, type);
+
+  // Plain text does not go to the helper: no attachment.
+  await box.focus();
+  await paste("text/plain");
+  await paste("image/png");
+  await expect(items).toHaveCount(1);
+  const picture = items.getByRole("img", { name: "shot.png" });
+  await expect.poll(() => picture.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true);
+
+  await page.getByRole("button", { name: "Attach image" }).click();
+  await expect(items).toHaveCount(2);
+  await expect(items.nth(1)).toHaveText("gone.png");
+  await expect(items.nth(1)).toHaveAttribute("title", gone);
+  await expect(items.nth(1).getByRole("img")).toHaveCount(0);
+  await expect(items.nth(1).getByRole("button", { name: "Remove gone.png" })).toBeVisible();
+
+  // No text: the pictures alone are sent, and the box is empty after.
+  await expect(box).toHaveValue("");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(items).toHaveCount(0);
+  expect(JSON.parse(readFileSync(sendLog, "utf8"))).toEqual({ terminal: "t7", text: `${image}\n${gone}` });
+  await app.close();
+});

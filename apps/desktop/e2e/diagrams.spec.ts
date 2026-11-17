@@ -12,9 +12,14 @@ test("contr-flow and contr-seq draw; a block past a limit shows as code", async 
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
     FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/diagrams-session.jsonl"),
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    // t7 is in the sidebar: the tab and the reply box show its title, not "Terminal" (#119).
+    FAKE_HC_AGENTS: "1",
+    CONTR_TERMINAL: "t7",
   });
   const page = await app.firstWindow();
   const row = await chatRow(page, "r1");
+  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText(["Chat panel usability audit"]);
+  await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
 
   const flow = row.locator('[data-diagram="contr-flow"]');
   await expect(flow.locator("[data-node]")).toHaveCount(4);

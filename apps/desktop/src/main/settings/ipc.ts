@@ -17,7 +17,8 @@ export function registerSettingsIpc(appRoot: string): void {
   const file = path.join(app.getPath("userData"), "settings.json");
   nativeTheme.themeSource = readTheme(file);
   nativeTheme.on("updated", paint);
-  app.on("browser-window-created", (_e, w) => w.setBackgroundColor(nativeTheme.shouldUseDarkColors ? CANVAS.dark : CANVAS.light));
+  // The window sets its options' backgroundColor after this event, so the paint comes on the next turn.
+  app.on("browser-window-created", (_e, w) => setImmediate(() => w.setBackgroundColor(nativeTheme.shouldUseDarkColors ? CANVAS.dark : CANVAS.light)));
   ipcMain.handle(SETTINGS_CHANNEL, () => ({ theme: readTheme(file), helper: helperPath(appRoot) }));
   ipcMain.handle(THEME_CHANNEL, (_e, theme: ThemeChoice) => {
     nativeTheme.themeSource = writeTheme(file, theme);

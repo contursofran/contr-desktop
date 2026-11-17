@@ -1,0 +1,5 @@
+#!/bin/sh
+# The first `hc` on PATH in e2e: a call that ignores CONTR_HC comes here, is logged to PATH_HC_LOG and fails,
+# so it never reaches the owner's hc core.
+echo "$*" >> "$PATH_HC_LOG"
+exit 1
