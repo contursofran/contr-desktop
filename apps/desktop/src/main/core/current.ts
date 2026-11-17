@@ -6,6 +6,8 @@ export interface CurrentCore {
   source: "home" | "bundle";
   /** The core's root, or null when the core logic is off. */
   root: string | null;
+  /** Why the app runs the bundle in place of the home (texts T8, T9), else null or not set. */
+  error?: string | null;
 }
 
 let current: CurrentCore = { source: "bundle", root: null };

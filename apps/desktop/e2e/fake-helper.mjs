@@ -15,9 +15,13 @@
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 // FAKE_HELPER_ERROR_WHILE=<file> does the same with the code `no-core` while that file is there.
 // FAKE_HELPER_SLOW_FEED=<ms> and FAKE_HELPER_SLOW_SEND=<ms> make `feed` and `send` wait that long before they answer.
+// `install --backend --helper <file> [--orch <file>] [--dry-run]` answers plain text, as the real core does: it links the
+// programs into <CONTR_HOME>/bin/ (a link, not a copy: the fakes find their fixtures next to their real file), writes
+// install.json {"build": FAKE_CORE_BUILD} and prints "Done.". FAKE_CORE_FAIL=install prints "STOP: fake" and exits 1.
+// FAKE_CORE_LOG=<file>: each call appends {args, home} (home is CONTR_HOME, or null) as one JSON line.
 // The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
 // `working` and `card` give that worker's data. FAKE_HELPER_CARD and FAKE_HELPER_MODEL=none still win.
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const workerDir = path.join(import.meta.dirname, "fixtures", "workers");
@@ -34,6 +38,25 @@ const arg = (name) => {
   const i = rest.indexOf(`--${name}`);
   return i >= 0 ? rest[i + 1] : undefined;
 };
+if (process.env.FAKE_CORE_LOG) appendFileSync(process.env.FAKE_CORE_LOG, `${JSON.stringify({ args: process.argv.slice(2), home: process.env.CONTR_HOME ?? null })}\n`);
+if (cmd === "install") {
+  if (process.env.FAKE_CORE_FAIL === "install") {
+    process.stdout.write("STOP: fake\nNothing was written.\n");
+    process.exit(1);
+  }
+  if (!rest.includes("--dry-run")) {
+    const bin = path.join(process.env.CONTR_HOME, "bin");
+    mkdirSync(bin, { recursive: true });
+    for (const [flag, name] of [["helper", "herdr-contr-feed"], ["orch", "herdr-contr-orch"]]) {
+      if (!arg(flag)) continue;
+      rmSync(path.join(bin, name), { force: true });
+      symlinkSync(realpathSync(arg(flag)), path.join(bin, name));
+    }
+    writeFileSync(path.join(process.env.CONTR_HOME, "install.json"), JSON.stringify({ build: process.env.FAKE_CORE_BUILD ?? null }));
+  }
+  process.stdout.write("Done.\n");
+  process.exit(0);
+}
 const out = (line) => process.stdout.write(`${JSON.stringify(line)}\n`);
 const end = (ok) => out({ ms: 1, ok, type: "end" });
 const worker = workers[arg("terminal")];
