@@ -26,7 +26,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
             <li key={r.plan} aria-label={r.plan} className="flex h-4 items-center gap-2">
               <span className="w-[52px] shrink-0 text-xs text-muted">{r.plan}</span>
               <span role="meter" aria-label={`${r.plan} usage`} aria-valuenow={r.percent} aria-valuemin={0} aria-valuemax={100} className="h-1 min-w-0 flex-1 overflow-hidden rounded-sm bg-hover">
-                <span className="block h-full bg-dim" style={{ width: `${Math.min(100, r.percent)}%` }} />
+                <span className="block h-full bg-faint" style={{ width: `${Math.min(100, r.percent)}%` }} />
               </span>
               <span className="shrink-0 font-mono text-[11px] text-muted">{r.value}</span>
             </li>
@@ -41,7 +41,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
         </button>
         {/* Add machine does nothing yet: inert as the top bar's +. */}
         <Tip label="Add machine (not yet)" side="top">
-          <button type="button" aria-label="Add machine" aria-disabled="true" className="flex size-7 items-center justify-center self-center rounded-lg text-dim">
+          <button type="button" aria-label="Add machine" aria-disabled="true" className="flex size-7 items-center justify-center self-center rounded-lg text-faint">
             <Plus aria-hidden className="size-4" />
           </button>
         </Tip>

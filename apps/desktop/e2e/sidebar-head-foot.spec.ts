@@ -110,7 +110,7 @@ test("Add machine… in the machine menu is inert and says so", async () => {
   const add = page.getByRole("menu", { name: "Machine" }).getByRole("menuitem", { name: "Add machine…" });
   await expect(add).toHaveAttribute("aria-disabled", "true");
   const color = (v: string) => page.evaluate((v) => { const e = document.createElement("span"); e.style.color = `var(${v})`; document.body.append(e); const c = getComputedStyle(e).color; e.remove(); return c; }, v);
-  expect(await add.evaluate((e) => getComputedStyle(e).color)).toBe(await color("--color-dim"));
+  expect(await add.evaluate((e) => getComputedStyle(e).color)).toBe(await color("--color-faint"));
   await add.hover();
   await expect(page.getByRole("tooltip")).toHaveText("Add machine (not yet)");
   await add.click({ force: true });
