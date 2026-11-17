@@ -103,6 +103,9 @@ test("Tab reaches the ↓ button right after the reply box", async () => {
 test("in a 900x600 window the ↓ button is 34 px, centered on the reading column, above the reply box", async () => {
   test.setTimeout(60_000);
   const { app, page } = await open([900, 600]);
+  // A classic scrollbar that takes width, as on the CI runner (macOS here shows an overlay one by default).
+  await page.addStyleTag({ content: '[aria-label="Chat"]::-webkit-scrollbar { width: 15px; } [aria-label="Chat"]::-webkit-scrollbar-thumb { background: gray; }' });
+  expect(await chatList(page).evaluate((el) => (el as HTMLElement).offsetWidth - el.clientWidth)).toBe(15);
   const row = await chatRow(page, "r40");
   const button = (await jump(page).boundingBox())!;
   const column = (await row.boundingBox())!;
