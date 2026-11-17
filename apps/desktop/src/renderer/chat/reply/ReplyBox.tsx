@@ -124,7 +124,7 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
           type="submit"
           aria-label="Send"
           disabled={message === "" || sending}
-          className="rounded-full bg-foreground px-3 py-0.5 text-sm text-canvas disabled:bg-hover disabled:text-dim"
+          className="rounded-full bg-foreground px-3 py-0.5 text-sm text-canvas disabled:bg-hover disabled:text-faint"
         >
           ↑
         </button>

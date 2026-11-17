@@ -13,6 +13,7 @@
   --color-border: #363636;
   --color-muted: #9a9a9a;
   --color-dim: #6a6a6a;
+  --color-faint: #6a6a6a;
   --color-foreground: #dedede;
   --color-accent: #0a84ff;
   --color-working: #0a84ff;
@@ -36,7 +37,10 @@
     --color-selected: #d8d8d8;
     --color-border: #d1d1d1;
     --color-muted: #6e6e73;
-    --color-dim: #a1a1a6;
+    /* Not the theme file's #a1a1a6: text must reach 4.5:1 on canvas, chrome and raised
+       (docs/decisions/88-colors.md). `faint` keeps the file's pale value for non-text marks. */
+    --color-dim: #6a6a6f;
+    --color-faint: #a1a1a6;
     --color-foreground: #1d1d1f;
     --color-accent: #007aff;
     --color-working: #007aff;
