@@ -1,6 +1,5 @@
 // The Terminal side's IPC. It shows the chat's terminal (the selected agent, see ../helper),
-// in the hc session that CONTR_HC_SESSION names (empty: hc's default session).
-// It runs the hc program that CONTR_HC names, as the sidebar does (default: `hc` on PATH).
+// in the hc session that CONTR_HC_SESSION names (empty: hc's default session), with the hc program that CONTR_HC names (else `hc`).
 import { ipcMain, type WebContents } from "electron";
 import { chatTerminal } from "../helper";
 import { HcAttach } from "./hc-attach";

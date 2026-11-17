@@ -26,12 +26,16 @@ export class HcAttach {
   private ended = false;
   /** Keys typed before the attach reply: sent when the channel opens. */
   private pending: string[] = [];
+  /** hc's own words when it exits with an error. */
+  private stderr = "";
 
   constructor(target: AttachTarget, cols: number, rows: number, private on: AttachEvents) {
     const args = ["connect", ...(target.session ? ["--session", target.session] : [])];
     this.proc = spawn(target.hc ?? "hc", args, { stdio: "pipe" });
     this.proc.on("error", (e) => this.finish(`hc: ${e.message}`));
-    this.proc.on("exit", () => this.finish("hc closed the connection"));
+    this.proc.stderr.on("data", (d: Buffer) => (this.stderr += d.toString()));
+    // `close`, not `exit`: an error line on stdout or stderr is read before the end.
+    this.proc.on("close", () => this.finish(this.stderr.trim() ? `hc closed the connection: ${this.stderr.trim()}` : "hc closed the connection"));
     this.proc.stdout.on("data", (d: Buffer) => this.read(d, target.terminal, cols, rows));
     this.rpc(0, "hello", { generation: 1, framed: true }, true);
   }
