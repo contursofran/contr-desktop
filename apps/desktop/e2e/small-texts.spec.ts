@@ -45,11 +45,11 @@ test("at 600 px the model button stays on one line and the shown tab fits the ro
   await size(app, 600, 450);
   const tip = page.getByRole("tooltip");
 
-  // G7: "Opus 5.5" on one line.
+  // G7: "Opus 5.5" on one line: as high as the effort text.
   const model = page.getByRole("button", { name: "Model" });
   await expect(model).toContainText("Opus 5.5");
-  const label = model.getByText("Opus 5.5");
-  await expect.poll(() => label.evaluate((e) => e.getClientRects().length)).toBe(1);
+  const height = (text: string) => model.getByText(text, { exact: true }).evaluate((e) => e.getBoundingClientRect().height);
+  await expect.poll(async () => (await height("Opus 5.5")) - (await height("medium"))).toBe(0);
 
   // G12: the shown tab is in the row from its start, and its title truncates.
   const row = page.locator("[data-tab-row]");

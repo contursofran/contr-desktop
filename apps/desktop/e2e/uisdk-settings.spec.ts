@@ -73,7 +73,7 @@ test("the reply box and the code block show UI SDK tooltips on hover and focus; 
   await expect(ring).toBeFocused();
   const ringTip = tip.filter({ visible: true });
   await expect(ringTip).toHaveCount(1);
-  await expect(ringTip).toHaveText("ctx 37%");
+  await expect(ringTip).toHaveText("37% of the model's context window");
   await page.keyboard.press("Escape");
   await expect(tip.filter({ visible: true })).toHaveCount(0);
   await expect(ring).toBeFocused();
