@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CANVAS_DARK, windowOptions } from "./window-options";
+import { CANVAS_DARK, MIN_HEIGHT, MIN_WIDTH, windowOptions } from "./window-options";
 
 describe("windowOptions", () => {
   it("uses hiddenInset on macOS", () => {
@@ -12,5 +12,10 @@ describe("windowOptions", () => {
   it("paints the dark canvas before the page loads", () => {
     expect(windowOptions("darwin", "p").backgroundColor).toBe(CANVAS_DARK);
     expect(CANVAS_DARK).toBe("#202020");
+  });
+  it("has a minimum size of 640 x 480", () => {
+    const o = windowOptions("darwin", "p");
+    expect([o.minWidth, o.minHeight]).toEqual([MIN_WIDTH, MIN_HEIGHT]);
+    expect([MIN_WIDTH, MIN_HEIGHT]).toEqual([640, 480]);
   });
 });

@@ -10,9 +10,9 @@ import { pickImage } from "./pick";
 
 let selected: string | undefined;
 
-/** The terminal of the chat's agent: the one picked in the sidebar, else CONTR_TERMINAL at start. */
+/** The terminal of the chat's agent: the one picked in the sidebar, else CONTR_TERMINAL at start, else none (""): the renderer then picks one. */
 export function chatTerminal(env = process.env): string {
-  return selected ?? env.CONTR_TERMINAL ?? "t1";
+  return selected ?? env.CONTR_TERMINAL ?? "";
 }
 
 /** Picks the chat's agent. The renderer then listens again, and the feed starts for this terminal. */
