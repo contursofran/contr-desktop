@@ -96,7 +96,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
             role="listitem"
             data-kind={item.k}
             data-row-id={item.id}
-            className="mx-auto w-full max-w-3xl py-1"
+            className="mx-auto w-full max-w-read py-1"
           >
             <Row row={item} />
           </div>
