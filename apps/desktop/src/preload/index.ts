@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, SEND_CHANNEL, TAB_TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, OWNER_CHANNEL, OWNER_EVENT, OWNER_ANSWER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_ERROR_CHANNEL, OWNER_ERROR_EVENT, SETTINGS_CHANNEL, THEME_CHANNEL, UPDATE_CHANNEL, UPDATE_EVENT, UPDATE_DOWNLOAD_CHANNEL, UPDATE_RESTART_CHANNEL, UPDATE_CHECK_CHANNEL, CHANGELOG_CHANNEL, OPEN_SETTINGS_EVENT, type UpdateState, type OwnerItems, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, SEND_CHANNEL, TAB_TITLE_CHANNEL, REPLY_INFO_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, OWNER_CHANNEL, OWNER_EVENT, OWNER_ANSWER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_ERROR_CHANNEL, OWNER_ERROR_EVENT, SETTINGS_CHANNEL, THEME_CHANNEL, UPDATE_CHANNEL, UPDATE_EVENT, UPDATE_DOWNLOAD_CHANNEL, UPDATE_RESTART_CHANNEL, UPDATE_CHECK_CHANNEL, CHANGELOG_CHANNEL, OPEN_SETTINGS_EVENT, CORE_CHANNEL, CORE_EVENT, CORE_CHECK_CHANNEL, type CoreState, type UpdateState, type OwnerItems, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
 
 const api: ContrApi = {
@@ -61,6 +61,13 @@ const api: ContrApi = {
   restartToUpdate: () => ipcRenderer.invoke(UPDATE_RESTART_CHANNEL),
   checkUpdate: () => ipcRenderer.invoke(UPDATE_CHECK_CHANNEL),
   changeLog: (again) => ipcRenderer.invoke(CHANGELOG_CHANNEL, again === true),
+  core: () => ipcRenderer.invoke(CORE_CHANNEL),
+  onCore(listener) {
+    const handler = (_event: unknown, state: CoreState) => listener(state);
+    ipcRenderer.on(CORE_EVENT, handler);
+    return () => ipcRenderer.off(CORE_EVENT, handler);
+  },
+  checkCore: (force) => ipcRenderer.invoke(CORE_CHECK_CHANNEL, force === true),
   onOpenSettings(listener) {
     const handler = () => listener();
     ipcRenderer.on(OPEN_SETTINGS_EVENT, handler);

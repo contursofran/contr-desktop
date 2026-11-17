@@ -8,6 +8,8 @@ export interface CurrentCore {
   root: string | null;
   /** Why the app runs the bundle in place of the home (texts T8, T9), else null or not set. */
   error?: string | null;
+  /** The root is shared with the Herdr app: the app changes nothing there (rule R1, row 5). */
+  shared?: boolean;
 }
 
 let current: CurrentCore = { source: "bundle", root: null };

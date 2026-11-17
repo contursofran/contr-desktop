@@ -18,6 +18,9 @@
 // `install --backend --helper <file> [--orch <file>] [--dry-run]` answers plain text, as the real core does: it links the
 // programs into <CONTR_HOME>/bin/ (a link, not a copy: the fakes find their fixtures next to their real file), writes
 // install.json {"build": FAKE_CORE_BUILD} and prints "Done.". FAKE_CORE_FAIL=install prints "STOP: fake" and exits 1.
+// `update check` answers an `update` line: `installed` from <CONTR_HOME>/install.json `build`, `newest` the stamp of the tag
+// FAKE_CORE_NEWEST (`build-YYYY-MM-DD-<sha7>`). FAKE_CORE_FAIL=check:<code> answers that error; FAKE_CORE_FIELDS=c2 adds
+// the fields of contr-core issue C2 (versions 0.1.41 and 0.1.57, `newer`, `root`, `releases`).
 // FAKE_CORE_LOG=<file>: each call appends {args, home} (home is CONTR_HOME, or null) as one JSON line.
 // The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
 // `working` and `card` give that worker's data. FAKE_HELPER_CARD and FAKE_HELPER_MODEL=none still win.
@@ -81,6 +84,20 @@ if (failing) {
     for (const r of rows.slice(seen)) out({ ...JSON.parse(r.replaceAll("$FIXTURES", fixtures)), type: "row" });
   }
   end(true);
+} else if (cmd === "update" && rest[0] === "check") {
+  const fail = process.env.FAKE_CORE_FAIL?.startsWith("check:") && process.env.FAKE_CORE_FAIL.slice("check:".length);
+  if (fail) {
+    out({ code: fail, message: `fake ${fail}`, type: "error" });
+    end(false);
+  } else {
+    const installed = JSON.parse(readFileSync(path.join(process.env.CONTR_HOME, "install.json"), "utf8")).build;
+    const [, date, sha] = /^build-(\d{4}-\d{2}-\d{2})-([0-9a-f]{7})$/.exec(process.env.FAKE_CORE_NEWEST ?? "") ?? [];
+    const newest = `${sha} ${date}`;
+    const line = { type: "update", installed, newest, tag: process.env.FAKE_CORE_NEWEST, url: "https://example.invalid/release", differs: installed.split(" ")[0] !== sha, checked_at: Math.floor(Date.now() / 1000) };
+    if (process.env.FAKE_CORE_FIELDS === "c2") Object.assign(line, { installed_version: "0.1.41", newest_version: "0.1.57", newer: true, root: process.env.CONTR_HOME, releases: [] });
+    out(line);
+    end(true);
+  }
 } else if (cmd === "send" && process.env.FAKE_HELPER_SEND_ERROR) {
   out({ code: process.env.FAKE_HELPER_SEND_ERROR, message: `fake send error ${process.env.FAKE_HELPER_SEND_ERROR}`, type: "error" });
   end(false);

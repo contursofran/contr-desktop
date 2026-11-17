@@ -7,15 +7,21 @@ import { usageTip } from "./usageTip";
 /**
  * The sidebar foot (docs/design/recipe-herdr.md, the foot): one row per plan (name, meter, "41% wk · 4d"; a stale
  * plan: an empty meter and "—"), with a tooltip that says when the data was read,
- * then Settings and the add machine button. Settings opens the Settings view and has a dot (`accent`) when an update is ready; + does nothing yet.
+ * then Settings and the add machine button. Settings opens the Settings view and has a dot (`accent`) when an update of the app or the core is ready; + does nothing yet.
  */
 export function Foot({ onSettings, settingsShown }: { onSettings: () => void; settingsShown: boolean }) {
   const [rows, setRows] = useState<UsageRow[]>([]);
-  const [ready, setReady] = useState(false);
+  const [appReady, setAppReady] = useState(false);
+  const [coreReady, setCoreReady] = useState(false);
   useEffect(() => {
-    void window.contr.update().then((u) => setReady(u.available));
-    return window.contr.onUpdate((u) => setReady(u.available));
+    void window.contr.update().then((u) => setAppReady(u.available));
+    return window.contr.onUpdate((u) => setAppReady(u.available));
   }, []);
+  useEffect(() => {
+    void window.contr.core().then((c) => setCoreReady(c.available));
+    return window.contr.onCore((c) => setCoreReady(c.available));
+  }, []);
+  const ready = appReady || coreReady;
   useEffect(() => {
     void window.contr.usage().then(setRows);
     return window.contr.onUsage(setRows);
