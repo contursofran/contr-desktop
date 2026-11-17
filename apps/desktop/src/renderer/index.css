@@ -36,9 +36,9 @@
     --color-hover: #e2e2e2;
     --color-selected: #d8d8d8;
     --color-border: #d1d1d1;
-    --color-muted: #6e6e73;
-    /* Not the theme file's #a1a1a6: text must reach 4.5:1 on canvas, chrome and raised
-       (docs/decisions/88-colors.md). `faint` keeps the file's pale value for non-text marks. */
+    /* `muted` and `dim` are not the theme file's #6e6e73 and #a1a1a6: text must reach 4.5:1 on
+       canvas, chrome and raised (docs/decisions/88-colors.md). `faint` keeps the file's pale value. */
+    --color-muted: #5f5f64;
     --color-dim: #6a6a6f;
     --color-faint: #a1a1a6;
     --color-foreground: #1d1d1f;

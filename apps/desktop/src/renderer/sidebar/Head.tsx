@@ -7,13 +7,13 @@ import { Tip } from "../ui/Tip";
 const STATE: Record<string, string> = { unreachable: "unreachable", "needs-login": "needs login", needs_login: "needs login", rebuilt: "rebuilt" };
 
 const icon = "flex size-7 items-center justify-center rounded-lg text-muted hover:bg-hover [-webkit-app-region:no-drag]";
-const inert = "flex size-7 items-center justify-center rounded-lg text-dim [-webkit-app-region:no-drag]";
+const inert = "flex size-7 items-center justify-center rounded-lg text-faint [-webkit-app-region:no-drag]";
 
 /**
 * The sidebar head (docs/design/recipe-herdr.md, the head): the app name, the machine switch, search and the
  * sidebar toggle on the first row, the machine switch on its own row under it, so the
  * machine name reads in full (decision: the PR of issue 50). The toggle hides the sidebar (`onHide`); the top bar then has the
- * toggle that shows it. Search and "Add machine…" do nothing yet, so they are inert as the top bar's +: `aria-disabled`, `dim`, "(not yet)".
+ * toggle that shows it. Search and "Add machine…" do nothing yet, so they are inert as the top bar's +: `aria-disabled`, `faint`, "(not yet)".
  * The pick only changes the label: it filters no project yet, as the app reads agents of this computer only.
  */
 export function Head({ onHide }: { onHide: () => void }) {
@@ -50,7 +50,7 @@ export function Head({ onHide }: { onHide: () => void }) {
             </MenuRadioGroup>
             <MenuSeparator className="my-1 border-t border-border" />
             <Tip label="Add machine (not yet)" side="right">
-              <MenuItem disabled className={`${item} text-dim aria-disabled:data-highlighted:bg-transparent`}>Add machine…</MenuItem>
+              <MenuItem disabled className={`${item} text-faint aria-disabled:data-highlighted:bg-transparent`}>Add machine…</MenuItem>
             </Tip>
           </MenuContent>
         </Menu>

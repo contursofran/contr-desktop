@@ -23,13 +23,20 @@ const contrast = (a: string, b: string) => {
 };
 
 describe("light theme contrast", () => {
-  for (const surface of ["canvas", "chrome", "raised"]) {
-    it(`dim text reaches 4.5:1 on ${surface}`, () => {
-      expect(contrast(token(light, "dim"), token(light, surface))).toBeGreaterThanOrEqual(4.5);
-    });
+  for (const text of ["muted", "dim"]) {
+    for (const surface of ["canvas", "chrome", "raised"]) {
+      it(`${text} text reaches 4.5:1 on ${surface}`, () => {
+        expect(contrast(token(light, text), token(light, surface))).toBeGreaterThanOrEqual(4.5);
+      });
+    }
   }
+  it("muted is clearly stronger than dim", () => {
+    expect(luminance(token(light, "muted"))).toBeLessThan(luminance(token(light, "dim")));
+    expect(contrast(token(light, "muted"), token(light, "canvas")) - contrast(token(light, "dim"), token(light, "canvas"))).toBeGreaterThanOrEqual(0.5);
+  });
   it("faint keeps the theme file's pale value; the dark theme does not change", () => {
     expect(token(light, "faint")).toBe("#a1a1a6");
+    expect(token(dark, "muted")).toBe("#9a9a9a");
     expect(token(dark, "dim")).toBe("#6a6a6a");
     expect(token(dark, "faint")).toBe("#6a6a6a");
   });

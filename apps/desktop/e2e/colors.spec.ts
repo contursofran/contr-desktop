@@ -12,10 +12,10 @@ const THEME = {
   dark: { chrome: "rgb(28, 28, 28)", canvas: "rgb(32, 32, 32)", foreground: "rgb(222, 222, 222)", working: "rgb(10, 132, 255)", done: "rgb(48, 209, 88)", blocked: "rgb(255, 159, 10)" },
   light: { chrome: "rgb(245, 245, 245)", canvas: "rgb(236, 236, 236)", foreground: "rgb(29, 29, 31)", working: "rgb(0, 122, 255)", done: "rgb(52, 199, 89)", blocked: "rgb(255, 149, 0)" },
 };
-// Text in `dim`, inert controls in `faint`: in light, `dim` is darker than the theme file for 4.5:1 (#102).
+// Text in `muted` and `dim`, inert controls in `faint`: in light, `muted` and `dim` are darker than the theme file for 4.5:1 (#102).
 const QUIET = {
-  dark: { dim: "rgb(106, 106, 106)", faint: "rgb(106, 106, 106)" },
-  light: { dim: "rgb(106, 106, 111)", faint: "rgb(161, 161, 166)" },
+  dark: { muted: "rgb(154, 154, 154)", dim: "rgb(106, 106, 106)", faint: "rgb(106, 106, 106)" },
+  light: { muted: "rgb(95, 95, 100)", dim: "rgb(106, 106, 111)", faint: "rgb(161, 161, 166)" },
 };
 
 test("the palette, the agent icons and the loader are herdr-contr's", async () => {
@@ -65,6 +65,9 @@ test("the palette, the agent icons and the loader are herdr-contr's", async () =
     await expect(page.getByText(/Worked 1m 0s/)).toHaveCSS("color", QUIET[scheme].dim);
     await expect(tabs.locator("[data-tab-close]").first()).toHaveCSS("color", QUIET[scheme].dim);
     await expect(page.getByRole("button", { name: "New tab" })).toHaveCSS("color", QUIET[scheme].faint);
+    await expect(page.locator("aside > header").getByRole("button", { name: "Search" })).toHaveCSS("color", QUIET[scheme].faint);
+    await expect(page.locator("aside > footer").getByRole("button", { name: "Add machine" })).toHaveCSS("color", QUIET[scheme].faint);
+    await expect(page.getByRole("listitem", { name: "Claude" }).getByText("Claude", { exact: true })).toHaveCSS("color", QUIET[scheme].muted);
     await expect(page.getByRole("form", { name: "Reply" }).getByRole("button", { name: "Send" })).toHaveCSS("color", QUIET[scheme].faint);
     await expect(page.getByRole("meter", { name: "Claude usage" }).locator("span")).toHaveCSS("background-color", QUIET[scheme].faint);
     await page.screenshot({ path: path.join(shots, `colors-working-${scheme}.png`) });
