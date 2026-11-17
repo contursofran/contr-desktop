@@ -13,6 +13,7 @@ test("a link in a message opens the browser, never a window or a navigation of t
   const openLog = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "open.txt");
   const opened = () => { try { return readFileSync(openLog, "utf8"); } catch { return ""; } };
   const app = await launchApp({
+    CONTR_TERMINAL: "t1",
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
     FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/links-session.jsonl"),
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
