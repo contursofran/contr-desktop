@@ -117,9 +117,9 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
           {feed.error.code}: {feed.error.message}
         </p>
       )}
-      <ChatList rows={feed.rows} />
-      {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window. */}
-      <div className="px-4">
+      {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window.
+          They come before the chat rows in the DOM, so Tab reaches the reply box first; `order-last` shows them under the rows. */}
+      <div className="order-last px-4">
         <OwnerCards items={owner} />
         {feed.card && <Card card={feed.card} />}
         <StatusLine
@@ -129,6 +129,7 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
         />
         <ReplyBox terminal={terminal} title={title} draft={draft} />
       </div>
+      <ChatList rows={feed.rows} />
     </>
   );
 }
