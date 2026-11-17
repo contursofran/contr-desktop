@@ -43,7 +43,7 @@ else if (cmd === "get") {
   // FAKE_HC_STATUS: a JSON file { address: status } that a test rewrites to change an agent's status.
   const status = process.env.FAKE_HC_STATUS ? JSON.parse(readFileSync(process.env.FAKE_HC_STATUS, "utf8")) : {};
   const list = listed
-    ? listed.map(({ foreground: _f, title: _t, ...t }) => t)
+    ? listed.map((t) => ({ ...t, foreground: undefined, title: undefined }))
     : process.env.FAKE_HC_AGENTS === "1" ? agents.map((t) => ({ ...t, status: status[t.address] ?? t.status, title: undefined })) : [];
   process.stdout.write(JSON.stringify({ terminals: list }));
 } else process.exit(1);
