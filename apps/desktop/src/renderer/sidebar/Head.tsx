@@ -7,13 +7,14 @@ import { Tip } from "../ui/Tip";
 const STATE: Record<string, string> = { unreachable: "unreachable", "needs-login": "needs login", needs_login: "needs login", rebuilt: "rebuilt" };
 
 const icon = "flex size-7 items-center justify-center rounded-lg text-muted hover:bg-hover [-webkit-app-region:no-drag]";
+const inert = "flex size-7 items-center justify-center rounded-lg text-dim [-webkit-app-region:no-drag]";
 
 /**
 * The sidebar head (docs/design/recipe-herdr.md, the head): the app name, the machine switch, search and the
  * sidebar toggle on the first row, the machine switch on its own row under it, so the
  * machine name reads in full (decision: the PR of issue 50). The toggle hides the sidebar (`onHide`); the top bar then has the
- * toggle that shows it. "Add machine…" does nothing yet, so it is inert as the top bar's +: `aria-disabled`, `dim`, "(not yet)".
- * The pick does not filter the Projects list yet: the app reads agents of this computer only.
+ * toggle that shows it. Search and "Add machine…" do nothing yet, so they are inert as the top bar's +: `aria-disabled`, `dim`, "(not yet)".
+ * The pick only changes the label: it filters no project yet, as the app reads agents of this computer only.
  */
 export function Head({ onHide }: { onHide: () => void }) {
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -33,7 +34,7 @@ export function Head({ onHide }: { onHide: () => void }) {
       <div className={`flex h-[46px] items-center gap-1 pr-2.5 [-webkit-app-region:drag] ${window.contr.platform === "darwin" ? "pl-[76px]" : "pl-5"}`}>
         <span className="text-sm font-semibold">contr</span>
         <span className="flex-1" />
-        <Tip label="Search"><button type="button" aria-label="Search" className={icon}><Search aria-hidden className="size-4" /></button></Tip>
+        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" className={inert}><Search aria-hidden className="size-4" /></button></Tip>
         <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" onClick={onHide} className={icon}><PanelLeft aria-hidden className="size-4" /></button></Tip>
       </div>
       <div className="flex px-3 pb-1">

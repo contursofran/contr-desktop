@@ -24,14 +24,15 @@ test("the sidebar head has the machine switch, the foot the plan usage and Setti
   await expect(head.getByRole("button", { name: "Machine" })).toHaveText("This computer");
   const label = head.getByTestId("machine-label");
   expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
-  await expect(head.getByRole("button", { name: "Search" })).toBeVisible();
+  // Search and the foot's Add machine do nothing yet: inert, as the top bar's +.
+  await expect(head.getByRole("button", { name: "Search" })).toHaveAttribute("aria-disabled", "true");
   await expect(head.getByRole("button", { name: "Hide sidebar" })).toBeVisible();
 
   const usage = page.getByRole("list", { name: "Plan usage" });
   await expect(usage.getByRole("listitem")).toHaveText(["Claude64% wk · 4d", "Codex21% 5h · 3h"]);
   await expect(usage.getByRole("meter", { name: "Claude usage" })).toHaveAttribute("aria-valuenow", "64");
   await expect(page.locator("aside > footer").getByRole("button", { name: "Settings" })).toBeVisible();
-  await expect(page.locator("aside > footer").getByRole("button", { name: "Add machine" })).toBeVisible();
+  await expect(page.locator("aside > footer").getByRole("button", { name: "Add machine" })).toHaveAttribute("aria-disabled", "true");
 
   await expect(page.getByRole("region", { name: "contr-desktop" })).toBeVisible();
   await page.emulateMedia({ colorScheme: "dark" });

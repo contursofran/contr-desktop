@@ -107,7 +107,7 @@ test("the sidebar and top bar tooltips show on hover and focus, and Escape or le
 
   const search = page.locator("aside > header").getByRole("button", { name: "Search" });
   await search.focus();
-  await expect(tip).toHaveText("Search");
+  await expect(tip).toHaveText("Search (not yet)");
   await page.keyboard.press("Tab");
   await expect(tip).toHaveText("Hide sidebar");
   await page.keyboard.press("Escape");
@@ -115,7 +115,7 @@ test("the sidebar and top bar tooltips show on hover and focus, and Escape or le
   await expect(page.locator("aside > header").getByRole("button", { name: "Hide sidebar" })).toBeFocused();
 
   await hover(page, page.locator("aside > footer").getByRole("button", { name: "Add machine" }));
-  await expect(tip).toHaveText("Add machine");
+  await expect(tip).toHaveText("Add machine (not yet)");
   await shoot(page, "sidebar-foot-tooltip");
   await app.close();
 });
