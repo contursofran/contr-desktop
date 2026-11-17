@@ -20,6 +20,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      # scripts/fetch-helper with a fake gh: the repository, the prerelease skip and the zip layout.
+      - run: node --test scripts/fetch-helper.test.mjs
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test

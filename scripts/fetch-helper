@@ -1,15 +1,15 @@
 #!/bin/sh
-# Downloads the newest herdr-contr release and puts herdr-contr-feed and
+# Downloads the newest contr-core release and puts herdr-contr-feed and
 # herdr-contr-orch in bin/ (git ignores it), and the Linux x86_64 helper in
 # bin/linux-x64/. The packaged app bundles them (docs/reference/releases.md).
 # The app takes CONTR_HELPER over bin/.
-# Uses gh to read herdr-contr's releases (a public repository).
+# Uses gh to read contr-core's releases (a public repository).
 set -eu
-repo="${HERDR_CONTR_REPO:-contursofran/herdr-contr}"
+repo="${HERDR_CONTR_REPO:-contursofran/contr-core}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-tag="$(gh release list -R "$repo" --limit 20 --json tagName -q '[.[].tagName | select(startswith("build-"))][0]')"
+tag="$(gh release list -R "$repo" --exclude-pre-releases --limit 20 --json tagName -q '[.[].tagName | select(startswith("build-"))][0]')"
 [ -n "$tag" ] || { echo "no build-* release in $repo" >&2; exit 1; }
 gh release download "$tag" -R "$repo" --pattern '*.zip' --dir "$work"
 unzip -q -o "$work"/*.zip -d "$work/zip"
