@@ -27,7 +27,8 @@ export function HelperError({ error, onRetry }: { error: { code: string; message
   const [helper, setHelper] = useState("");
   useEffect(() => void window.contr.settings().then((s) => setHelper(s.helper)), []);
   return (
-    <div className="flex min-h-0 flex-1 items-center px-4">
+    // The chat list's scrollbar gutters (ChatList.tsx), so the block's sides are the reply box's.
+    <div className="flex min-h-0 flex-1 items-center overflow-y-auto px-4 [scrollbar-gutter:stable_both-edges]">
       <ErrorNote label="Helper error" problem={helperProblem(error)} detail={`${error.code}: ${error.message}`} onRetry={onRetry}>
         <p className="mt-2 flex min-w-0 items-center gap-2 text-xs text-muted">
           <span className="shrink-0">Helper</span>

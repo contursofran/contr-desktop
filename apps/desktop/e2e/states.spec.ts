@@ -46,7 +46,8 @@ test("a helper error is a block in the reading column: plain words, the error, t
   await expect(alert.locator("p").first()).toHaveText("hc is not running.");
   await expect(alert.locator("pre")).toHaveText("no-core: fake error no-core");
   await expect(alert.getByLabel("Helper path")).toHaveText(base.CONTR_HELPER);
-  // In the column: the block's sides are the reply box's.
+  // In the column: the block's sides are the reply box's, with a classic scrollbar too (as on the CI runner).
+  await page.addStyleTag({ content: "::-webkit-scrollbar { width: 15px; }" });
   const block = (await alert.boundingBox())!;
   const reply = (await page.getByRole("form", { name: "Reply" }).boundingBox())!;
   expect(Math.abs(block.x - reply.x)).toBeLessThan(1);
