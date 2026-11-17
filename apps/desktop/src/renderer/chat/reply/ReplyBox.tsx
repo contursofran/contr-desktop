@@ -1,10 +1,11 @@
 import { Plus } from "lucide-react";
 import { Tip } from "../../ui/Tip";
-import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { Attachments } from "./Attachments";
 import { addImage, readDraft, removeImage, saveDraft } from "./drafts";
 import { composeMessage, isSendKey } from "./message";
 import { replyPlaceholder, serial } from "./menu";
+import { cutSent, outbox } from "./outbox";
 import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
 
 /** A text to put in the box. A new `id` puts it again. */
@@ -18,8 +19,11 @@ export interface Draft {
  * A `draft` replaces the text, puts the caret at its end and focuses the box; it does not send.
  * Each attached file has a × that removes it (`Attachments.tsx`).
  * The unsent text and images of each `terminal` stay in memory (`drafts.ts`) when another view shows.
+ * Enter during a send queues the new text and images; a good send clears only what it sent (`outbox.ts`).
+ * `keyboard`: true when the box may take the keyboard, false while a card owns the card keys, undefined until the chat
+ * has its first full answer (the card is known then).
  */
-export function ReplyBox({ terminal, title, draft }: { terminal: string; title: string; draft?: Draft }) {
+export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: string; title: string; draft?: Draft; keyboard?: boolean }) {
   const [text, setText] = useState(() => readDraft(terminal).text);
   const box = useRef<HTMLTextAreaElement>(null);
   useGrow(box, text);
@@ -35,14 +39,18 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
   const [images, setImages] = useState<string[]>(() => readDraft(terminal).images);
   useEffect(() => saveDraft(terminal, { text, images }), [terminal, text, images]);
   const [error, setError] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const message = composeMessage(text, images);
   const placeholder = replyPlaceholder(title);
   const { info, branch } = useReplyInfo();
   // Messages and menu commands go one after the other: a menu choice made during a send is not lost.
   const queue = useRef(serial()).current;
   const sendText = (body: string) =>
     queue(() => window.contr.send(body)).catch((e: unknown) => ({ ok: false, message: String(e) }));
+  const [out] = useState(() => outbox(queue, (body) => window.contr.send(body)));
+  // The outbox is not React state: a change in it renders the box again (the Send button).
+  const [, setQueued] = useState(0);
+  const untaken = out.untaken({ text, images });
+  const message = composeMessage(untaken.text, untaken.images);
+  useKeyboard(box, keyboard);
 
   async function sendCommand(command: string): Promise<boolean> {
     const result = await sendText(command);
@@ -51,16 +59,20 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
   }
 
   async function send() {
-    if (message === "" || sending) return;
-    setSending(true);
+    const sending = out.take({ text, images });
+    if (!sending) return;
     setError(null);
-    const result = await sendText(message);
-    setSending(false);
+    setQueued((n) => n + 1);
+    const result = await sending.done;
+    setQueued((n) => n + 1);
+    if (result.skipped) return;
     if (!result.ok) return setError(result.message ?? "send failed");
-    // The chat can be gone by now: clear the stored draft too.
-    saveDraft(terminal, { text: "", images: [] });
-    setText("");
-    setImages([]);
+    // Only the sent part leaves: what the owner typed or attached during the send stays.
+    // The chat can be gone by now: the stored draft changes too.
+    const { part } = sending;
+    saveDraft(terminal, cutSent(readDraft(terminal), part));
+    setText((t) => cutSent({ text: t, images: [] }, part).text);
+    setImages((i) => cutSent({ text: "", images: i }, part).images);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -139,7 +151,7 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
         <button
           type="submit"
           aria-label="Send"
-          disabled={message === "" || sending}
+          disabled={message === ""}
           className="rounded-full bg-foreground px-3 py-0.5 text-sm text-canvas disabled:bg-hover disabled:text-faint"
         >
           ↑
@@ -147,6 +159,36 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
       </div>
     </form>
   );
+}
+
+/** Where the focus stays when the box could take the keyboard: the owner works in a text field, a menu or a dialog. */
+const HOLDS = "textarea, input, select, [contenteditable]:not([contenteditable=false]), [role=menu], [role=listbox], [role=combobox], [role=dialog]";
+
+/**
+ * The box takes the keyboard when the chat shows (docs/design/recipe-herdr.md): once when `keyboard` is first known
+ * (at start, on another agent's chat, back from Terminal), and when the window becomes active. Never on a redraw or a
+ * new message. It does not take the keyboard while a card owns the card keys (`keyboard` false), from another text
+ * field, a menu or a dialog, or while text is selected (a selection stays).
+ */
+function useKeyboard(box: { current: HTMLTextAreaElement | null }, keyboard: boolean | undefined) {
+  const may = useRef(keyboard);
+  may.current = keyboard;
+  const take = useCallback(() => {
+    const el = box.current;
+    const active = document.activeElement;
+    if (!may.current || !el || active === el) return;
+    if (active?.closest(HOLDS) || !(document.getSelection()?.isCollapsed ?? true)) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [box]);
+  const known = keyboard !== undefined;
+  useEffect(() => {
+    if (known) take();
+  }, [known, take]);
+  useEffect(() => {
+    window.addEventListener("focus", take);
+    return () => window.removeEventListener("focus", take);
+  }, [take]);
 }
 
 /** The box's largest height, as a part of the window's height. Over it, the text scrolls inside the box. */
