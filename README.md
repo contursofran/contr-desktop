@@ -24,8 +24,9 @@ when it does that job better. Until then, herdr-contr stays the daily app.
 `scripts/fetch-helper` downloads the newest herdr-contr release into `bin/`
 (it needs `gh`). In dev the app runs `bin/herdr-contr-feed`; the packaged
 app runs the copy in its `Resources/bin`. `CONTR_HELPER` names another
-program. It reads the terminal that `CONTR_TERMINAL` names (default
-`t1`). The reply box takes the terminal's title from `hc get --json` (or the
+program. At start it shows the agent shown before the restart while hc lists
+it, else the one that `CONTR_TERMINAL` names, else the first agent in the
+sidebar. The reply box takes the terminal's title from `hc get --json` (or the
 program that `CONTR_HC` names). Tests use `apps/desktop/e2e/fake-helper.mjs` and
 `fake-hc.mjs`.
 The Terminal side shows the same terminal through hc (or the program that

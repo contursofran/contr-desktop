@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Card } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
@@ -14,9 +14,8 @@ import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
+import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
 import type { Sidebar as SidebarData } from "../shared/api";
-
-type Side = "chat" | "terminal";
 
 const NO_ISSUES: number[] = [];
 
@@ -30,7 +29,23 @@ export function App() {
   // The open tabs. Selecting an agent anywhere opens its tab.
   const [tabs, setTabs] = useState<string[]>(readTabs);
   useEffect(() => saveTabs(tabs), [tabs]);
-  const [side, setSide] = useState<Side>("chat");
+  // The Chat / Terminal pick is one for the window: it stays when another agent shows and over a restart.
+  const [side, setSide] = useState<Side>(readSide);
+  useEffect(() => saveSide(side), [side]);
+  // At start the stored agent shows again while the sidebar lists it (startAgent); after that, the shown agent is stored.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!started.current) {
+      if (sidebar.projects.length === 0) return;
+      started.current = true;
+      const start = startAgent(sidebar, readShown());
+      if (start !== sidebar.selected) {
+        void window.contr.select(start).then((selected) => setSidebar((s) => ({ ...s, selected })));
+        return;
+      }
+    }
+    saveShown(sidebar.selected);
+  }, [sidebar]);
   useEffect(() => setTabs((t) => openTab(t, sidebar.selected)), [sidebar.selected]);
   // Titles from hc for tabs with no sidebar entry, read once per terminal.
   const [titles, setTitles] = useState<Record<string, string>>({});
@@ -59,7 +74,6 @@ export function App() {
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
   const select = (terminal: string) => {
-    setSide("chat");
     setInbox(false);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
