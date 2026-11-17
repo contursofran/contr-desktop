@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { readTabTitle, readTitle } from "./title";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { readTabTitle, readTitle, tabTitle } from "./title";
+
+const fakeHc = path.resolve(import.meta.dirname, "../../../e2e/fake-hc.mjs");
 
 describe("readTitle", () => {
   it("uses the title", () => expect(readTitle('{"title":"Audit","name":"w-1"}', "t7")).toBe("Audit"));
@@ -19,5 +24,31 @@ describe("readTabTitle", () => {
     expect(readTabTitle('{"title":"","name":"w-1","address":"t7"}')).toBe("Terminal");
     expect(readTabTitle('{"agent":"vim","address":"t7"}')).toBe("Terminal");
     expect(readTabTitle("")).toBe("Terminal");
+  });
+});
+
+describe("tabTitle", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("gives the title while hc lists the terminal", async () => {
+    vi.stubEnv("FAKE_HC_AGENTS", "1");
+    expect(await tabTitle("t11", fakeHc)).toEqual({ title: "Release notes draft" });
+  });
+  it("gives gone when hc runs and does not list the terminal", async () => {
+    vi.stubEnv("FAKE_HC_AGENTS", "1");
+    vi.stubEnv("FAKE_HC_GONE", "t99");
+    expect(await tabTitle("t99", fakeHc)).toEqual({ gone: true });
+  });
+  it("gives an error, not gone, when hc fails", async () => {
+    const down = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-test-hc-")), "down");
+    writeFileSync(down, "");
+    vi.stubEnv("FAKE_HC_AGENTS", "1");
+    vi.stubEnv("FAKE_HC_DOWN", down);
+    expect(await tabTitle("t11", fakeHc)).toEqual({ error: "fake hc: the core is not running" });
+  });
+  it("gives an error, not gone, when hc get fails for a terminal that hc lists", async () => {
+    vi.stubEnv("FAKE_HC_AGENTS", "1");
+    vi.stubEnv("FAKE_HC_GONE", "t11");
+    expect(await tabTitle("t11", fakeHc)).toMatchObject({ error: expect.any(String) });
   });
 });

@@ -3,6 +3,7 @@ import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef, useState } from "react";
 import { useColorScheme } from "../chat/markdown/useColorScheme";
+import type { Sidebar } from "../../shared/api";
 import { ErrorNote } from "../ui/ErrorNote";
 import { terminalProblem } from "./problem";
 import { terminalTheme } from "./theme";
@@ -14,7 +15,7 @@ export function TerminalView() {
   const shown = useRef<Terminal>(null);
   const scheme = useColorScheme();
   const first = useRef(scheme);
-  const again = useRef<() => void>(() => undefined);
+  const again = useRef<(focus?: boolean) => void>(() => undefined);
 
   useEffect(() => {
     const el = host.current!;
@@ -35,11 +36,11 @@ export function TerminalView() {
     const offEnd = api.onEnd((r) => setNote(r));
     const attach = () => void api.attach(term.cols, term.rows).then((r) => { if (r.error) setNote(r.error); });
     // Retry attaches again: main closes the old attach, and hc sends the scrollback again into a clean screen.
-    again.current = () => {
+    again.current = (focus = true) => {
       setNote(null);
       term.reset();
       attach();
-      term.focus();
+      if (focus) term.focus();
     };
     attach();
     term.onData((d) => api.input(d));
@@ -54,6 +55,25 @@ export function TerminalView() {
       term.dispose();
       shown.current = null;
     };
+  }, []);
+
+  // hc comes back after an outage (the sidebar's hcError clears): a shown note attaches again, as Retry does, but focus stays where it is.
+  // Only the change from failing to working attaches, once: while hc fails there is no attach, so no loop.
+  const noteShown = useRef(false);
+  useEffect(() => {
+    noteShown.current = note !== null;
+  }, [note]);
+  useEffect(() => {
+    let down = false;
+    const follow = (s: Sidebar) => {
+      if (s.hcError !== undefined) down = true;
+      else if (down) {
+        down = false;
+        if (noteShown.current) again.current(false);
+      }
+    };
+    void window.contr.sidebar().then(follow);
+    return window.contr.onSidebar(follow);
   }, []);
 
   // The colors follow the system appearance, as the theme tokens do.
