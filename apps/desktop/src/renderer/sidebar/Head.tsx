@@ -11,10 +11,11 @@ const icon = "flex size-7 items-center justify-center rounded-lg text-muted hove
 /**
 * The sidebar head (docs/design/recipe-herdr.md, the head): the app name, the machine switch, search and the
  * sidebar toggle on the first row, the machine switch on its own row under it, so the
- * machine name reads in full (decision: the PR of issue 50). Search, the toggle and "Add machine…" do nothing yet. The pick does not filter the Projects
- * list yet: the app reads agents of this computer only.
+ * machine name reads in full (decision: the PR of issue 50). The toggle hides the sidebar (`onHide`); the top bar then has the
+ * toggle that shows it. "Add machine…" does nothing yet, so it is inert as the top bar's +: `aria-disabled`, `dim`, "(not yet)".
+ * The pick does not filter the Projects list yet: the app reads agents of this computer only.
  */
-export function Head() {
+export function Head({ onHide }: { onHide: () => void }) {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => void window.contr.machines().then(setMachines), []);
@@ -33,7 +34,7 @@ export function Head() {
         <span className="text-sm font-semibold">contr</span>
         <span className="flex-1" />
         <Tip label="Search"><button type="button" aria-label="Search" className={icon}><Search aria-hidden className="size-4" /></button></Tip>
-        <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" className={icon}><PanelLeft aria-hidden className="size-4" /></button></Tip>
+        <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" onClick={onHide} className={icon}><PanelLeft aria-hidden className="size-4" /></button></Tip>
       </div>
       <div className="flex px-3 pb-1">
         <Menu onOpenChange={(open) => open && void window.contr.machines().then(setMachines)}>
@@ -47,7 +48,9 @@ export function Head() {
               {machines.map((m) => row(m.name, m.name, m.state))}
             </MenuRadioGroup>
             <MenuSeparator className="my-1 border-t border-border" />
-            <MenuItem className={item}>Add machine…</MenuItem>
+            <Tip label="Add machine (not yet)" side="right">
+              <MenuItem disabled className={`${item} text-dim aria-disabled:data-highlighted:bg-transparent`}>Add machine…</MenuItem>
+            </Tip>
           </MenuContent>
         </Menu>
       </div>

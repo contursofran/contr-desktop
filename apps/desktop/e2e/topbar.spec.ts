@@ -168,3 +168,83 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText([a]);
   await app.close();
 });
+
+const many = {
+  CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+  FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+  CONTR_TERMINAL: "t7",
+  CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+  FAKE_HC_AGENTS: "1",
+  CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
+  CONTR_GIT: path.join(e2e, "fake-git.mjs"),
+};
+
+test("in a narrow window the shown tab scrolls into view, and the tab row shows a thin scrollbar", async () => {
+  test.setTimeout(60_000);
+  const app = await launchApp(many);
+  const page = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
+  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(900);
+  const nav = page.getByRole("navigation", { name: "Projects" });
+  const tabs = page.getByRole("tablist", { name: "Tabs" });
+  const row = tabs.locator("[data-tab-row]");
+  // The shown tab is all inside the row's visible part.
+  const inView = () => row.evaluate((r) => {
+    const tab = r.querySelector('[role="tab"][aria-selected="true"]')!.parentElement!.getBoundingClientRect();
+    const box = r.getBoundingClientRect();
+    return tab.left >= box.left - 0.5 && tab.right <= box.right + 0.5;
+  });
+  // Six agents: each one opened from the sidebar shows its tab in view.
+  for (const name of ["Install health check", "Release notes draft", /^Cards/, /^Flow/, /^Virtual/]) {
+    await nav.getByRole("button", { name }).first().click();
+    await expect(tabs.getByRole("tab")).not.toHaveCount(0);
+    await expect.poll(inView).toBe(true);
+  }
+  await expect(tabs.getByRole("tab")).toHaveCount(6);
+  expect(await row.evaluate((r) => r.scrollWidth > r.clientWidth && r.scrollLeft > 0)).toBe(true);
+  expect(await row.evaluate((r) => getComputedStyle(r).scrollbarWidth)).toBe("thin");
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `tabs-narrow-${scheme}.png`) });
+  }
+  // The first agent again: the row scrolls back to it.
+  await nav.getByRole("button", { name: "Chat panel usability audit" }).click();
+  await expect.poll(inView).toBe(true);
+  expect(await row.evaluate((r) => r.scrollLeft)).toBe(0);
+  // The last tab, then a narrower window: it stays in view.
+  await tabs.getByRole("tab").last().click();
+  await expect.poll(inView).toBe(true);
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(700, 600));
+  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(700);
+  await expect.poll(inView).toBe(true);
+  // A close shows the next tab (here the one before) in view.
+  await tabs.locator("[data-tab-close]").click();
+  await expect(tabs.getByRole("tab")).toHaveCount(5);
+  await expect.poll(inView).toBe(true);
+  await app.close();
+});
+
+for (const view of ["Inbox", "Settings"] as const) {
+  test(`with ${view} shown no agent row and no tab looks selected, and the chat brings the look back`, async () => {
+    const app = await launchApp(many);
+    const page = await app.firstWindow();
+    const nav = page.getByRole("navigation", { name: "Projects" });
+    const tabs = page.getByRole("tablist", { name: "Tabs" });
+    const agent = nav.getByRole("button", { name: "Chat panel usability audit" });
+    await expect(agent).toHaveAttribute("aria-current", "true");
+    await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
+    await (view === "Inbox" ? nav.getByRole("button", { name: /^Inbox/ }) : page.locator("aside > footer").getByRole("button", { name: "Settings" })).click();
+    await expect(page.getByRole("region", { name: view })).toBeVisible();
+    await expect(nav.locator("[aria-current]")).toHaveText(view === "Inbox" ? [/^Inbox/] : []);
+    await expect(tabs.getByRole("tab", { selected: true })).toHaveCount(0);
+    for (const scheme of ["dark", "light"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.screenshot({ path: path.join(shots, `selected-${view.toLowerCase()}-${scheme}.png`) });
+    }
+    await tabs.getByRole("tab", { name: "Chat panel usability audit" }).click();
+    await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
+    await expect(agent).toHaveAttribute("aria-current", "true");
+    await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
+    await app.close();
+  });
+}

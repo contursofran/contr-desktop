@@ -1,5 +1,5 @@
-import { Plus, Sparkle, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { PanelLeft, Plus, Sparkle, X } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 import type { Sidebar, SidebarAgent } from "../../shared/api";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
 import { Tip } from "../ui/Tip";
@@ -40,6 +40,13 @@ export function nextAfterClose(tabs: string[], closed: string): string {
   return rest[Math.min(i, rest.length - 1)] ?? "";
 }
 
+/** The `scrollLeft` that puts an item (`left`, `width` in the row's content) in a row of `width` scrolled to `scroll`: the least move. */
+export function scrollToShow(row: { width: number; scroll: number }, item: { left: number; width: number }): number {
+  if (item.left < row.scroll) return item.left;
+  if (item.left + item.width > row.scroll + row.width) return item.left + item.width - row.width;
+  return row.scroll;
+}
+
 /**
  * The top strip (docs/design/README.md part 2): the drag area of the hidden title bar.
  * Herdr's normal tab bar (its `tabs` mod): tabs from the left, then an inert + (new tab comes later). On the right: `right`.
@@ -47,24 +54,50 @@ export function nextAfterClose(tabs: string[], closed: string): string {
  * As herdr-contr-tabs: an agent's tab has its program icon (ui/AgentIcon, one-color glyphs in `muted`),
  * then the title, then the loader in `working` while it works or a 6 px dot in `done` or `blocked`.
  * A tab with no agent keeps the sparkle: herdr-contr takes that icon from Herdr's program table, which we do not have.
- * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full.
- * The sidebar is always shown, so the bar never reaches the macOS window buttons.
+ * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's,
+ * and it scrolls the shown tab into view when the shown tab, the tabs or the row's width change (Herdr: `scroll_to_item(active)`).
+ * With the sidebar hidden (`onShowSidebar`), the bar starts with the "Show sidebar" toggle, and on macOS it pads 76 px
+ * at the left for the window buttons, as Herdr's bar and the sidebar head do.
  */
-export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, right }: {
+export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onShowSidebar, right }: {
   data: Sidebar;
   tabs: string[];
   titles: Record<string, string>;
   onSelect: (terminal: string) => void;
   onClose: (terminal: string) => void;
   onReorder: (tabs: string[]) => void;
+  onShowSidebar?: () => void;
   right?: ReactNode;
 }) {
+  const row = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    const show = () => {
+      const tab = el.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.parentElement;
+      if (!tab) return;
+      const left = tab.getBoundingClientRect().left - el.getBoundingClientRect().left + el.scrollLeft;
+      el.scrollLeft = scrollToShow({ width: el.clientWidth, scroll: el.scrollLeft }, { left, width: tab.offsetWidth });
+    };
+    show();
+    const size = new ResizeObserver(show);
+    size.observe(el);
+    return () => size.disconnect();
+  }, [data.selected, tabs, titles]);
+  const mac = window.contr.platform === "darwin";
   return (
-    <div className="flex h-10 shrink-0 items-center gap-[3px] border-b border-border bg-chrome px-2.5 [-webkit-app-region:drag]">
-      <TabOrderRoot value={tabs} onValueChange={(order) => onReorder(order)} aria-label="Tabs" className="flex min-w-0 items-center gap-[3px] [-webkit-app-region:no-drag]">
+    <div className={`flex h-10 shrink-0 items-center gap-[3px] border-b border-border bg-chrome pr-2.5 [-webkit-app-region:drag] ${onShowSidebar && mac ? "pl-[76px]" : "pl-2.5"}`}>
+      {onShowSidebar && (
+        <Tip label="Show sidebar">
+          <button type="button" aria-label="Show sidebar" onClick={onShowSidebar} className="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-hover [-webkit-app-region:no-drag]">
+            <PanelLeft aria-hidden className="size-4" />
+          </button>
+        </Tip>
+      )}
+      <TabOrderRoot value={tabs} onValueChange={(order) => onReorder(order)} aria-label="Tabs" className="flex min-w-0 items-center self-stretch gap-[3px] [-webkit-app-region:no-drag]">
         {(state) => (
           <>
-            <div className="flex min-w-0 items-center gap-[3px] overflow-x-auto">
+            <div ref={row} data-tab-row className="flex min-w-0 items-center self-stretch gap-[3px] overflow-x-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin]">
               {state.order.map((t) => {
               const shown = t === data.selected;
               const title = tabLabel(data, t, titles);
