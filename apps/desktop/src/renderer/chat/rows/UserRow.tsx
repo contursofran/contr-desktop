@@ -8,14 +8,14 @@ export function UserRow({ row }: { row: FeedRow }) {
   if (row.from) {
     const first = text.split("\n")[0];
     return (
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="w-full text-left text-sm text-muted hover:text-foreground">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="w-full text-left text-sm text-muted [overflow-wrap:anywhere] hover:text-foreground">
         ↳ {row.from}: {open ? <span className="whitespace-pre-wrap">{text}</span> : first}
       </button>
     );
   }
   return (
     <div className="flex flex-col items-end gap-1">
-      <p className="max-w-[80%] whitespace-pre-wrap rounded-2xl bg-raised px-4 py-2 text-sm">{text}</p>
+      <p className="max-w-[80%] whitespace-pre-wrap rounded-2xl [overflow-wrap:anywhere] bg-raised px-4 py-2 text-sm">{text}</p>
       {row.images ? <span className="text-xs text-dim">{row.images === 1 ? "1 picture" : `${row.images} pictures`}</span> : null}
     </div>
   );

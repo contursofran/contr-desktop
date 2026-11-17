@@ -50,10 +50,13 @@ The target is herdr-contr as the owner uses it on 2026-11-16:
    - `contr-status` and `contr-queue` blocks as a board and a queue (herdr-contr
      shows them as code today: herdr-contr #230).
 5. **Status line** above the reply box: a spinner, the verb ("Hashing…"), the
-   time and the tokens; on the right, "Orchestrating · 3 workers".
+   time and the tokens; on the right, "Orchestrating · 3 workers". In a narrow
+   window the left text is cut with an ellipsis; the right text stays whole.
 6. **Reply box**: "Reply to <title>". Under it: a + (attach), the model
    button (agent icon, "Opus 5.5", effort "medium", chevron), and on the right
    the context ring with its percent, the branch, and the send button.
+   The box grows with its text up to 40% of the window, then scrolls. The
+   unsent text and images stay for each agent while the app runs.
 7. **Cards** above the reply box when an agent asks for permission or asks a
    question: the choices as buttons, with keys.
 
