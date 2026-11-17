@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { chmodSync, mkdtempSync, readFileSync } from "node:fs";
+import { Arch, build, Platform } from "electron-builder";
+import { chmodSync, createReadStream, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
+import { createRequire } from "node:module";
 import type { AddressInfo } from "node:net";
 import os from "node:os";
 import path from "node:path";
-import { fakeApp } from "./fake-app";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
@@ -18,12 +19,60 @@ const base = {
   CONTR_GIT: path.join(e2e, "fake-git.mjs"),
 };
 const DMG = Buffer.alloc(64 * 1024, 7);
-const ZIP = readFileSync(fakeApp("9.1.42").zip);
+const require = createRequire(import.meta.url);
+let project = "";
+let zip = "";
+
+/**
+ * Builds the release .zip as `pnpm dist` does: electron-builder with electron-builder.yml, so the app is signed
+ * with the release's signing options (#87). Only the content and the build speed differ: a small main file,
+ * the local arch, no compression and the local Electron.
+ */
+async function releaseZip(version: string): Promise<string> {
+  project = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-release-"));
+  writeFileSync(path.join(project, "package.json"), JSON.stringify({ name: "desktop", version, main: "main.js" }));
+  writeFileSync(path.join(project, "main.js"), "process.exit(0);\n");
+  // The scratch project has no dependencies; a lockfile makes electron-builder list them with npm, not with
+  // the package manager that runs the tests.
+  writeFileSync(path.join(project, "package-lock.json"), JSON.stringify({ name: "desktop", version, lockfileVersion: 3, packages: {} }));
+  // On a pull_request run (GITHUB_BASE_REF is set) electron-builder skips signing; the release runs on
+  // workflow_run and signs. CSC_FOR_PULL_REQUEST makes this build sign as the release does.
+  const pr = process.env.CSC_FOR_PULL_REQUEST;
+  process.env.CSC_FOR_PULL_REQUEST = "true";
+  await build({
+    projectDir: project,
+    targets: Platform.MAC.createTarget(["zip"], process.arch === "x64" ? Arch.x64 : Arch.arm64),
+    config: {
+      extends: path.resolve(e2e, "../electron-builder.yml"),
+      directories: { output: path.join(project, "release") },
+      electronDist: path.dirname(require.resolve("electron/dist/version")),
+      electronVersion: (require("electron/package.json") as { version: string }).version,
+      files: ["main.js"],
+      compression: "store",
+      npmRebuild: false,
+    },
+  }).finally(() => {
+    if (pr === undefined) delete process.env.CSC_FOR_PULL_REQUEST;
+    else process.env.CSC_FOR_PULL_REQUEST = pr;
+  });
+  return path.join(project, "release/contr-mac-universal.zip");
+}
+
+test.beforeAll(async () => {
+  // electron-builder signs only on macOS; the Update button installs only there.
+  test.skip(process.platform !== "darwin", "macOS only: codesign and ditto");
+  test.setTimeout(180_000);
+  zip = await releaseZip("9.1.42");
+});
+
+test.afterAll(() => {
+  if (project) rmSync(project, { recursive: true, force: true });
+});
 
 /** What /live gives: the release `version`, or HTTP 500 when `fail`; while `hold` is set, the answer waits for it. */
 const live: { version: string; fail: boolean; hold: Promise<void> | null } = { version: "0.0.0", fail: false, hold: null };
 
-/** A fake GitHub: /live (see `live`), /release (the release JSON, its .zip broken), /release-zip, /release-dmg (no .zip), /dmg (a small fake .dmg), /zip (a fake app), /broken (HTTP 500). */
+/** A fake GitHub: /live (see `live`), /release (the release JSON, its .zip broken), /release-zip, /release-dmg (no .zip), /dmg (a small fake .dmg), /zip (the app as the release build makes it), /broken (HTTP 500). */
 async function fakeGitHub(): Promise<{ server: Server; url: string }> {
   const server = createServer(async (req, res) => {
     const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -41,8 +90,8 @@ async function fakeGitHub(): Promise<{ server: Server; url: string }> {
     } else if (req.url === "/release-zip") {
       res.end(JSON.stringify({ body: "contr 9.1.42 from abc.", assets: [{ name: "contr-mac-universal.dmg", browser_download_url: `${url}/dmg` }, { name: "contr-mac-universal.zip", browser_download_url: `${url}/zip` }] }));
     } else if (req.url === "/zip") {
-      res.setHeader("content-length", String(ZIP.length));
-      res.end(ZIP);
+      res.setHeader("content-length", String(statSync(zip).size));
+      createReadStream(zip).pipe(res);
     } else if (req.url === "/dmg") {
       res.setHeader("content-length", String(DMG.length));
       res.end(DMG);

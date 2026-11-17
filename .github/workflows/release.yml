@@ -1,6 +1,7 @@
 name: Release
 
-# A release for each commit on main that passes CI: the macOS app (universal .dmg and .zip, unsigned)
+# A release for each commit on main that passes CI: the macOS app (universal .dmg and .zip, ad-hoc signed,
+# no certificate)
 # and the Linux AppImage, with the helper and herdr-contr-orch from herdr-contr's newest release.
 # Tag: build-<commit date>-<short sha>. App version: 0.1.<run number>. See docs/reference/releases.md.
 on:
@@ -68,6 +69,13 @@ jobs:
       - run: pnpm ${{ matrix.dist }} -c.extraMetadata.version=${{ needs.stamp.outputs.version }}
       - if: runner.os == 'macOS'
         run: scripts/check-bundle
+      # The Update button unpacks the .zip with ditto and needs `codesign --verify --deep` to pass (#87).
+      - if: runner.os == 'macOS'
+        name: Check the signature of the app in the .zip
+        run: |
+          out="$(mktemp -d)"
+          ditto -x -k apps/desktop/release/contr-mac-universal.zip "$out"
+          codesign --verify --deep --strict --verbose=2 "$out/contr.app"
       - run: mkdir -p dist && cp ${{ matrix.files }} dist/
       - uses: actions/upload-artifact@v4
         with:
@@ -92,7 +100,7 @@ jobs:
           {
             echo "contr ${{ needs.stamp.outputs.version }} from ${{ needs.stamp.outputs.sha }}."
             echo
-            echo "The macOS app is not signed. The first time, open it with right-click > Open"
+            echo "The macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open"
             echo "(or run \`xattr -dr com.apple.quarantine /Applications/contr.app\`)."
           } > notes.md
       - run: gh release create "$TAG" dist/* -R "${{ github.repository }}" --target "${{ needs.stamp.outputs.sha }}" -t "$TAG" -F notes.md
