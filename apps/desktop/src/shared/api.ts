@@ -290,7 +290,7 @@ export interface UpdateState {
   available: boolean;
   /** 0 to 100 while the .zip or .dmg downloads, else null. */
   progress: number | null;
-  /** The downloaded .dmg's path, once it is opened. */
+  /** The downloaded .dmg's path, once it is opened; a passed check that takes a release clears it. */
   downloaded: string | null;
   /** The new app is unpacked and checked: Settings shows "Restart to update". */
   ready: boolean;
@@ -300,6 +300,8 @@ export interface UpdateState {
   checking: boolean;
   /** The time (ms) of the last finished check, passed or failed; null before the first one. */
   checked: number | null;
+  /** True after a failed check, until a check passes: Settings then shows the failure, not "Checked …". */
+  checkFailed?: boolean;
 }
 
 export const UPDATE_CHANNEL = "contr:update";
