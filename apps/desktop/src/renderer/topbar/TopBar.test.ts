@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Sidebar } from "../../shared/api";
-import { findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./TopBar";
+import { findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel, scrollToShow } from "./TopBar";
 
 const agent = (terminal: string, title: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, title, name: null, kind: null, issue: null, state: "idle" as const, workers });
 
@@ -53,4 +53,11 @@ describe("saved tab order", () => {
     store('["t1", 3]');
     expect(readTabs()).toEqual(["t1"]);
   });
+});
+
+describe("scrollToShow", () => {
+  const row = { width: 300, scroll: 100 };
+  it("keeps the scroll when the tab is in view", () => expect(scrollToShow(row, { left: 150, width: 100 })).toBe(100));
+  it("scrolls left to a tab cut at the left", () => expect(scrollToShow(row, { left: 60, width: 100 })).toBe(60));
+  it("scrolls right just enough for a tab cut at the right", () => expect(scrollToShow(row, { left: 350, width: 120 })).toBe(170));
 });

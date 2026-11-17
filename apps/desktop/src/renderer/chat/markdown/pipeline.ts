@@ -2,12 +2,14 @@
 // THIRD_PARTY_NOTICES.md (MIT). Changes: only the sanitize schema, the code-meta and
 // inline-code plugins and the plugin lists; no raw HTML, t3code images, file, thread or
 // Windows-path links, Codex directives or autolink fixes. INLINE_TEXT_PLUGINS and the
-// contr-image protocol for local images (markdownLocalImages.ts) are ours.
+// contr-image protocol for local images (markdownLocalImages.ts) and HTML as
+// text (markdownHtmlText.ts) are ours.
 import type { PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { remarkRefs } from "../refs/remarkRefs";
 import { remarkGithubAlerts } from "./markdownGithubAlerts";
+import { remarkHtmlAsText } from "./markdownHtmlText";
 import { remarkLocalImages } from "./markdownLocalImages";
 import { remarkNormalizeListItemIndentation } from "./markdownListIndentation";
 import { remarkKeepOrderedListNumbers } from "./markdownOrderedListNumbers";
@@ -89,6 +91,7 @@ const CHAT_MARKDOWN_SANITIZE_SCHEMA = {
 
 export const CHAT_MARKDOWN_REMARK_PLUGINS: PluggableList = [
   remarkGfm,
+  remarkHtmlAsText,
   remarkGithubAlerts,
   remarkLocalImages,
   remarkKeepOrderedListNumbers,

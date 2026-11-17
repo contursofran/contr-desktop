@@ -126,3 +126,40 @@ test("long words wrap in the bubble and the text; tables have a frame; diffs col
   }
   await app.close();
 });
+
+test("raw HTML shows as its source; a missing picture shows its alt text; perm and question rows are chips", async () => {
+  test.setTimeout(60_000);
+  const app = await launchApp({
+    CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+    FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/trace-session.jsonl"),
+    CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
+    CONTR_TERMINAL: "t7",
+  });
+  const page = await app.firstWindow();
+
+  // F15: the HTML block and inline HTML keep their source text; no element comes from them.
+  const md = (await chatRow(page, "a1")).locator(".chat-markdown");
+  expect(await md.locator("p").nth(1).innerText()).toBe("<div>\nraw html <b>bold</b>\n</div>");
+  await expect(md.locator("p").nth(2)).toHaveText("Inline: a <kbd>Ctrl</kbd> key.");
+  await expect(md.locator("b, kbd")).toHaveCount(0);
+  // F15: a picture that cannot load: its alt text, else its path, as text; no broken image.
+  await expect(md.locator("[data-missing-image]")).toHaveText(["build graph", "/nonexistent/no-alt.png"]);
+  await expect(md.locator("img")).toHaveCount(0);
+
+  // F17: a perm row is a chip (running, then done); a question row is a quiet note; an unknown kind is empty.
+  await expect((await chatRow(page, "p1")).locator(".rounded-full")).toHaveText(/^.Running · Bash$/);
+  await expect((await chatRow(page, "p2")).locator(".rounded-full")).toHaveText("Edit");
+  const note = (await chatRow(page, "q1")).locator("span");
+  await expect(note).toHaveText("The agent asks a question");
+  expect(await note.evaluate((e) => getComputedStyle(e).color)).toBe(await token(page, "muted", "color"));
+  await expect(await chatRow(page, "q2")).toHaveText("Question answered");
+  await expect(await chatRow(page, "x1")).toHaveText("");
+
+  await md.evaluate((e) => e.scrollIntoView({ block: "start" }));
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `markdown-trace-${scheme}.png`) });
+  }
+  await app.close();
+});

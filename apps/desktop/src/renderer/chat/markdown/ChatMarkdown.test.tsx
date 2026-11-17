@@ -13,11 +13,19 @@ describe("ChatMarkdown", () => {
     expect(out).toContain('<td style="text-align:right">1</td>');
   });
 
-  it("tags inline code and drops raw HTML and unsafe links", () => {
+  it("tags inline code, shows inline HTML as text and drops unsafe links", () => {
     const out = html("Use `pnpm` <script>alert(1)</script> [x](javascript:alert(1))");
     expect(out).toContain('<code data-inline-code="">pnpm</code>');
     expect(out).not.toContain("<script");
+    expect(out).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(out).not.toContain("javascript:");
+  });
+
+  it("shows an HTML block as its source text, line by line", () => {
+    const out = html("<div>\nraw html <b>bold</b>\n</div>\n\nAfter");
+    expect(out).toContain("<p>&lt;div&gt;<br/>\nraw html &lt;b&gt;bold&lt;/b&gt;<br/>\n&lt;/div&gt;</p>");
+    expect(out).not.toContain("<b>");
+    expect(html("> <span>in a quote</span>")).toContain("&lt;span&gt;in a quote&lt;/span&gt;");
   });
 
   it("colors added and removed lines of a diff or patch fence; headers and @@ stay neutral", () => {

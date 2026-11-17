@@ -1,5 +1,5 @@
 import type { Element } from "hast";
-import { Component, Suspense, useMemo, type ComponentProps, type ReactNode } from "react";
+import { Component, Suspense, useMemo, useState, type ComponentProps, type ReactNode } from "react";
 import { diagramFor } from "../blocks/Diagram";
 import { DiffCode, HighlightedCode, MarkdownCodeBlock, extractFenceLanguage, isDiffLanguage } from "./MarkdownCodeBlock";
 import { contrBlock } from "../blocks/contrBlock";
@@ -69,6 +69,20 @@ function Table({ node, ...props }: WithNode<"table">) {
   return <MarkdownTable {...props} />;
 }
 
+/** The path of a `contr-image:` URL (markdownLocalImages.ts), or the URL itself. */
+function imagePath(src: string): string {
+  const local = src.replace(/^contr-image:\/\/local/, "");
+  return local === src ? src : local.split("/").map(decodeURIComponent).join("/");
+}
+
+/** A local image; when the file cannot load, its alt text (else its path) as text, as herdr-contr shows it. */
+function Img({ node, ...props }: WithNode<"img">) {
+  void node;
+  const [missing, setMissing] = useState(false);
+  if (!missing) return <img {...props} onError={() => setMissing(true)} />;
+  return <span data-missing-image="">{props.alt || imagePath(String(props.src ?? ""))}</span>;
+}
+
 /** `contr-ref` from remarkRefs: a PR or issue number. */
 function Ref({ node, children }: { node?: Element; children?: ReactNode }) {
   return <RefChip number={Number(node?.properties.dataRef)}>{children}</RefChip>;
@@ -109,7 +123,7 @@ function urlTransform(url: string): string {
 const render = createMarkdownRenderer({
   remarkPlugins: CHAT_MARKDOWN_REMARK_PLUGINS,
   rehypePlugins: CHAT_MARKDOWN_REHYPE_PLUGINS,
-  components: { pre: Pre, a: Link, table: Table, blockquote: Blockquote, "contr-ref": Ref },
+  components: { pre: Pre, a: Link, img: Img, table: Table, blockquote: Blockquote, "contr-ref": Ref },
   urlTransform,
 });
 
