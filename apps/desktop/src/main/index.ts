@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { chatTerminal, setupHelper } from "./helper";
+import { startCore } from "./core/start";
 import { handleImageScheme, registerImageScheme } from "./localImages";
 import { registerBoardIpc } from "./board/ipc";
 import { registerRefsIpc } from "./refs/ipc";
@@ -39,9 +40,11 @@ registerImageScheme();
 // Each window: no new window and no navigation away from the app's page; web and mail links go to the system.
 app.on("web-contents-created", (_event, contents) => guardLinks(contents, openExternal));
 
-void app.whenReady().then(() => {
+void app.whenReady().then(async () => {
   handleImageScheme();
   if (e2e && process.platform === "darwin") app.setActivationPolicy("accessory");
+  // The core's root and copy (home or bundle) come before any helper or tool call.
+  await startCore(app.getAppPath(), app.isPackaged);
   setupHelper(app.getAppPath());
   registerTerminalIpc();
   registerRefsIpc(chatTerminal);

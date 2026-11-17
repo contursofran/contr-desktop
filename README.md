@@ -23,8 +23,9 @@ when it does that job better. Until then, herdr-contr stays the daily app.
 
 `scripts/fetch-helper` downloads the newest contr-core release into `bin/`
 (it needs `gh`). In dev the app runs `bin/herdr-contr-feed`; the packaged
-app runs the copy in its `Resources/bin`. `CONTR_HELPER` names another
-program. At start it shows the agent shown before the restart while hc lists
+app runs the copy in the core's home (`<root>/bin`) when it is healthy and not
+older, else the copy in its `Resources/bin` (`docs/reference/releases.md`).
+`CONTR_HELPER` names another program. At start it shows the agent shown before the restart while hc lists
 it, else the one that `CONTR_TERMINAL` names, else the first agent in the
 sidebar. The reply box takes the terminal's title from `hc get --json` (or the
 program that `CONTR_HC` names). Tests use `apps/desktop/e2e/fake-helper.mjs` and
