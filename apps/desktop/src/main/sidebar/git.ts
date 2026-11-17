@@ -1,7 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { IMAGE_SCHEME } from "../localImages";
-import { run } from "./agents";
+import { runRead } from "./agents";
 
 const FAVICON_DIRS = ["", "public", "static", "app", "src/app", "assets", "web"];
 const FAVICON_NAMES = [["favicon.svg", "favicon.png"], ["apple-touch-icon.png", "icon.png", "icon.svg"]];
@@ -32,12 +32,12 @@ export function parseCounts(out: string): { ahead: number; behind: number } {
   return Number.isInteger(a) && Number.isInteger(b) ? { ahead: a!, behind: b! } : { ahead: 0, behind: 0 };
 }
 
-/** The branch and the commits ahead and behind in `cwd`. */
-export async function gitState(git: string, cwd: string): Promise<{ branch: string | null; ahead: number; behind: number }> {
+/** The branch and the commits ahead and behind in `cwd`. `exec` runs git (`runRead`). */
+export async function gitState(git: string, cwd: string, exec = runRead): Promise<{ branch: string | null; ahead: number; behind: number }> {
   if (!cwd) return { branch: null, ahead: 0, behind: 0 };
   const [branch, counts] = await Promise.all([
-    run(git, ["-C", cwd, "branch", "--show-current"]),
-    run(git, ["-C", cwd, "rev-list", "--left-right", "--count", "HEAD...@{upstream}"]),
+    exec(git, ["-C", cwd, "branch", "--show-current"]),
+    exec(git, ["-C", cwd, "rev-list", "--left-right", "--count", "HEAD...@{upstream}"]),
   ]);
-  return { branch: branch.trim() || null, ...parseCounts(counts) };
+  return { branch: branch.out.trim() || null, ...parseCounts(counts.out) };
 }
