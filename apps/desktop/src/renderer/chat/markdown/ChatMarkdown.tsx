@@ -1,4 +1,5 @@
 import type { Element } from "hast";
+import { ImageOff } from "lucide-react";
 import { Component, Suspense, useMemo, useState, type ComponentProps, type ReactNode } from "react";
 import { diagramFor } from "../blocks/Diagram";
 import { DiffCode, HighlightedCode, MarkdownCodeBlock, extractFenceLanguage, isDiffLanguage } from "./MarkdownCodeBlock";
@@ -75,12 +76,25 @@ function imagePath(src: string): string {
   return local === src ? src : local.split("/").map(decodeURIComponent).join("/");
 }
 
-/** A local image; when the file cannot load, its alt text (else its path) as text, as herdr-contr shows it. */
+/**
+ * A picture that cannot load: a chip with a picture icon and the alt text (else the path), in the look of a
+ * broken attachment (reply/Attachments.tsx), so that it does not read as a sentence. Its tooltip is the path.
+ */
+export function MissingPicture({ alt, path }: { alt?: string; path: string }) {
+  return (
+    <span data-missing-image="" title={path} className="inline-flex max-w-full items-center gap-1 rounded bg-selected px-2 py-0.5 text-xs text-muted">
+      <ImageOff aria-hidden className="size-3 shrink-0" />
+      <span className="truncate">{alt || path}</span>
+    </span>
+  );
+}
+
+/** A local image; a MissingPicture when the file is not there or is a type the protocol does not serve. */
 function Img({ node, ...props }: WithNode<"img">) {
   void node;
   const [missing, setMissing] = useState(false);
   if (!missing) return <img {...props} onError={() => setMissing(true)} />;
-  return <span data-missing-image="">{props.alt || imagePath(String(props.src ?? ""))}</span>;
+  return <MissingPicture alt={props.alt} path={imagePath(String(props.src ?? ""))} />;
 }
 
 /** `contr-ref` from remarkRefs: a PR or issue number. */

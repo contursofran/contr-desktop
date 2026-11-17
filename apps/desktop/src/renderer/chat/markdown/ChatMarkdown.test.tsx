@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { ChatMarkdown } from "./ChatMarkdown";
+import { ChatMarkdown, MissingPicture } from "./ChatMarkdown";
 
 const html = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} />);
 
@@ -103,6 +103,19 @@ describe("images", () => {
     expect(html("![shot](</tmp/a b.png>)")).toContain('<img src="contr-image://local/tmp/a%20b.png" alt="shot"/>');
     expect(html("![j](/x/y.jpeg)")).toContain('src="contr-image://local/x/y.jpeg"');
     expect(html("![s](/x/y.svg)")).toContain('src="contr-image://local/x/y.svg"');
+  });
+
+  it("sends a local picture type that the protocol does not serve to contr-image, where it loads as missing", () => {
+    expect(html("![g](/x/y.gif)")).toContain('<img src="contr-image://local/x/y.gif" alt="g"/>');
+    expect(html("![w](/x/y.WEBP)")).toContain('src="contr-image://local/x/y.WEBP"');
+  });
+
+  it("shows a missing picture as a muted chip with an icon, the alt text (else the path) and the path as tooltip", () => {
+    const chip = renderToStaticMarkup(<MissingPicture alt="build graph" path="/no/graph.png" />);
+    expect(chip).toMatch(/^<span data-missing-image="" title="\/no\/graph.png" class="[^"]*bg-selected[^"]*text-muted[^"]*">/);
+    expect(chip).toContain("lucide-image-off");
+    expect(chip).toContain('<span class="truncate">build graph</span>');
+    expect(renderToStaticMarkup(<MissingPicture path="/no/alt.png" />)).toContain('<span class="truncate">/no/alt.png</span>');
   });
 
   it("keeps web URLs, other files and inline images as links", () => {

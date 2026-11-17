@@ -1,0 +1,2 @@
+{"id": "u1", "k": "user", "ts": 1793670000000, "text": "Show the pictures of the build."}
+{"id": "a1", "k": "assistant", "ts": 1793670010000, "text": "The build graph:\n\n![build graph](/nonexistent/graph.png)\n\nNo alt text:\n\n![](/nonexistent/no-alt.png)\n\nA GIF, which the chat does not serve:\n\n![The spinner](/nonexistent/spin.gif)\n\nThe login form:\n\n![The login form]($FIXTURES/shot.png)\n\nA web picture stays a link:\n\n![A web image](https://example.com/web.png)"}

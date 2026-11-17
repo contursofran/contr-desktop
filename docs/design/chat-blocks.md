@@ -45,7 +45,7 @@ Write each item once. Do not write a row of blocks and then a table that names t
 
 ## Images
 
-To show a local PNG, JPEG or SVG, write `![alt](absolute path)` alone on its line; the chat draws the image. A web URL stays a link. When the file cannot load, the line shows the alt text (or the path when there is no alt text).
+To show a local PNG, JPEG or SVG, write `![alt](absolute path)` alone on its line; the chat draws the image. A web URL stays a link. When the file cannot load (it is not there, or it is a picture type other than PNG, JPEG or SVG), the line shows a small muted chip, in the look of a broken attachment in the reply box: a picture icon and the alt text (or the path when there is no alt text), with the path as its tooltip.
 
 ## Remarks
 
