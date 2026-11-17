@@ -119,7 +119,10 @@ function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProj
         <Folder data-icon="folder" aria-hidden className="size-4 shrink-0 text-dim" />
       )}
       {/* The name reads in full: the branch shrinks first (to nothing), then the marks, then the counts; the name truncates last. */}
-      <span data-name className={`max-w-full shrink-[0.001] truncate font-medium ${shown ? "text-foreground" : "text-muted"}`}>{project.name}</span>
+      {/* Its tooltip has the whole name. */}
+      <Tip label={project.name} side="right">
+        <span data-name className={`max-w-full shrink-[0.001] truncate font-medium ${shown ? "text-foreground" : "text-muted"}`}>{project.name}</span>
+      </Tip>
       {/* A branch with no room wraps to a second line that the 16 px box hides. */}
       {project.branch && (
         <span className="flex h-4 min-w-0 shrink-[1000] flex-wrap overflow-hidden">

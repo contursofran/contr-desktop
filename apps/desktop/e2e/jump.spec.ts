@@ -89,7 +89,7 @@ test("Tab reaches the ↓ button right after the reply box", async () => {
   const { app, page } = await open();
   await chatRow(page, "r40");
   await expect(jump(page)).toBeVisible();
-  await page.getByRole("textbox", { name: /Reply to/ }).focus();
+  await page.getByRole("form", { name: "Reply" }).getByRole("textbox").focus();
   // Tab through the reply box's controls; the first stop outside it is the ↓ button.
   for (let i = 0; i < 12 && (await page.evaluate(() => !!document.activeElement?.closest("fieldset"))); i++) await page.keyboard.press("Tab");
   await expect(jump(page)).toBeFocused();
@@ -109,7 +109,7 @@ test("in a 900x600 window the ↓ button is 34 px, centered on the reading colum
   const row = await chatRow(page, "r40");
   const button = (await jump(page).boundingBox())!;
   const column = (await row.boundingBox())!;
-  const reply = (await page.getByRole("textbox", { name: /Reply to/ }).boundingBox())!;
+  const reply = (await page.getByRole("form", { name: "Reply" }).getByRole("textbox").boundingBox())!;
   expect(button.width).toBe(34);
   expect(button.height).toBe(34);
   expect(Math.abs(button.x + button.width / 2 - (column.x + column.width / 2))).toBeLessThan(1);

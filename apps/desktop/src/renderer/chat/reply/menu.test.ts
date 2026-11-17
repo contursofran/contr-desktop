@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReplyInfo } from "../../../shared/api";
-import { menuCommand, modelLabel, PENDING_MS, serial, shown } from "./menu";
+import { contextTip, menuCommand, modelLabel, modelTip, PENDING_MS, replyPlaceholder, serial, shown } from "./menu";
 
 const info: ReplyInfo = {
   agent: "claude",
@@ -42,4 +42,16 @@ it("serial runs a task after the one before ends, also after a failure", async (
   await first.catch(() => undefined);
   await second;
   expect(order).toEqual(["send", "model"]);
+});
+
+describe("tooltips and placeholder", () => {
+  it("names model, effort and program", () => expect(modelTip("Opus 5.5", "medium", "claude")).toBe("Opus 5.5 · medium effort · Claude Code"));
+  it("leaves out what is not known", () => expect(modelTip("Model", null, null)).toBe("Model"));
+  it("shows another kind as it is", () => expect(modelTip("GPT-6", "high", "pi")).toBe("GPT-6 · high effort · pi"));
+  it("says the context in plain words", () => expect(contextTip(37)).toBe("37% of the model's context window"));
+  it("names the agent when the title is known", () => expect(replyPlaceholder("Chat panel usability audit")).toBe("Reply to Chat panel usability audit"));
+  it("gives no name while the title is not known", () => {
+    expect(replyPlaceholder("")).toBe("Reply");
+    expect(replyPlaceholder("Terminal")).toBe("Reply");
+  });
 });
