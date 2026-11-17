@@ -11,6 +11,7 @@
 // `done` with FAKE_HELPER_ANSWER_RESULT (default `sent`).
 // `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model.
 // `usage` gives Claude and Codex plans that reset some hours and days from now.
+// FAKE_HELPER_CALL_LOG=<file>: each call appends its arguments as one JSON list.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 // FAKE_HELPER_ERROR_WHILE=<file> does the same with the code `no-core` while that file is there.
 // The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
@@ -27,6 +28,7 @@ const workers = {
 };
 
 const [cmd, ...rest] = process.argv.slice(2);
+if (process.env.FAKE_HELPER_CALL_LOG) appendFileSync(process.env.FAKE_HELPER_CALL_LOG, `${JSON.stringify(process.argv.slice(2))}\n`);
 const arg = (name) => {
   const i = rest.indexOf(`--${name}`);
   return i >= 0 ? rest[i + 1] : undefined;

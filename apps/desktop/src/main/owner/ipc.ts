@@ -3,7 +3,7 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { OWNER_ANSWER_CHANNEL, OWNER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_ERROR_CHANNEL, OWNER_ERROR_EVENT, OWNER_EVENT, type OwnerItems } from "../../shared/api";
 import { orchPath } from "../board/board";
 import { runRead } from "../sidebar/agents";
-import { inboxCount, ownerResult, readOwnerOpen, windowTitle } from "./owner";
+import { inboxCount, ownerAnswerArgs, ownerResult, readOwnerOpen, windowTitle } from "./owner";
 
 /** The open count as the main process last set it; e2e reads it here, as e2e runs set no Dock badge. */
 export let inboxBadge = 0;
@@ -66,7 +66,7 @@ export function registerOwnerIpc(appRoot: string): void {
   ipcMain.handle(OWNER_CHANNEL, () => last);
   ipcMain.handle(OWNER_ERROR_CHANNEL, () => error);
   ipcMain.handle(OWNER_ANSWER_CHANNEL, async (_e, id: unknown, answer: unknown) => {
-    const r = await runOrch(orch, ["owner", "answer", String(id), String(answer)]);
+    const r = await runOrch(orch, ownerAnswerArgs(String(id), String(answer)));
     await read();
     return ownerResult(r.code, r.stderr, "The answer is saved");
   });

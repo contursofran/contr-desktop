@@ -10,13 +10,15 @@ export function registerTerminalIpc(): void {
   ipcMain.handle("terminal:attach", (e, cols: number, rows: number) => {
     const terminal = chatTerminal();
     const wc: WebContents = e.sender;
-    sessions.get(wc.id)?.close();
+    const old = sessions.get(wc.id);
+    old?.close();
     const a = new HcAttach({ terminal, session: process.env.CONTR_HC_SESSION, hc: process.env.CONTR_HC }, cols, rows, {
       data: (bytes) => { if (!wc.isDestroyed()) wc.send("terminal:data", bytes); },
       end: (reason) => { if (!wc.isDestroyed()) wc.send("terminal:end", reason); },
     });
+    // One `destroyed` listener per renderer: it closes the attach of that time.
+    if (!old) wc.once("destroyed", () => { sessions.get(wc.id)?.close(); sessions.delete(wc.id); });
     sessions.set(wc.id, a);
-    wc.once("destroyed", () => { a.close(); sessions.delete(wc.id); });
     return { terminal };
   });
   ipcMain.on("terminal:input", (e, text: string) => sessions.get(e.sender.id)?.input(text));

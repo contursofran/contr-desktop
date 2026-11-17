@@ -70,3 +70,11 @@ export const inboxCount = (items: OwnerItems): number => items.questions.length 
 
 /** The window title: "contr", and "contr · Inbox N" while items are open. */
 export const windowTitle = (n: number): string => (n > 0 ? `contr · Inbox ${n}` : "contr");
+
+/**
+ * The tool's arguments for an answer. The tool reads the words after the id as the answer, also one that starts
+ * with "-"; a "--" there would be part of the answer.
+ */
+export function ownerAnswerArgs(id: string, answer: string): string[] {
+  return ["owner", "answer", id, answer];
+}
