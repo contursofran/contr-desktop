@@ -2,9 +2,11 @@ import { Plus, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { UsageRow } from "../../shared/api";
 import { Tip } from "../ui/Tip";
+import { usageTip } from "./usageTip";
 
 /**
- * The sidebar foot (docs/design/recipe-herdr.md, the foot): one row per plan (name, meter, "41% wk · 4d"),
+ * The sidebar foot (docs/design/recipe-herdr.md, the foot): one row per plan (name, meter, "41% wk · 4d"; a stale
+ * plan: an empty meter and "—"), with a tooltip that says when the data was read,
  * then Settings and the add machine button. Settings opens the Settings view and has a dot (`accent`) when an update is ready; + does nothing yet.
  */
 export function Foot({ onSettings, settingsShown }: { onSettings: () => void; settingsShown: boolean }) {
@@ -18,19 +20,29 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
     void window.contr.usage().then(setRows);
     return window.contr.onUsage(setRows);
   }, []);
+  // "Read 2h ago" draws again each 30 s, as the sidebar's ages do.
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
   return (
     <footer className="shrink-0 border-t border-border">
       {rows.length > 0 && (
         <ul aria-label="Plan usage" className="flex flex-col gap-2.5 px-5 pt-3 pb-1.5">
-          {rows.map((r) => (
-            <li key={r.plan} aria-label={r.plan} className="flex h-4 items-center gap-2">
-              <span className="w-[52px] shrink-0 text-xs text-muted">{r.plan}</span>
-              <span role="meter" aria-label={`${r.plan} usage`} aria-valuenow={r.percent} aria-valuemin={0} aria-valuemax={100} className="h-1 min-w-0 flex-1 overflow-hidden rounded-sm bg-hover">
-                <span className="block h-full bg-faint" style={{ width: `${Math.min(100, r.percent)}%` }} />
-              </span>
-              <span className="shrink-0 font-mono text-[11px] text-muted">{r.value}</span>
-            </li>
-          ))}
+          {rows.map((r) => {
+            const row = (
+              <li key={r.plan} aria-label={r.plan} className="flex h-4 items-center gap-2">
+                <span className="w-[52px] shrink-0 text-xs text-muted">{r.plan}</span>
+                <span role="meter" aria-label={`${r.plan} usage`} aria-valuenow={r.percent ?? undefined} aria-valuetext={r.percent === null ? "No current data" : undefined} aria-valuemin={0} aria-valuemax={100} className="h-1 min-w-0 flex-1 overflow-hidden rounded-sm bg-hover">
+                  <span className="block h-full bg-faint" style={{ width: `${Math.min(100, r.percent ?? 0)}%` }} />
+                </span>
+                <span className="shrink-0 font-mono text-[11px] text-muted">{r.value}</span>
+              </li>
+            );
+            const tip = usageTip(r, now);
+            return tip === null ? row : <Tip key={r.plan} label={tip} side="top">{row}</Tip>;
+          })}
         </ul>
       )}
       <div className="flex gap-1 px-2.5 pt-1 pb-2.5">
