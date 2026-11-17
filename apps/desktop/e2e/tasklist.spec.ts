@@ -30,7 +30,8 @@ test("task-list boxes take their colors from theme tokens", async () => {
     expect(c.bg).toBe(working[scheme][1]);
     expect(e.bg).not.toBe(c.bg);
     expect(e.border).not.toBe(e.bg);
-    await row.scrollIntoViewIfNeeded();
+    // The scheme change can lay out the rows again: find the row again before the screenshot.
+    await chatRow(page, "a5");
     await row.screenshot({ path: path.join(shots, `tasklist-${scheme}.png`) });
   }
   await app.close();

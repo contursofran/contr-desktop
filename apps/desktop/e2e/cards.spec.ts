@@ -25,7 +25,7 @@ async function open(name: string, env: Record<string, string> = {}) {
 }
 
 // Sends a key to the page's DOM (no OS-level keys: e2e must not take the owner's input).
-const key = (page: Page, k: string) => page.evaluate((k) => (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true })), k);
+const key = (page: Page, k: string) => page.evaluate((k) => (document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })), k);
 
 // The card sits between the chat and the reply box: the last chat row is fully visible above it.
 // The list scrolls to its end after the card makes it shorter, so the check waits for that.
@@ -58,8 +58,8 @@ test("a Bash permission card allows with key 1", async () => {
   await shoot(page, "card-bash");
   // A key typed in the reply box stays there.
   await page.getByRole("textbox", { name: /Reply to/ }).focus();
-  await key(page, "1");
-  await page.waitForTimeout(300);
+  // The card's key handler calls preventDefault when it takes a key: here it must not.
+  expect(await key(page, "1")).toBe(true);
   await expect(section.getByRole("status")).toHaveCount(0);
   await page.evaluate(() => (document.activeElement as HTMLElement).blur());
   await key(page, "1");
