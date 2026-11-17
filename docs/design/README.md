@@ -56,7 +56,10 @@ The target is herdr-contr as the owner uses it on 2026-11-16:
    button (agent icon, "Opus 5.5", effort "medium", chevron), and on the right
    the context ring with its percent, the branch, and the send button.
    The box grows with its text up to 40% of the window, then scrolls. The
-   unsent text and images stay for each agent while the app runs.
+   unsent text and images stay for each agent while the app runs. Attached
+   files show above the text: a PNG, JPEG or SVG as a 56 px high picture,
+   any other file (and a picture that does not load) as a chip with its
+   name. Each has a × ("Remove <name>") that takes it out of the message.
 7. **Cards** above the reply box when an agent asks for permission or asks a
    question: the choices as buttons, with keys.
 
