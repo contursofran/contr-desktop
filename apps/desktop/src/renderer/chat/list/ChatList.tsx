@@ -19,9 +19,6 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
   // The same as `atEnd`, for the ↓ button. `fresh`: a new last row came in while not at the end.
   const [following, setFollowing] = useState(true);
   const [fresh, setFresh] = useState(false);
-  // The width of a classic scrollbar on the list's right side (0 for an overlay one). The button leaves it
-  // out, so it is centered on the reading column and not on the box that holds the scrollbar.
-  const [gutter, setGutter] = useState(0);
   const last = rows.at(-1)?.id;
   const seen = useRef(last);
   // Older rows that load at the top do not change the last row, so they do not mark the button.
@@ -49,10 +46,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
       {/* Before the rows in the DOM, so Tab reaches it right after the reply box (App renders that first) and
           before the rows' controls. It shows only away from the end, so it never covers the last row there. */}
       {!following && (
-        <div
-          className="pointer-events-none absolute bottom-3 left-0 z-10 flex justify-center"
-          style={{ right: gutter }}
-        >
+        <div className="pointer-events-none absolute right-0 bottom-3 left-0 z-10 flex justify-center">
           <button
             type="button"
             aria-label="Jump to the end"
@@ -69,7 +63,9 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
         ref={list}
         aria-label="Chat"
         role="list"
-        className="flex-1 px-4"
+        // A classic scrollbar takes width on the right. The same gutter on the left keeps the rows centered
+        // on the box, as the status line, the reply box and the ↓ button are, with both scrollbar kinds.
+        className="flex-1 px-4 [scrollbar-gutter:stable_both-edges]"
         data={rows}
         keyExtractor={(row) => row.id}
         ListFooterComponent={<div className="h-4" />}
@@ -82,10 +78,6 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
         onScroll={() => {
           const state = list.current?.getState();
           if (!state) return;
-          const el = box.current?.querySelector<HTMLElement>(
-            '[aria-label="Chat"]',
-          );
-          if (el) setGutter(el.offsetWidth - el.clientWidth);
           atEnd.current =
             state.isFollowingEnd || state.isWithinMaintainScrollAtEndThreshold;
           setFollowing(atEnd.current);

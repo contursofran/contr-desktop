@@ -105,7 +105,8 @@ test("in a 900x600 window the ↓ button is 34 px, centered on the reading colum
   const { app, page } = await open([900, 600]);
   // A classic scrollbar that takes width, as on the CI runner (macOS here shows an overlay one by default).
   await page.addStyleTag({ content: '[aria-label="Chat"]::-webkit-scrollbar { width: 15px; } [aria-label="Chat"]::-webkit-scrollbar-thumb { background: gray; }' });
-  expect(await chatList(page).evaluate((el) => (el as HTMLElement).offsetWidth - el.clientWidth)).toBe(15);
+  // 15 px on each side: the list keeps the same gutter on the left (`scrollbar-gutter: stable both-edges`).
+  expect(await chatList(page).evaluate((el) => (el as HTMLElement).offsetWidth - el.clientWidth)).toBe(30);
   const row = await chatRow(page, "r40");
   const button = (await jump(page).boundingBox())!;
   const column = (await row.boundingBox())!;

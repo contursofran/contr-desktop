@@ -19,7 +19,7 @@ async function edges(page: Page) {
 }
 
 // The recipe's reading column (docs/design/recipe-herdr.md): at most 1000 px wide, centered.
-// The rows, the status line and the reply box have the same edges at each window width.
+// The rows, the status line and the reply box have the same edges at each window width, with a classic scrollbar too.
 test("the reading column is at most 1000 px and its parts line up", async () => {
   test.setTimeout(60_000);
   const app = await launchApp({
@@ -31,6 +31,8 @@ test("the reading column is at most 1000 px and its parts line up", async () => 
   });
   const page = await app.firstWindow();
   await page.setViewportSize({ width: 1600, height: 900 });
+  // A classic scrollbar that takes width, as on the CI runner (macOS here shows an overlay one by default).
+  await page.addStyleTag({ content: "::-webkit-scrollbar { width: 15px; } ::-webkit-scrollbar-thumb { background: gray; }" });
   await expect(chatList(page).locator('[data-row-id="a6"]')).toBeInViewport();
   await chatRow(page, "a6");
 
