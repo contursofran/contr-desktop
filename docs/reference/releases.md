@@ -130,7 +130,14 @@ opens it.
 
 When the folder is not writable or the release has no `.zip`, a press
 downloads the `.dmg` into Downloads and opens it; the owner drags contr to
-Applications. A failed check or download shows its message.
+Applications. Settings then says "Opened contr-mac-universal.dmg. Drag contr
+to Applications." (the file name, not its folder); the next check that takes a
+release removes that line. A failed check or download shows its message. After
+a failed check, Settings shows the failure in place of "Checked …", the last
+known version (never "Up to date") or "Unknown" when no check passed yet, and
+the Update button of a release that a passed check found. A new check hides
+the old failure while it runs. `renderer/settings/updateView.ts` holds these
+states.
 
 Dev and e2e builds show "Development build" and check nothing. The e2e test of
 the `.zip` install builds its `.zip` with electron-builder and
