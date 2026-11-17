@@ -42,6 +42,8 @@ test("with each tab closed, main reads the helper no more; an agent shown again 
   for (const title of ["Release notes draft", "Chat panel usability audit"]) await page.getByRole("button", { name: `Close ${title}` }).click();
   await expect(tabs.getByRole("tab")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: /^Reply to/ })).toHaveCount(0);
+  // A ready signal with no agent shown starts nothing.
+  await page.evaluate(() => void window.contr.onFeed(() => undefined));
   // A call that started before the close can still end: wait one tick, then count.
   await page.waitForTimeout(1500);
   const before = feedCalls(log);
