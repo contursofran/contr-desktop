@@ -54,7 +54,8 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
  * As herdr-contr-tabs: an agent's tab has its program icon (ui/AgentIcon, one-color glyphs in `muted`),
  * then the title, then the loader in `working` while it works or a 6 px dot in `done` or `blocked`.
  * A tab with no agent keeps the sparkle: herdr-contr takes that icon from Herdr's program table, which we do not have.
- * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's,
+ * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's:
+ * a 3 px `::-webkit-scrollbar` that takes its own room under the tabs (an overlay one drew over the shown tab),
  * and it scrolls the shown tab into view when the shown tab, the tabs or the row's width change (Herdr: `scroll_to_item(active)`).
  * With the sidebar hidden (`onShowSidebar`), the bar starts with the "Show sidebar" toggle, and on macOS it pads 76 px
  * at the left for the window buttons, as Herdr's bar and the sidebar head do.
@@ -97,7 +98,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
       <TabOrderRoot value={tabs} onValueChange={(order) => onReorder(order)} aria-label="Tabs" className="flex min-w-0 items-center self-stretch gap-[3px] [-webkit-app-region:no-drag]">
         {(state) => (
           <>
-            <div ref={row} data-tab-row className="flex min-w-0 items-center self-stretch gap-[3px] overflow-x-auto [scrollbar-color:var(--color-border)_transparent] [scrollbar-width:thin]">
+            <div ref={row} data-tab-row className="flex min-w-0 items-center self-stretch gap-[3px] overflow-x-auto [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
               {state.order.map((t) => {
               const shown = t === data.selected;
               const title = tabLabel(data, t, titles);

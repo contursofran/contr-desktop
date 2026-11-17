@@ -12,13 +12,6 @@ export function readTitle(json: string, terminal: string): string {
   return terminal;
 }
 
-/** Reads the terminal's title once with `hc get --json` (read-only). CONTR_HC picks the hc program. */
-export function terminalTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string> {
-  return new Promise((resolve) => {
-    execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readTitle(String(stdout ?? ""), terminal)));
-  });
-}
-
 /** Program names by hc `agent` kind. */
 const PROGRAMS: Record<string, string> = { "claude-code": "Claude Code", codex: "Codex" };
 

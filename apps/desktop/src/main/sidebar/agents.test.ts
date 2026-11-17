@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProjects, projectFromCommonDir } from "./agents";
+import { buildProjects, projectFromCommonDir, readHcList, runHcList } from "./agents";
 
 const hc = JSON.stringify({
   terminals: [
@@ -50,5 +50,28 @@ describe("buildProjects workers", () => {
     const stopped = JSON.stringify([{ name: "b-2", address: "t2", parent: "t1", live: false }]);
     const out = buildProjects({ hc, orch: stopped, titles: new Map(), projectOf: (c) => c.split("/")[2] });
     expect(out.flatMap((p) => p.agents.map((a) => [a.terminal, a.workers.length]))).toEqual([["t1", 0], ["t2", 1], ["t4", 0]]);
+  });
+});
+
+describe("readHcList", () => {
+  it("gives the terminals and no error when hc answered", () => {
+    expect(readHcList(hc, null)).toEqual({ terms: JSON.parse(hc).terminals, error: undefined });
+  });
+  it("keeps hc's error text when hc failed", () => {
+    expect(readHcList("", "hc: core is not running")).toEqual({ terms: [], error: "hc: core is not running" });
+  });
+  it("says hc gave no JSON when it exited 0 with other text", () => {
+    expect(readHcList("not json", null)).toEqual({ terms: [], error: "hc gave no JSON" });
+  });
+});
+
+describe("runHcList", () => {
+  it("gives the spawn error of a missing hc", async () => {
+    const got = await runHcList("/nonexistent/hc");
+    expect(got.error).toContain("ENOENT");
+  });
+  it("gives the error message when hc exits non-zero with no stderr", async () => {
+    const got = await runHcList("/usr/bin/false");
+    expect(got.error).toContain("Command failed");
   });
 });

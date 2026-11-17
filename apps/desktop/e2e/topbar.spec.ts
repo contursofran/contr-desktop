@@ -204,7 +204,8 @@ test("in a narrow window the shown tab scrolls into view, and the tab row shows 
   }
   await expect(tabs.getByRole("tab")).toHaveCount(6);
   expect(await row.evaluate((r) => r.scrollWidth > r.clientWidth && r.scrollLeft > 0)).toBe(true);
-  expect(await row.evaluate((r) => getComputedStyle(r).scrollbarWidth)).toBe("thin");
+  // The thin scrollbar takes 3 px of its own under the tabs.
+  expect(await row.evaluate((r: HTMLElement) => r.offsetHeight - r.clientHeight)).toBe(3);
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.screenshot({ path: path.join(shots, `tabs-narrow-${scheme}.png`) });

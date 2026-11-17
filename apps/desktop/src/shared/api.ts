@@ -49,8 +49,6 @@ export interface ContrApi {
   onFeed(listener: (event: FeedEvent) => void): () => void;
   /** Types a message into the agent's terminal and presses Enter. */
   send(text: string): Promise<{ ok: boolean; message?: string }>;
-  /** The title of the chat's terminal (hc `title`, else its name, else its address). */
-  title(): Promise<string>;
   /** A tab's title for a terminal with no sidebar entry: hc `title`, else the program name, else "Terminal". Never the address. */
   tabTitle(terminal: string): Promise<string | null>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
@@ -141,6 +139,8 @@ export interface SidebarProject {
 export interface Sidebar {
   projects: SidebarProject[];
   selected: string;
+  /** The error text when `hc ls --json` failed (hc missing, not running, no JSON); absent when hc answered. */
+  hcError?: string;
 }
 
 /** A foot row: the plan, the most used window's percent, and its text ("41% wk · 4d"). */
@@ -205,7 +205,6 @@ export const FEED_READY_CHANNEL = "contr:feed-ready";
 export const SEND_CHANNEL = "contr:send";
 export const PASTE_IMAGE_CHANNEL = "contr:paste-image";
 export const PICK_IMAGE_CHANNEL = "contr:pick-image";
-export const TITLE_CHANNEL = "contr:title";
 export const TAB_TITLE_CHANNEL = "contr:tab-title";
 export const REFS_CHANNEL = "contr:refs";
 export const OPEN_REF_CHANNEL = "contr:open-ref";
