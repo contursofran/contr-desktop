@@ -28,7 +28,7 @@ test("the chat follows new rows at the end and stays put when scrolled up", asyn
   test.setTimeout(60_000);
   const fixture = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "long.jsonl");
   writeFileSync(fixture, rows(0, 300));
-  const app = await launchApp({ CONTR_TERMINAL: "t1", CONTR_HELPER: path.join(e2e, "fake-helper.mjs"), FAKE_HELPER_FIXTURE: fixture, CONTR_HC: path.join(e2e, "fake-hc.mjs") });
+  const app = await launchApp({ CONTR_HELPER: path.join(e2e, "fake-helper.mjs"), FAKE_HELPER_FIXTURE: fixture, CONTR_HC: path.join(e2e, "fake-hc.mjs") });
   const page = await app.firstWindow();
   await page.emulateMedia({ colorScheme: "dark" });
   const list = chatList(page);

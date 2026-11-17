@@ -14,7 +14,6 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   const ghLog = path.join(tmp, "gh.jsonl");
   const openLog = path.join(tmp, "open.txt");
   const app = await launchApp({
-    CONTR_TERMINAL: "t1",
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
     FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),

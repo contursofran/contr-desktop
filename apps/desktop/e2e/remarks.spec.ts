@@ -9,7 +9,6 @@ const e2e = import.meta.dirname;
 test("remarks show a word and local images draw", async () => {
   test.setTimeout(60_000);
   const app = await launchApp({
-    CONTR_TERMINAL: "t1",
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
     FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/remarks-session.jsonl"),
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
