@@ -56,3 +56,27 @@ export const checkArgs = (force: boolean) => ["update", "check", ...(force ? ["-
 export async function runCoreCheck(helper: string, root: string, force: boolean, run = runHelper, env = process.env): Promise<CoreCheck | { error: string }> {
   return readUpdateLine(await run(helper, checkArgs(force), { env: { ...env, CONTR_HOME: root } }));
 }
+
+/**
+ * One check at a time, as `singleFlight`, but a forced call (Check now) is never lost: while an unforced check runs,
+ * it waits for that check and then runs one forced check. A call while a forced check runs, or one is queued, joins it.
+ */
+export function forceFlight(run: (force: boolean) => Promise<void>): (force: boolean) => Promise<void> {
+  let running: { done: Promise<void>; force: boolean } | null = null;
+  let queued: Promise<void> | null = null;
+  const start = (force: boolean): Promise<void> => {
+    const done = run(force).finally(() => {
+      if (running?.done === done) running = null;
+    });
+    running = { done, force };
+    return done;
+  };
+  return (force) => {
+    if (!running) return start(force);
+    if (!force || running.force) return running.done;
+    return (queued ??= running.done.then(() => {
+      queued = null;
+      return start(true);
+    }));
+  };
+}

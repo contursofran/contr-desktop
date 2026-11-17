@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { HelperLine } from "../helper/run";
-import { checkView, NO_GH, readUpdateLine, runCoreCheck } from "./check";
+import { checkView, forceFlight, NO_GH, readUpdateLine, runCoreCheck } from "./check";
 
 const header: HelperLine = { type: "header", protocol: 1 };
 const end: HelperLine = { type: "end", ok: true };
@@ -43,5 +43,29 @@ describe("runCoreCheck", () => {
       ["/h", ["update", "check"], { env: { CONTR_HOME: "/tmp/core" } }],
       ["/h", ["update", "check", "--force"], { env: { CONTR_HOME: "/tmp/core" } }],
     ]);
+  });
+});
+
+describe("forceFlight", () => {
+  it("a forced call while an unforced check runs runs a forced check after it", async () => {
+    const runs: boolean[] = [];
+    let open!: () => void;
+    const check = forceFlight((force) => {
+      runs.push(force);
+      return runs.length === 1 ? new Promise<void>((r) => (open = r)) : Promise.resolve();
+    });
+    const first = check(false);
+    const joined = check(false);
+    const forced = check(true);
+    const forcedAgain = check(true);
+    expect(runs).toEqual([false]);
+    open();
+    await Promise.all([first, joined, forced, forcedAgain]);
+    expect(runs).toEqual([false, true]);
+    // A call while a forced check runs joins it.
+    const a = check(true);
+    const b = check(false);
+    await Promise.all([a, b]);
+    expect(runs).toEqual([false, true, true]);
   });
 });

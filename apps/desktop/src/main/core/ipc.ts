@@ -3,10 +3,10 @@ import path from "node:path";
 import { CORE_CHANNEL, CORE_CHECK_CHANNEL, CORE_EVENT, type CoreState } from "../../shared/api";
 import { binPath } from "../helper/binPath";
 import { helperPath } from "../helper/run";
-import { afterCheck, singleFlight } from "../update/check";
+import { afterCheck } from "../update/check";
 import { CHECK_MS } from "../update/ipc";
 import { readBundleTag, readInstalled, stampOfTag } from "./build";
-import { checkView, coreCheckFailed, runCoreCheck } from "./check";
+import { checkView, coreCheckFailed, forceFlight, runCoreCheck } from "./check";
 import type { CurrentCore } from "./current";
 
 /** The version that the app runs before a check: the home's build, or the bundle's stamp. */
@@ -51,8 +51,8 @@ export function registerCoreIpc(appRoot: string, start: CurrentCore): { check: (
     Object.assign(state, change);
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(CORE_EVENT, { ...state });
   };
-  let force = false;
-  const once = singleFlight(async () => {
+  /** One check at a time; a Check now press during an unforced check runs a forced one after it (forceFlight). */
+  const check = forceFlight(async (force) => {
     const root = state.root;
     if (root === null || shared) return;
     set({ checking: true });
@@ -63,11 +63,6 @@ export function registerCoreIpc(appRoot: string, start: CurrentCore): { check: (
     // For the bundle, `installed` is the root's build, not the copy that runs: the start's stamp stays.
     set({ ...change, ...(state.source === "home" ? { current: v.current } : {}), checkFailed: false, error: startError });
   });
-  /** A call while a check runs waits for that check (singleFlight), forced or not. */
-  const check = (f: boolean) => {
-    force = f;
-    return once();
-  };
   ipcMain.handle(CORE_CHANNEL, () => ({ ...state }));
   ipcMain.handle(CORE_CHECK_CHANNEL, (_e, f: boolean) => check(f === true));
   void check(false);
