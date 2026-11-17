@@ -8,5 +8,9 @@ describe("helperProblem", () => {
     expect(helperProblem({ code: "helper", message: "the helper gave no header and end line" })).toBe("The herdr-contr helper did not answer."));
   it("uses herdr-contr's words for a known code", () =>
     expect(helperProblem({ code: "no-terminal", message: "" })).toBe("This agent's terminal is gone."));
+  it("names hc as hc, not herdr-core", () => {
+    expect(helperProblem({ code: "no-core", message: "" })).toBe("hc is not running.");
+    expect(helperProblem({ code: "core", message: "" })).toBe("hc did not answer.");
+  });
   it("falls back for an unknown code", () => expect(helperProblem({ code: "boom", message: "" })).toBe("The conversation could not be loaded."));
 });

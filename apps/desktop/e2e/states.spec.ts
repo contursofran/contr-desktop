@@ -43,7 +43,7 @@ test("a helper error is a block in the reading column: plain words, the error, t
   // The sidebar's first read is done: its agents show the orchestrator text, the chat does not.
   await expect(page.getByRole("navigation", { name: "Projects" }).getByText("Orchestrating · 3 workers")).toBeVisible();
   const alert = page.getByRole("alert", { name: "Helper error" });
-  await expect(alert.locator("p").first()).toHaveText("herdr-core is not running.");
+  await expect(alert.locator("p").first()).toHaveText("hc is not running.");
   await expect(alert.locator("pre")).toHaveText("no-core: fake error no-core");
   await expect(alert.getByLabel("Helper path")).toHaveText(base.CONTR_HELPER);
   // In the column: the block's sides are the reply box's.
@@ -94,10 +94,10 @@ test("with no agents the main area says how one shows, and the sidebar says No a
 test("with an hc that cannot run the main area says hc is not reachable, with the error", async () => {
   const app = await launchApp({ ...base, CONTR_HC: "/nonexistent/hc", CONTR_TERMINAL: "" });
   const page = await app.firstWindow();
-  const empty = page.getByRole("status", { name: "No agent" });
-  await expect(empty.locator("p").first()).toHaveText("hc is not reachable.");
-  await expect(empty.locator("p").last()).toContainText("spawn /nonexistent/hc ENOENT");
-  await expect(page.getByRole("navigation", { name: "Projects" }).getByText("No agents", { exact: true })).toBeVisible();
+  const note = page.getByRole("alert", { name: "hc error" });
+  await expect(note.locator("p")).toHaveText("hc is not reachable.");
+  await expect(note.locator("pre")).toContainText("spawn /nonexistent/hc ENOENT");
+  await expect(page.getByRole("navigation", { name: "Projects" }).getByText("hc is not reachable", { exact: true })).toBeVisible();
   await shoot(page, "no-hc");
   await app.close();
 });

@@ -76,7 +76,11 @@ export function registerSidebarIpc(appRoot: string): void {
   refresh();
   setInterval(refresh, GIT_POLL_MS);
 
-  ipcMain.handle(SIDEBAR_CHANNEL, () => ({ ...last, selected: chatTerminal() }));
+  // A read while hc failed (Retry) reads the list again at once; the new list comes as an event.
+  ipcMain.handle(SIDEBAR_CHANNEL, () => {
+    if (last.hcError) refresh();
+    return { ...last, selected: chatTerminal() };
+  });
   ipcMain.handle(SELECT_CHANNEL, (_event, terminal: unknown) => {
     if (typeof terminal === "string" && terminal !== "") selectTerminal(terminal);
     return chatTerminal();
