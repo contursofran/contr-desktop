@@ -77,21 +77,41 @@
   font-size: 0.8rem;
   scrollbar-width: thin;
 }
+/* Tables (docs/design/recipe-herdr.md): a 12 px rounded frame, a `raised` header row,
+   1 px lines between rows. Words do not break: a column is at least as wide as its
+   longest word, and the table scrolls sideways when it is wider than the panel. */
+.chat-markdown .chat-markdown-table-container {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
 .chat-markdown table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8125rem;
+  overflow-wrap: normal;
 }
 .chat-markdown th,
 .chat-markdown td {
-  padding: 0.45rem 0.75rem;
+  min-width: 4rem;
+  padding: 0.5rem 0.75rem;
   text-align: start;
   vertical-align: top;
-  border-bottom: 1px solid var(--color-border);
 }
-.chat-markdown :is(th, td):first-child { padding-inline-start: 0; }
-.chat-markdown :is(th, td):last-child { padding-inline-end: 0; }
-.chat-markdown thead th { font-weight: 600; }
+.chat-markdown tbody tr { border-top: 1px solid var(--color-border); }
+.chat-markdown thead th { font-weight: 600; background: var(--color-raised); }
+/* Diffs: a soft fill on added and removed lines; file headers and `@@` stay neutral. */
+.chat-markdown .chat-markdown-shiki pre.chat-diff { padding-inline: 0; }
+.chat-markdown .chat-diff .line {
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  padding-inline: 0.75rem;
+}
+.chat-markdown .chat-diff .line[data-diff="add"] { background: color-mix(in srgb, var(--color-done) 15%, transparent); }
+.chat-markdown .chat-diff .line[data-diff="del"] { background: color-mix(in srgb, var(--color-pr-closed) 15%, transparent); }
+.chat-markdown .chat-diff .line[data-diff="meta"] { color: var(--color-muted); }
 .chat-markdown hr { border-color: var(--color-border); margin: 1rem 0; }
 /* Remarks (docs/design/chat-blocks.md): a colored bar and a word. */
 .chat-markdown blockquote.chat-remark {

@@ -20,10 +20,22 @@ describe("ChatMarkdown", () => {
     expect(out).not.toContain("javascript:");
   });
 
+  it("colors added and removed lines of a diff or patch fence; headers and @@ stay neutral", () => {
+    for (const lang of ["diff", "patch"]) {
+      const out = html("```" + lang + "\n--- a/x.ts\n+++ b/x.ts\n@@ -1 +1 @@\n same\n-old\n+new\n```");
+      expect(out).toContain('class="chat-diff"');
+      const kinds = [...out.matchAll(/data-diff="(\w+)">([^<\n]*)/g)].map((m) => `${m[1]} ${m[2]}`);
+      expect(kinds).toEqual(["meta --- a/x.ts", "meta +++ b/x.ts", "meta @@ -1 +1 @@", "context  same", "del -old", "add +new"]);
+    }
+    expect(html("```ts\n-x\n```")).not.toContain("data-diff");
+  });
+
   it("opens web links outside the app", () => {
     expect(html("[t3](https://example.com)")).toContain('target="_blank"');
   });
 });
+
+vi.mock("./useColorScheme", () => ({ useColorScheme: () => "dark" }));
 
 vi.mock("../refs/useRef", () => ({
   useRefState: (n: number) =>
