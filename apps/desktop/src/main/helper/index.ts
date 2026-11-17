@@ -11,6 +11,10 @@ import { pickImage } from "./pick";
 let selected: string | undefined;
 /** The running feed of each renderer. */
 const feeds = new Map<WebContents, () => void>();
+/** Starts the feed of a renderer (set by setupHelper). */
+let startFor: (sender: WebContents) => void = () => undefined;
+/** Empties the `commands` cache (set by setupHelper). */
+let clearCommands: () => void = () => undefined;
 
 /** The terminal of the chat's agent: the one picked in the sidebar, else CONTR_TERMINAL at start, else none (""): the renderer then picks one. */
 export function chatTerminal(env = process.env): string {
@@ -25,9 +29,19 @@ export function selectTerminal(terminal: string): void {
   feeds.clear();
 }
 
-/** Wires the helper to the renderer: the feed starts when the renderer listens. */
+/** Stops and starts each feed (a new cursor, the helper path read again) and empties the `commands` cache. */
+export function restartFeeds(): void {
+  clearCommands();
+  for (const [sender, stop] of [...feeds]) {
+    stop();
+    feeds.delete(sender);
+    if (!sender.isDestroyed()) startFor(sender);
+  }
+}
+
+/** Wires the helper to the renderer: the feed starts when the renderer listens. The helper path is read at each use. */
 export function setupHelper(appRoot: string): void {
-  const helper = helperPath(appRoot);
+  const helper = () => helperPath(appRoot);
   // One `destroyed` listener per renderer, not one per chat mount.
   const watched = new WeakSet<WebContents>();
   ipcMain.on(FEED_READY_CHANNEL, (event) => {
@@ -41,22 +55,28 @@ export function setupHelper(appRoot: string): void {
         feeds.delete(sender);
       });
     }
+    startFor(sender);
+  });
+  startFor = (sender) => {
     // No agent shown: no feed.
     const terminal = chatTerminal();
     if (terminal === "") return;
-    feeds.set(sender, startFeed(helper, terminal, (feed) => {
+    feeds.set(sender, startFeed(helper(), terminal, (feed) => {
       if (!sender.isDestroyed()) sender.send(FEED_CHANNEL, feed);
     }));
-  });
-  ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper, chatTerminal(), text));
-  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper, chatTerminal(), request, allow));
-  ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper, chatTerminal(), request, answers));
+  };
+  ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper(), chatTerminal(), text));
+  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper(), chatTerminal(), request, allow));
+  ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper(), chatTerminal(), request, answers));
   ipcMain.handle(TAB_TITLE_CHANNEL, (_event, terminal: string) => tabTitle(terminal));
   // `commands` changes seldom: one good answer per agent and app run.
-  const commands = cachedCommands((terminal) => runHelper(helper, ["commands", "--terminal", terminal]));
+  let commands = cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
+  clearCommands = () => {
+    commands = cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
+  };
   ipcMain.handle(REPLY_INFO_CHANNEL, () => {
     const terminal = chatTerminal();
-    return replyInfo(helper, terminal, commands(terminal));
+    return replyInfo(helper(), terminal, commands(terminal));
   });
   ipcMain.handle(PICK_IMAGE_CHANNEL, (event) =>
     pickImage(process.env, (options) => {
@@ -64,5 +84,5 @@ export function setupHelper(appRoot: string): void {
       return window ? dialog.showOpenDialog(window, options) : dialog.showOpenDialog(options);
     }),
   );
-  ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper, path.join(app.getPath("userData"), "paste")));
+  ipcMain.handle(PASTE_IMAGE_CHANNEL, () => pasteImage(helper(), path.join(app.getPath("userData"), "paste")));
 }

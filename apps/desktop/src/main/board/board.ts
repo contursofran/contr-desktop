@@ -1,12 +1,12 @@
 import { execFile } from "node:child_process";
-import { binPath } from "../helper/binPath";
+import { corePath } from "../core/current";
 import { run } from "../sidebar/agents";
 import { countLiveWorkers } from "../workers/live";
 import type { PrChecks, WorkerState } from "../../shared/api";
 
-/** The orchestration tool: CONTR_ORCH, else the bundled binary (see binPath). */
+/** The orchestration tool: CONTR_ORCH, else the home's tool when the app runs the home's core, else the bundled one (see corePath). */
 export function orchPath(appRoot: string, env = process.env): string {
-  return binPath("herdr-contr-orch", appRoot, env.CONTR_ORCH);
+  return corePath("herdr-contr-orch", appRoot, env.CONTR_ORCH, env);
 }
 
 interface OrchWorker {

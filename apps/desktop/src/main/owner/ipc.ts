@@ -41,12 +41,11 @@ function runOrch(orch: string, args: string[]): Promise<{ code: number | null; s
 
 /** The owner's open questions and to-dos, and the runs that answer them or mark them done. */
 export function registerOwnerIpc(appRoot: string): void {
-  const orch = orchPath(appRoot);
   let last: OwnerItems = { questions: [], todos: [] };
   let lastText = JSON.stringify(last);
   let error: string | null = null;
   const read = async () => {
-    const r = await runRead(orch, ["owner", "open", "--json"]);
+    const r = await runRead(orchPath(appRoot), ["owner", "open", "--json"]);
     const { items, error: why } = readOwnerOpen(last, r.out, r.error);
     if (why !== error) {
       error = why;
@@ -66,12 +65,12 @@ export function registerOwnerIpc(appRoot: string): void {
   ipcMain.handle(OWNER_CHANNEL, () => last);
   ipcMain.handle(OWNER_ERROR_CHANNEL, () => error);
   ipcMain.handle(OWNER_ANSWER_CHANNEL, async (_e, id: unknown, answer: unknown) => {
-    const r = await runOrch(orch, ownerAnswerArgs(String(id), String(answer)));
+    const r = await runOrch(orchPath(appRoot), ownerAnswerArgs(String(id), String(answer)));
     await read();
     return ownerResult(r.code, r.stderr, "The answer is saved");
   });
   ipcMain.handle(OWNER_DONE_CHANNEL, async (_e, id: unknown) => {
-    const r = await runOrch(orch, ["owner", "done", String(id)]);
+    const r = await runOrch(orchPath(appRoot), ["owner", "done", String(id)]);
     await read();
     return ownerResult(r.code, r.stderr, "The to-do is marked done");
   });

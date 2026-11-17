@@ -20,7 +20,6 @@ const GIT_POLL_MS = 30_000;
 export function registerSidebarIpc(appRoot: string): void {
   const hc = process.env.CONTR_HC ?? "hc";
   const git = process.env.CONTR_GIT ?? "git";
-  const orch = orchPath(appRoot);
   const projects = new Map<string, Promise<string>>();
   const projectOf = (cwd: string) => {
     if (!projects.has(cwd)) projects.set(cwd, run(git, ["-C", cwd, "rev-parse", "--git-common-dir"]).then((out) => projectFromCommonDir(cwd, out.trim() || null)));
@@ -35,7 +34,7 @@ export function registerSidebarIpc(appRoot: string): void {
   let last: Sidebar = { projects: [], selected: chatTerminal() };
 
   const read = async (): Promise<Sidebar> => {
-    const [hcList, orchOut] = await Promise.all([runHcList(hc), run(orch, ["agents", "ls", "--all", "--json"])]);
+    const [hcList, orchOut] = await Promise.all([runHcList(hc), run(orchPath(appRoot), ["agents", "ls", "--all", "--json"])]);
     const list = hcList.out;
     // hc failed: no agents, and the renderer shows why.
     const { terms, error: hcError } = readHcList(list, hcList.error);

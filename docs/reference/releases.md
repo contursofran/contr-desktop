@@ -94,9 +94,24 @@ contr-core that is not a prerelease, and puts:
 - the release tag in `bin/RELEASE`.
 
 `apps/desktop/electron-builder.yml` copies them into the app's
-`Resources/bin`. The packaged app finds them there (`binPath` in
-`apps/desktop/src/main/helper/binPath.ts`). In dev and e2e the app uses `bin/` at
-the repository root. `CONTR_HELPER` and `CONTR_ORCH` override both.
+`Resources/bin` (the bundle). At start the packaged app finds the core's root
+(`apps/desktop/src/main/core/root.ts`) and picks the copy to run
+(`main/core/start.ts`):
+
+- When the Herdr app uses the root too (its `install.json` has a `files`
+  record, or the root is the Herdr app's folder), the app runs the bundle and
+  changes nothing there.
+- When `<root>/bin/herdr-contr-feed` exists and its build is the same as the
+  bundle's, newer, or of an order that is not known, the app runs the home's
+  helper and tool.
+- When the home's helper does not answer `version` with protocol 1 in 5 s,
+  the app runs the bundle.
+
+The app does not install into the root yet: a root with no helper, or an
+older one, runs the bundle. In dev and e2e the app uses `bin/` at the
+repository root, unless `CONTR_CORE_HOME` names a root (`CONTR_CORE_BUNDLE`
+can name a folder in place of the bundle). `CONTR_HELPER` and `CONTR_ORCH`
+override all.
 
 contr-core releases have no Linux `herdr-contr-orch`, so the AppImage has
 only the helper.
