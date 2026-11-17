@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inboxCount, ownerResult, parseOwnerOpen, readOwnerOpen, windowTitle } from "./owner";
+import { inboxCount, ownerAnswerArgs, ownerResult, parseOwnerOpen, readOwnerOpen, windowTitle } from "./owner";
 
 describe("parseOwnerOpen", () => {
   it("gives questions with the recommended option first, and to-dos", () => {
@@ -47,4 +47,9 @@ describe("readOwnerOpen", () => {
   it("keeps the last good items when the output is not a JSON list", () => {
     for (const out of ["{oops", "{}", ""]) expect(readOwnerOpen(last, out, null)).toEqual({ items: last, error: "herdr-contr-orch gave no JSON list" });
   });
+});
+
+describe("ownerAnswerArgs", () => {
+  it("gives an answer that starts with '-' as the last word, with no '--' before it", () =>
+    expect(ownerAnswerArgs("D7", "-1")).toEqual(["owner", "answer", "D7", "-1"]));
 });

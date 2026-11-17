@@ -86,7 +86,8 @@ export function registerSidebarIpc(appRoot: string): void {
     return { ...last, selected: chatTerminal() };
   });
   ipcMain.handle(SELECT_CHANNEL, (_event, terminal: unknown) => {
-    if (typeof terminal === "string" && terminal !== "") selectTerminal(terminal);
+    // "" shows no agent (each tab closed): main stops the feed.
+    if (typeof terminal === "string") selectTerminal(terminal);
     return chatTerminal();
   });
 }

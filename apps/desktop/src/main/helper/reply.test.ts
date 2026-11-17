@@ -1,5 +1,5 @@
-import { expect, it } from "vitest";
-import { readReplyInfo } from "./reply";
+import { describe, expect, it } from "vitest";
+import { cachedCommands, readReplyInfo } from "./reply";
 
 const model = [{ type: "model", agent: "claude", model: "claude-opus-5-5", effort: "low" }];
 const status = [{ type: "status", tags: [{ kind: "model", text: "Opus 5.5" }, { kind: "context", percent: 37, text: "ctx 37%", warn: false }] }];
@@ -34,4 +34,17 @@ it("keeps the menu before the first reply: no model line, but commands", () => {
   const info = readReplyInfo([{ type: "model", agent: "claude", model: null, effort: null }], [], commands);
   expect(info.model).toBeNull();
   expect(info.models).toHaveLength(2);
+});
+
+describe("cachedCommands", () => {
+  it("asks again after an error answer and keeps the first good answer", async () => {
+    const answers = [[{ type: "error", code: "no-core", message: "down" }], commands, [{ type: "commands", commands: [] }]];
+    const calls: string[] = [];
+    const get = cachedCommands(async (terminal) => { calls.push(terminal); return answers[calls.length - 1]; });
+    expect(await get("t1")).toEqual(answers[0]);
+    await Promise.resolve();
+    expect(await get("t1")).toEqual(commands);
+    expect(await get("t1")).toEqual(commands);
+    expect(calls).toEqual(["t1", "t1"]);
+  });
 });

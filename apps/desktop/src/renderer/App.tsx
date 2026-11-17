@@ -83,7 +83,8 @@ export function App() {
     setTabs((t) => t.filter((x) => x !== terminal));
     if (terminal !== sidebar.selected) return;
     if (next) select(next);
-    else setSidebar((s) => ({ ...s, selected: "" }));
+    // No tab left: main stops the feed and its per-second reads.
+    else void window.contr.select("").then((selected) => setSidebar((s) => ({ ...s, selected })));
   };
   return (
     <div className="flex h-screen bg-canvas text-foreground">

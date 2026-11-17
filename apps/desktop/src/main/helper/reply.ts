@@ -42,3 +42,18 @@ export async function replyInfo(helper: string, terminal: string, commands: Prom
   const [model, status] = await Promise.all([runHelper(helper, ["model", ...t]), runHelper(helper, ["status", ...t])]);
   return readReplyInfo(model, status, await commands);
 }
+
+/** Keeps each terminal's `commands` answer. An answer with an `error` line is not kept: the next call asks again. */
+export function cachedCommands(run: (terminal: string) => Promise<HelperLine[]>): (terminal: string) => Promise<HelperLine[]> {
+  const kept = new Map<string, Promise<HelperLine[]>>();
+  return (terminal) => {
+    const known = kept.get(terminal);
+    if (known) return known;
+    const answer = run(terminal);
+    kept.set(terminal, answer);
+    void answer.then((lines) => {
+      if (lines.some((l) => l.type === "error") && kept.get(terminal) === answer) kept.delete(terminal);
+    });
+    return answer;
+  };
+}

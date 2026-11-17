@@ -73,7 +73,7 @@ export interface ContrApi {
   sidebar(): Promise<Sidebar>;
   /** Listens to changes of the Projects list. Returns a function that stops listening. */
   onSidebar(listener: (sidebar: Sidebar) => void): () => void;
-  /** Makes this terminal's agent the chat's agent. Returns the selected terminal. */
+  /** Makes this terminal's agent the chat's agent; "" shows none and stops the feed. Returns the selected terminal. */
   select(terminal: string): Promise<string>;
   /** The plan usage rows (helper `usage`), Claude then Codex. A plan with no data has no row. */
   usage(): Promise<UsageRow[]>;
