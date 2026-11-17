@@ -199,7 +199,7 @@ test("in a narrow window the shown tab scrolls into view, and the tab row shows 
   // Six agents: each one opened from the sidebar shows its tab in view.
   for (const name of ["Install health check", "Release notes draft", /^Cards/, /^Flow/, /^Virtual/]) {
     await nav.getByRole("button", { name }).first().click();
-    await expect(tabs.getByRole("tab")).not.toHaveCount(0);
+    await expect(tabs.getByRole("tab", { name })).toHaveAttribute("aria-selected", "true");
     await expect.poll(inView).toBe(true);
   }
   await expect(tabs.getByRole("tab")).toHaveCount(6);
@@ -211,10 +211,12 @@ test("in a narrow window the shown tab scrolls into view, and the tab row shows 
   }
   // The first agent again: the row scrolls back to it.
   await nav.getByRole("button", { name: "Chat panel usability audit" }).click();
+  await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
   await expect.poll(inView).toBe(true);
-  expect(await row.evaluate((r) => r.scrollLeft)).toBe(0);
+  await expect.poll(() => row.evaluate((r) => r.scrollLeft)).toBe(0);
   // The last tab, then a narrower window: it stays in view.
   await tabs.getByRole("tab").last().click();
+  await expect(tabs.getByRole("tab").last()).toHaveAttribute("aria-selected", "true");
   await expect.poll(inView).toBe(true);
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(700, 600));
   await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(700);
