@@ -17,16 +17,16 @@ export function StatusLine({
     <div aria-label="Status" className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-1 text-xs text-muted">
       {working?.text && (
         <>
-          <Spinner size={14} className="text-foreground" />
-          <span className="text-[13px] text-foreground">{working.text}</span>
-          {working.detail && <span className="font-mono text-[11px]">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
+          <Spinner size={14} className="shrink-0 text-foreground" />
+          <span className="min-w-0 shrink truncate text-[13px] text-foreground">{working.text}</span>
+          {working.detail && <span className="min-w-0 shrink-[2] truncate font-mono text-[11px]">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
         </>
       )}
       {right ? (
-        <span className="ml-auto font-mono text-[11px]">{right}</span>
+        <span className="ml-auto min-w-0 shrink-0 truncate font-mono text-[11px]">{right}</span>
       ) : (
         onOrchestrate && (
-          <button type="button" onClick={onOrchestrate} className="ml-auto text-[11px] text-dim hover:text-muted">
+          <button type="button" onClick={onOrchestrate} className="ml-auto shrink-0 text-[11px] text-dim hover:text-muted">
             Orchestrate
           </button>
         )

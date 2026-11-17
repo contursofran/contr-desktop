@@ -114,14 +114,17 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
         </p>
       )}
       <ChatList rows={feed.rows} />
-      <OwnerCards items={owner} />
-      {feed.card && <Card card={feed.card} />}
-      <StatusLine
-        working={feed.working}
-        right={orchestratingText(workers)}
-        onOrchestrate={board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
-      />
-      <ReplyBox title={title} draft={draft} />
+      {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window. */}
+      <div className="px-4">
+        <OwnerCards items={owner} />
+        {feed.card && <Card card={feed.card} />}
+        <StatusLine
+          working={feed.working}
+          right={orchestratingText(workers)}
+          onOrchestrate={board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
+        />
+        <ReplyBox terminal={terminal} title={title} draft={draft} />
+      </div>
     </>
   );
 }
