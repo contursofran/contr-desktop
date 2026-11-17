@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { appendFileSync, copyFileSync, mkdtempSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
 
@@ -93,5 +95,55 @@ test("with a card that owns the card keys, the reply box leaves the keyboard: a 
   await page.keyboard.press("1");
   await expect(card).toContainText("Answer sent. Waiting for the agent.");
   await expect(replyBox(page)).toHaveValue("");
+  await app.close();
+});
+
+// Issue #159: the first full answer comes late. A control that got the focus in between keeps it.
+test("a late first answer leaves the focus on a button that took it while the chat was read", async () => {
+  test.setTimeout(60_000);
+  const fixture = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "session.jsonl");
+  copyFileSync(path.join(e2e, "fixtures/claude-session.jsonl"), fixture);
+  const app = await launch({ FAKE_HELPER_FIXTURE: fixture, FAKE_HELPER_SLOW_FEED: "6000" });
+  const page = await app.firstWindow();
+  const loading = page.getByRole("status", { name: "Reading the chat" });
+  await expect(loading).toBeVisible();
+  const attachButton = page.getByRole("button", { name: "Attach image" });
+  await attachButton.focus();
+  // The focus moved before the first answer came.
+  await expect(loading).toBeVisible();
+  await expect(loading).toHaveCount(0, { timeout: 20_000 });
+  // The rows can show before the tick's card: a row of the next tick shows only after that card, when the box could take the keyboard.
+  appendFileSync(fixture, `${JSON.stringify({ id: "late", k: "assistant", ts: 1793671080000, text: "Next tick." })}\n`);
+  await expect(page.getByRole("list", { name: "Chat" })).toContainText("Next tick.", { timeout: 20_000 });
+  await expect(attachButton).toBeFocused();
+  await expect(replyBox(page)).not.toBeFocused();
+  await app.close();
+});
+
+test("a late first answer gives the keyboard to the reply box when nothing has the focus", async () => {
+  test.setTimeout(60_000);
+  const app = await launch({ FAKE_HELPER_SLOW_FEED: "6000" });
+  const page = await app.firstWindow();
+  const loading = page.getByRole("status", { name: "Reading the chat" });
+  await expect(loading).toBeVisible();
+  await page.getByRole("button", { name: "Attach image" }).focus();
+  await blur(page);
+  await expect(loading).toBeVisible();
+  await expect(loading).toHaveCount(0, { timeout: 20_000 });
+  await expect(replyBox(page)).toBeFocused();
+  await app.close();
+});
+
+test("a late first answer gives the keyboard to the reply box when the focus has not moved since the window became active", async () => {
+  test.setTimeout(60_000);
+  const app = await launch({ FAKE_HELPER_SLOW_FEED: "6000" });
+  const page = await app.firstWindow();
+  const loading = page.getByRole("status", { name: "Reading the chat" });
+  await expect(loading).toBeVisible();
+  await row(page, /Release notes draft/).focus();
+  await activate(page);
+  await expect(loading).toBeVisible();
+  await expect(loading).toHaveCount(0, { timeout: 20_000 });
+  await expect(replyBox(page)).toBeFocused();
   await app.close();
 });

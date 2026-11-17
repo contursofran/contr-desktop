@@ -169,14 +169,23 @@ const HOLDS = "textarea, input, select, [contenteditable]:not([contenteditable=f
  * (at start, on another agent's chat, back from Terminal), and when the window becomes active. Never on a redraw or a
  * new message. It does not take the keyboard while a card owns the card keys (`keyboard` false), from another text
  * field, a menu or a dialog, or while text is selected (a selection stays).
+ * `keyboard` can become known late (a slow first answer): the box then takes the keyboard only if the focus is still
+ * where it was when the chat showed or the window became active, or on the page body. A control focused in between
+ * keeps the focus (issue #159).
  */
 function useKeyboard(box: { current: HTMLTextAreaElement | null }, keyboard: boolean | undefined) {
   const may = useRef(keyboard);
   may.current = keyboard;
+  // The focused element when the chat showed or the window became active.
+  const mark = useRef<Element | null>(null);
+  useLayoutEffect(() => {
+    mark.current = document.activeElement;
+  }, []);
   const take = useCallback(() => {
     const el = box.current;
     const active = document.activeElement;
     if (!may.current || !el || active === el) return;
+    if (active !== mark.current && active !== document.body) return;
     if (active?.closest(HOLDS) || !(document.getSelection()?.isCollapsed ?? true)) return;
     el.focus();
     el.setSelectionRange(el.value.length, el.value.length);
@@ -186,8 +195,12 @@ function useKeyboard(box: { current: HTMLTextAreaElement | null }, keyboard: boo
     if (known) take();
   }, [known, take]);
   useEffect(() => {
-    window.addEventListener("focus", take);
-    return () => window.removeEventListener("focus", take);
+    const onActive = () => {
+      mark.current = document.activeElement;
+      take();
+    };
+    window.addEventListener("focus", onActive);
+    return () => window.removeEventListener("focus", onActive);
   }, [take]);
 }
 
