@@ -166,8 +166,10 @@ test("with a writable app folder a press installs from the .zip and shows Restar
   const view = await openSettings(page);
   await view.getByRole("button", { name: "Update" }).click();
   const restart = view.getByRole("button", { name: "Restart to update" });
+  // The press unpacks a real app and runs codesign on it: slow on a CI runner. A failed download shows its text here.
+  await expect(restart.or(view.getByRole("alert"))).toBeVisible({ timeout: 60_000 });
+  expect(await view.getByRole("alert").allTextContents()).toEqual([]);
   await expect(restart).toBeVisible();
-  await expect(view.getByRole("alert")).toHaveCount(0);
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "update-restart-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
