@@ -85,6 +85,10 @@ export interface ContrApi {
   owner(): Promise<OwnerItems>;
   /** Listens to changes of the open owner items. Returns a function that stops listening. */
   onOwner(listener: (items: OwnerItems) => void): () => void;
+  /** Why the last read of `owner open --json` failed, or null after a good read. The items stay as the last good read gave them. */
+  ownerError(): Promise<string | null>;
+  /** Listens to changes of `ownerError`. Returns a function that stops listening. */
+  onOwnerError(listener: (error: string | null) => void): () => void;
   /** Answers an owner question (`owner answer <id> <answer>`). */
   ownerAnswer(id: string, answer: string): Promise<OwnerResult>;
   /** Marks an owner to-do done (`owner done <id>`). */
@@ -234,6 +238,8 @@ export const OWNER_CHANNEL = "contr:owner";
 export const OWNER_EVENT = "contr:owner-event";
 export const OWNER_ANSWER_CHANNEL = "contr:owner-answer";
 export const OWNER_DONE_CHANNEL = "contr:owner-done";
+export const OWNER_ERROR_CHANNEL = "contr:owner-error";
+export const OWNER_ERROR_EVENT = "contr:owner-error-event";
 
 /** An open owner question from `herdr-contr-orch owner open --json`. Options have the recommended one first. */
 export interface OwnerQuestion {

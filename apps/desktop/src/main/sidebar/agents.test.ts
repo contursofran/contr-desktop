@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, runHcList } from "./agents";
+import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, run, runHcList, runRead } from "./agents";
 
 const hc = JSON.stringify({
   terminals: [
@@ -141,5 +141,17 @@ describe("runHcList", () => {
   it("gives the error message when hc exits non-zero with no stderr", async () => {
     const got = await runHcList("/usr/bin/false");
     expect(got.error).toContain("Command failed");
+  });
+});
+
+describe("runRead", () => {
+  const node = process.execPath;
+  it("gives stdout and no error when the program exits 0", async () => {
+    expect(await runRead(node, ["-e", "process.stdout.write('[]')"])).toEqual({ out: "[]", error: null });
+  });
+  it("gives stderr as the error when the program exits non-zero; run still gives its stdout", async () => {
+    const args = ["-e", "process.stdout.write('part'); process.stderr.write('the owner file is locked\\n'); process.exit(1)"];
+    expect(await runRead(node, args)).toEqual({ out: "part", error: "the owner file is locked" });
+    expect(await run(node, args)).toBe("part");
   });
 });

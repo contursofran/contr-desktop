@@ -136,8 +136,15 @@ export function readHcList(out: string, error: string | null): { terms: HcTermin
 }
 
 /** Runs a program read-only and gives its stdout ("" on failure). */
-export function run(program: string, args: string[], cwd?: string): Promise<string> {
+export async function run(program: string, args: string[], cwd?: string): Promise<string> {
+  return (await runRead(program, args, cwd)).out;
+}
+
+/** Runs a program read-only (10 s at most) and gives its stdout and why it failed: stderr, else the error message. `error` is null when it exited 0. */
+export function runRead(program: string, args: string[], cwd?: string): Promise<{ out: string; error: string | null }> {
   return new Promise((resolve) => {
-    execFile(program, args, { cwd, timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (_e, stdout) => resolve(String(stdout ?? "")));
+    execFile(program, args, { cwd, timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (e, stdout, stderr) =>
+      resolve({ out: String(stdout ?? ""), error: e ? (e.killed ? "no answer in 10 s" : String(stderr ?? "").trim() || e.message) : null }),
+    );
   });
 }

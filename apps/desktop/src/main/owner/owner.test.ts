@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inboxCount, ownerResult, parseOwnerOpen, windowTitle } from "./owner";
+import { inboxCount, ownerResult, parseOwnerOpen, readOwnerOpen, windowTitle } from "./owner";
 
 describe("parseOwnerOpen", () => {
   it("gives questions with the recommended option first, and to-dos", () => {
@@ -31,5 +31,20 @@ describe("ownerResult", () => {
   it("puts the count in the window title only while items are open", () => {
     expect(windowTitle(0)).toBe("contr");
     expect(windowTitle(3)).toBe("contr · Inbox 3");
+  });
+});
+
+describe("readOwnerOpen", () => {
+  const last = parseOwnerOpen(JSON.stringify([{ kind: "todo", id: "T1", coordinator: "t7", text: "Read" }]));
+  it("gives the new items and no error after a good read, also an empty list", () => {
+    expect(readOwnerOpen(last, "[]", null)).toEqual({ items: { questions: [], todos: [] }, error: null });
+  });
+  it("keeps the last good items and gives why when the run failed", () => {
+    const got = readOwnerOpen(last, "", "no answer in 10 s");
+    expect(got.items).toBe(last);
+    expect(got.error).toBe("no answer in 10 s");
+  });
+  it("keeps the last good items when the output is not a JSON list", () => {
+    for (const out of ["{oops", "{}", ""]) expect(readOwnerOpen(last, out, null)).toEqual({ items: last, error: "herdr-contr-orch gave no JSON list" });
   });
 });
