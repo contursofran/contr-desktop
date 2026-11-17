@@ -16,6 +16,7 @@ to `main` (or by hand, `workflow_dispatch`). It:
    names do not change between releases: `contr-mac-universal.dmg`,
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
    button finds the `.zip` and the `.dmg` of the newest release by these names.
+   The release also has `release.json` (see The release file).
 
 ## Release notes
 
@@ -36,17 +37,49 @@ workflow runs its test (`node --test scripts/release-notes.test.mjs`) and a
 dry run (`node scripts/release-notes.mjs --dry-run`) that prints the notes for
 the pull request's head.
 
+## The release file
+
+With `--json release.json --assets dist`, `scripts/release-notes.mjs` also
+writes `release.json`, and the publish job uploads it with the other files:
+
+```json
+{ "schema": 1, "version": "0.1.30", "tag": "build-…", "sha": "…", "date": "<ISO time>",
+  "assets": ["contr-linux-x86_64.AppImage", "contr-mac-universal.dmg", "contr-mac-universal.zip"],
+  "releases": [{ "version": "0.1.30", "tag": "build-…", "date": "2026-11-18", "changes": ["…"] }] }
+```
+
+`assets` are the file names in `dist`. `releases` is the change log of the
+newest 10 releases, this one first. The older ones come from the API list
+(the workflow has a token), sorted by `published_at`, parsed as the app's
+`changelog.ts` does: drafts and releases with no version are left out. The
+`CI` dry run prints the file too.
+
+The app reads
+`https://github.com/contursofran/contr-desktop/releases/latest/download/release.json`.
+GitHub redirects it to the file. It is not under the API's limit of 60 reads in
+an hour for one network address (no token). An asset's URL is
+`releases/download/<tag>/<name>`. One read gives the newest release and the
+change log. When the file is not there (HTTP 404, a release from before #128)
+or is not a schema 1 file, the app reads the API as before.
+
+A failed read says what it is: a 403 or 429 with `x-ratelimit-remaining: 0`
+gives "GitHub's limit for this network is reached. Try again after HH:MM."
+(`x-ratelimit-reset`, local time); no answer at all gives "No network: GitHub
+cannot be reached."; else "HTTP <status>".
+
 ## The change log in Settings
 
 Settings > Change log, under Updates, shows the newest 10 releases, newest
 first: version, date and the lines of `## Changes`. The installed version has
 the mark "Installed"; a newer one has the mark "New". The newest 3 are open; the
 rest are behind "Show older". A release with no `## Changes` part (each one
-before #120) shows its version and date only. The main process reads
-`releases?per_page=100` of contursofran/contr-desktop (no token) with each
-update check, keeps the result in memory, and sorts it by `published_at`. A
-failed read shows its message and Retry. Dev and e2e read nothing, unless
-`CONTR_RELEASES_URL` points at a fake list (e2e).
+before #120) shows its version and date only. The main process takes the
+releases of `release.json` with each update check (see The release file);
+with no such file it reads `releases?per_page=100` of
+contursofran/contr-desktop (no token) and sorts it by `published_at`. It keeps
+the result in memory. A failed read shows its message and Retry; Retry reads
+`release.json` again. Dev and e2e read nothing, unless `CONTR_RELEASE_FILE_URL`
+or `CONTR_RELEASES_URL` points at a fake file or list (e2e).
 
 The workflow reads the releases of herdr-contr, a public repository, with
 its own token. It needs no secret.
@@ -106,8 +139,8 @@ folder and run `codesign --verify --deep --strict --verbose=2` on its
 ## The Update button
 
 Settings > Updates shows this app's version and the newest release's version.
-A packaged app reads `releases/latest` of contursofran/contr-desktop (no
-token) at start, every 6 hours, each time the Settings view opens, on
+A packaged app reads `release.json` of the newest release (see The release
+file; else `releases/latest` of the API) at start, every 6 hours, each time the Settings view opens, on
 "Check now" in Settings > Updates and on "Check for Updates…" in the macOS
 app menu (it also opens Settings). One check runs at a time. While it runs,
 "Check now" says "Checking…"; after it, Settings shows "Up to date" or the
@@ -142,7 +175,8 @@ states.
 Dev and e2e builds show "Development build" and check nothing. The e2e test of
 the `.zip` install builds its `.zip` with electron-builder and
 `electron-builder.yml`, so a change to the signing options shows there. e2e tests set
-`CONTR_UPDATE_URL` (a fake release JSON) and `CONTR_DOWNLOADS` (a scratch
+`CONTR_UPDATE_URL` (a fake API release JSON), `CONTR_RELEASE_FILE_URL` (a
+fake `release.json`; with no such switch e2e reads no release file) and `CONTR_DOWNLOADS` (a scratch
 folder) and `CONTR_INSTALL_DIR` (a scratch folder in place of the running
 app's folder, never `/Applications`); with `CONTR_E2E=1` nothing is opened,
 swapped or quit.

@@ -9,7 +9,7 @@ import { CHANGELOG_CHANNEL, UPDATE_CHANNEL, UPDATE_CHECK_CHANNEL, UPDATE_DOWNLOA
 import { changeLogSource } from "./changelog";
 import { afterCheck, singleFlight } from "./check";
 import { bundleOf, startSwap, unpack, writable } from "./install";
-import { DMG, getJson, newer, parseRelease, RELEASE_URL, RELEASES_URL, ZIP } from "./release";
+import { DMG, getJson, newer, parseRelease, readReleaseFile, RELEASE_FILE_URL, RELEASE_URL, RELEASES_URL, ZIP, type ReleaseFile } from "./release";
 
 /**
  * GitHub has no release event for an app: the newest release is read at start, every 6 hours, each time the
@@ -27,14 +27,18 @@ const CHECK_MS = 6 * 60 * 60_000;
  * Settings > Change log reads the newest releases (docs/decisions/122-change-log.md) with each check;
  * CONTR_RELEASES_URL points it at a fake releases list (e2e). With CONTR_E2E=1, CONTR_VERSION replaces this app's
  * version, so a test can mark a release "Installed".
+ * A check reads release.json first (docs/decisions/131-release-file.md): one read gives the release and the change
+ * log, with no API rate limit. With no such file (HTTP 404) or a bad one, it reads the API as before.
+ * CONTR_RELEASE_FILE_URL points it at a fake release.json (e2e); e2e with no such switch reads no release.json.
  */
 export function registerUpdateIpc(): { check: () => Promise<void> } {
   const url = process.env.CONTR_UPDATE_URL ?? (app.isPackaged ? RELEASE_URL : null);
+  const file = process.env.CONTR_RELEASE_FILE_URL ?? (app.isPackaged ? RELEASE_FILE_URL : null);
   const e2e = process.env.CONTR_E2E === "1";
   const target = process.env.CONTR_INSTALL_DIR ? path.join(process.env.CONTR_INSTALL_DIR, "contr.app") : app.isPackaged ? bundleOf(app.getPath("exe")) : null;
-  const log = changeLogSource(process.env.CONTR_RELEASES_URL ?? (app.isPackaged ? RELEASES_URL : null));
+  const log = changeLogSource(process.env.CONTR_RELEASES_URL ?? (app.isPackaged ? RELEASES_URL : null), fetch, file);
   const current = (e2e && process.env.CONTR_VERSION) || app.getVersion();
-  const state: UpdateState = { current, dev: url === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null, checkFailed: false };
+  const state: UpdateState = { current, dev: url === null && file === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null, checkFailed: false };
   let release: { version: string; dmgUrl: string | null; zipUrl: string | null } | null = null;
   let next: string | null = null;
   const set = (change: Partial<UpdateState>) => {
@@ -45,11 +49,15 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
   const zipUrl = (r = release) => (r?.zipUrl && target && writable(path.dirname(target)) ? r.zipUrl : null);
   /** One check at a time (singleFlight); see afterCheck for a check while a download runs or is ready. */
   const check = singleFlight(async () => {
-    void log.load();
-    if (!url) return;
+    if (!url && !file) return void log.load();
     set({ checking: true });
+    // The change log takes release.json's releases; with no release.json it reads on its own.
+    const fromFile: Promise<ReleaseFile | null> = file ? readReleaseFile(file) : Promise.resolve(null);
+    void fromFile.then((r) => (r ? log.put(r.releases) : void log.load()), () => void log.load());
     try {
-      const found = parseRelease(await getJson(url));
+      const read = await fromFile;
+      if (!read && !url) throw new Error("The newest release has no release.json.");
+      const found = read?.release ?? parseRelease(await getJson(url!));
       const { take, change } = afterCheck(state, found.version, zipUrl(found) !== null || found.dmgUrl !== null, newer(found.version, state.current), Date.now());
       if (take) release = found;
       // A release taken again makes an older "Opened …" line wrong; a running or ready download keeps its state.

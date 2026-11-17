@@ -1,8 +1,7 @@
 import type { ChangeLog, ChangeLogRelease } from "../../shared/api";
-import { getJson, versionOf } from "./release";
+import { CHANGELOG_COUNT, getJson, readReleaseFile, versionOf } from "./release";
 
-/** Settings > Change log shows this many releases. */
-export const CHANGELOG_COUNT = 10;
+export { CHANGELOG_COUNT } from "./release";
 
 /** The "- " lines of the notes' "## Changes" part (release.yml writes it), up to the first other line. */
 export function parseChanges(body: string): string[] {
@@ -39,21 +38,24 @@ export function parseChangeLog(json: unknown): ChangeLogRelease[] {
 }
 
 /**
- * Keeps the change log in memory. `load` reads it from `url` (one read at a time); each update check calls it,
- * there is no timer of its own. `get` gives the running read, else the last result; with `again`, or before the
- * first read, it starts a read. A failed read keeps the releases of the last good one. With no `url` (dev, e2e
- * with no fake URL) there is nothing to read: `releases` stays null.
+ * Keeps the change log in memory. `load` reads it (one read at a time): release.json at `file`, else (no `file`,
+ * or no such file) the API list at `url`. An update check that read release.json gives its releases with `put`;
+ * else it calls `load`. There is no timer of its own. `get` gives the running read, else the last result; with
+ * `again`, or before the first read, it starts a read. A failed read keeps the releases of the last good one. With
+ * no `file` and no `url` (dev, e2e with no fake URL) there is nothing to read: `releases` stays null.
  */
-export function changeLogSource(url: string | null, get: typeof fetch = fetch) {
+export function changeLogSource(url: string | null, get: typeof fetch = fetch, file: string | null = null) {
   let last: ChangeLog = { releases: null, error: null };
   let running: Promise<ChangeLog> | null = null;
   let read = false;
+  const fromFile = async () => (file ? ((await readReleaseFile(file, get))?.releases ?? null) : null);
   const load = (): Promise<ChangeLog> => {
-    if (!url) return Promise.resolve(last);
+    if (!url && !file) return Promise.resolve(last);
     read = true;
-    return (running ??= getJson(url, get)
+    return (running ??= fromFile()
+      .then(async (releases) => releases ?? (url ? parseChangeLog(await getJson(url, get)) : []))
       .then(
-        (json): ChangeLog => ({ releases: parseChangeLog(json), error: null }),
+        (releases): ChangeLog => ({ releases, error: null }),
         (e): ChangeLog => ({ releases: last.releases, error: `Could not load the change log: ${(e as Error).message}` }),
       )
       .then((result) => {
@@ -64,6 +66,10 @@ export function changeLogSource(url: string | null, get: typeof fetch = fetch) {
   };
   return {
     load,
+    put: (releases: ChangeLogRelease[]) => {
+      read = true;
+      if (!running) last = { releases, error: null };
+    },
     get: (again = false): Promise<ChangeLog> => (again || !read ? load() : (running ?? Promise.resolve(last))),
   };
 }
