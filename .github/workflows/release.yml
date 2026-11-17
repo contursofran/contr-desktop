@@ -95,12 +95,13 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      # The notes: the version line, a "## Changes" part (the commits since the release before) and the lines
+      # about the ad-hoc signature. scripts/release-notes.mjs reads them with the GitHub API (no git history).
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.stamp.outputs.sha }}
+          path: src
+          sparse-checkout: scripts
       - name: Notes
-        run: |
-          {
-            echo "contr ${{ needs.stamp.outputs.version }} from ${{ needs.stamp.outputs.sha }}."
-            echo
-            echo "The macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open"
-            echo "(or run \`xattr -dr com.apple.quarantine /Applications/contr.app\`)."
-          } > notes.md
+        run: node src/scripts/release-notes.mjs --version "${{ needs.stamp.outputs.version }}" --sha "${{ needs.stamp.outputs.sha }}" --tag "$TAG" --repo "${{ github.repository }}" > notes.md
       - run: gh release create "$TAG" dist/* -R "${{ github.repository }}" --target "${{ needs.stamp.outputs.sha }}" -t "$TAG" -F notes.md

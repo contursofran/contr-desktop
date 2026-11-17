@@ -1,0 +1,2 @@
+{"id": "u1", "k": "user", "ts": 1793670000000, "text": "Where are the docs?"}
+{"id": "a1", "k": "assistant", "ts": 1793670010000, "text": "## Links\n\nThe [Electron docs](https://www.electronjs.org/docs/latest) open in the browser. A [local file](notes/plan.md) and an [absolute path](/tmp/contr-links/plan.md) open nothing. A [custom scheme](vscode://file/plan.md) and a [script](javascript:alert(1)) open nothing too."}
