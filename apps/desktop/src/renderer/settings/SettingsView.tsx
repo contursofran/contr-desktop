@@ -1,6 +1,7 @@
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useEffect, useState } from "react";
 import type { Settings, ThemeChoice, UpdateState } from "../../shared/api";
+import { PathText } from "../ui/PathText";
 import { ChangeLog } from "./ChangeLog";
 import { updateView } from "./updateView";
 
@@ -51,7 +52,7 @@ export function SettingsView() {
           <h2 className="text-xs font-medium text-muted">Helper</h2>
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-raised px-4 py-3">
             <span className="text-[13px]">Path</span>
-            <span aria-label="Helper path" className="min-w-0 truncate font-mono text-[11px] text-muted">{data?.helper}</span>
+            <PathText label="Helper path" path={data?.helper ?? ""} />
           </div>
         </div>
       </div>

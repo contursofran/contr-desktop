@@ -30,7 +30,7 @@ async function shoot(page: Page, name: string) {
   }
 }
 
-test("the machine switch opens with keys and the mouse, picks, and gives focus back", async () => {
+test("the machine switch opens with keys and the mouse, keeps This computer, and gives focus back", async () => {
   test.setTimeout(60_000);
   const { app, page } = await start();
   const trigger = page.locator("aside > header").getByRole("button", { name: "Machine" });
@@ -44,20 +44,18 @@ test("the machine switch opens with keys and the mouse, picks, and gives focus b
   await expect(menu.getByRole("menuitemradio")).toHaveText(["This computer", "aerum-pc", "vpsunreachable"]);
   await expect(menu.getByRole("menuitemradio", { name: "This computer" })).toHaveAttribute("aria-checked", "true");
   await expect(menu.getByRole("menuitem", { name: "Add machine…" })).toBeVisible();
-  await page.keyboard.press("ArrowDown");
-  await expect(menu.getByRole("menuitemradio", { name: "aerum-pc" })).toBeFocused();
+  // The other machines are inert until the pick filters (small-texts.spec.ts): Enter picks This computer.
   await shoot(page, "sidebar-machines");
   await page.keyboard.press("Enter");
   await expect(menu).toBeHidden();
-  await expect(trigger).toHaveText("aerum-pc");
+  await expect(trigger).toHaveText("This computer");
   await expect(trigger).toBeFocused();
 
   await page.keyboard.press("Enter");
-  await expect(menu.getByRole("menuitemradio", { name: "aerum-pc" })).toHaveAttribute("aria-checked", "true");
+  await expect(menu).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(trigger).toHaveText("aerum-pc");
 
   await hover(page, trigger);
   await page.mouse.down();
