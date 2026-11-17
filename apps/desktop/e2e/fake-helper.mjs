@@ -12,9 +12,10 @@
 // `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model.
 // `usage` gives Claude and Codex plans that reset some hours and days from now.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
+// FAKE_HELPER_ERROR_WHILE=<file> does the same with the code `no-core` while that file is there.
 // The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
 // `working` and `card` give that worker's data. FAKE_HELPER_CARD and FAKE_HELPER_MODEL=none still win.
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const workerDir = path.join(import.meta.dirname, "fixtures", "workers");
@@ -35,8 +36,9 @@ const end = (ok) => out({ ms: 1, ok, type: "end" });
 const worker = workers[arg("terminal")];
 
 out({ build: "fake", cmd, protocol: 1, sidecar: "0.0.0-fake", type: "header" });
-if (process.env.FAKE_HELPER_ERROR) {
-  out({ code: process.env.FAKE_HELPER_ERROR, message: `fake error ${process.env.FAKE_HELPER_ERROR}`, type: "error" });
+const failing = process.env.FAKE_HELPER_ERROR || (process.env.FAKE_HELPER_ERROR_WHILE && existsSync(process.env.FAKE_HELPER_ERROR_WHILE) && "no-core");
+if (failing) {
+  out({ code: failing, message: `fake error ${failing}`, type: "error" });
   end(false);
 } else if (cmd === "feed") {
   // The cursor is the row count: rows appended to the fixture since then come as a splice.

@@ -6,7 +6,7 @@ import { chatTerminal, selectTerminal } from "../helper";
 import { readTitle } from "../helper/title";
 import { setBlockedCount } from "../owner/ipc";
 import { blockedAgents } from "../../shared/inbox";
-import { buildProjects, projectFromCommonDir, run } from "./agents";
+import { buildProjects, projectFromCommonDir, readHcList, run, runHcList } from "./agents";
 import { faviconUrl, gitState } from "./git";
 
 /** Without hc events (hc gone or too old), the list is read again every 10 s. */
@@ -35,13 +35,10 @@ export function registerSidebarIpc(appRoot: string): void {
   let last: Sidebar = { projects: [], selected: chatTerminal() };
 
   const read = async (): Promise<Sidebar> => {
-    const [list, orchOut] = await Promise.all([run(hc, ["ls", "--json"]), run(orch, ["agents", "ls", "--all", "--json"])]);
-    let terms: { address?: unknown; cwd?: unknown }[] = [];
-    try {
-      terms = (JSON.parse(list) as { terminals?: typeof terms }).terminals ?? [];
-    } catch {
-      // hc failed: no agents.
-    }
+    const [hcList, orchOut] = await Promise.all([runHcList(hc), run(orch, ["agents", "ls", "--all", "--json"])]);
+    const list = hcList.out;
+    // hc failed: no agents, and the renderer shows why.
+    const { terms, error: hcError } = readHcList(list, hcList.error);
     const cwds = [...new Set(terms.map((t) => t.cwd).filter((c): c is string => typeof c === "string" && c !== ""))];
     const names = new Map<string, string>();
     await Promise.all(cwds.map(async (c) => names.set(c, await projectOf(c))));
@@ -55,7 +52,7 @@ export function registerSidebarIpc(appRoot: string): void {
     );
     const built = buildProjects({ hc: list, orch: orchOut, titles, projectOf: (c) => names.get(c) ?? c });
     const projects = await Promise.all(built.map(async (p) => ({ ...p, ...(await gitState(git, p.cwd)), favicon: favicon(p.cwd) })));
-    return { projects, selected: chatTerminal() };
+    return { projects, selected: chatTerminal(), ...(hcError ? { hcError } : {}) };
   };
 
   let timer: NodeJS.Timeout | undefined;

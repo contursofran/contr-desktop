@@ -3,7 +3,7 @@ import path from "node:path";
 import { isLiveAgent, liveWorkerParents } from "../workers/live";
 import type { SidebarAgent, SidebarProject, WorkerState } from "../../shared/api";
 
-interface HcTerminal {
+export interface HcTerminal {
   address?: unknown;
   name?: unknown;
   cwd?: unknown;
@@ -102,6 +102,25 @@ export function projectFromCommonDir(cwd: string, commonDir: string | null): str
 }
 
 /** Runs a program read-only and gives its stdout ("" on failure). */
+/** Runs `hc ls --json` and keeps why it failed: stderr, else the error message ("spawn hc ENOENT"). `error` is null when hc exited 0. */
+export function runHcList(hc: string): Promise<{ out: string; error: string | null }> {
+  return new Promise((resolve) => {
+    execFile(hc, ["ls", "--json"], { timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (e, stdout, stderr) =>
+      resolve({ out: String(stdout ?? ""), error: e ? String(stderr ?? "").trim() || e.message : null }),
+    );
+  });
+}
+
+/** The terminals of an `hc ls --json` answer, and the error text when hc failed or gave no JSON. */
+export function readHcList(out: string, error: string | null): { terms: HcTerminal[]; error: string | undefined } {
+  if (error) return { terms: [], error };
+  try {
+    return { terms: (JSON.parse(out) as { terminals?: HcTerminal[] }).terminals ?? [], error: undefined };
+  } catch {
+    return { terms: [], error: "hc gave no JSON" };
+  }
+}
+
 export function run(program: string, args: string[], cwd?: string): Promise<string> {
   return new Promise((resolve) => {
     execFile(program, args, { cwd, timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (_e, stdout) => resolve(String(stdout ?? "")));

@@ -5,6 +5,8 @@ import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
 import { blockedAgents } from "../shared/inbox";
 import { ChatList } from "./chat/list/ChatList";
+import { Empty } from "./chat/Empty";
+import { HelperError } from "./chat/HelperError";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
 import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
@@ -74,7 +76,7 @@ export function App() {
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onShowSidebar={hidden ? () => setHidden(false) : undefined} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
-        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} />}
+        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} />}
       </main>
     </div>
   );
@@ -103,7 +105,15 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
 /** `title` is the tab's title (`tabLabel`): the reply box names the agent as the tab and the sidebar do, never by its hc name. */
 function Chat({ terminal, title, side }: { terminal: string; title: string; side: Side }) {
   const [feed, setFeed] = useState(emptyFeed);
-  useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
+  // Retry listens again: main stops the old feed and starts a new one.
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), [attempt]);
+  const retry = () => {
+    setFeed(emptyFeed);
+    setAttempt((n) => n + 1);
+  };
+  // While the helper is down, the chat cannot send and shows no orchestrator text.
+  const down = feed.error !== null;
   const board = useBoard(NO_ISSUES);
   const workers = board?.orchestrating ?? 0;
   const owner = useOwnerItems(terminal);
@@ -112,11 +122,6 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
   if (side === "terminal") return <TerminalView />;
   return (
     <>
-      {feed.error && (
-        <p role="alert" className="px-4 py-2 text-sm text-blocked">
-          {feed.error.code}: {feed.error.message}
-        </p>
-      )}
       {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window.
           They come before the chat rows in the DOM, so Tab reaches the reply box first; `order-last` shows them under the rows. */}
       <div className="order-last px-4">
@@ -124,12 +129,15 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
         {feed.card && <Card card={feed.card} />}
         <StatusLine
           working={feed.working}
-          right={orchestratingText(workers)}
-          onOrchestrate={board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
+          right={down ? undefined : orchestratingText(workers)}
+          onOrchestrate={!down && board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
         />
-        <ReplyBox terminal={terminal} title={title} draft={draft} />
+        {/* A disabled fieldset turns off every control of the reply box; the draft stays. */}
+        <fieldset disabled={down} className="min-w-0 disabled:opacity-50">
+          <ReplyBox terminal={terminal} title={title} draft={draft} />
+        </fieldset>
       </div>
-      <ChatList rows={feed.rows} />
+      {feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}
     </>
   );
 }
