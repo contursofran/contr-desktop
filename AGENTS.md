@@ -46,7 +46,9 @@ Each step is finished and in use before the next one starts.
 
 ## Design
 
-The design to aim for is herdr-contr as it is now: `docs/design/README.md`.
+The design to aim for is the redesign of 2026-11-17:
+`docs/design/redesign/README.md` (issues with the label `redesign`).
+Until a part is redone, it follows herdr-contr: `docs/design/README.md`.
 Take the colors from theme tokens, dark and light first. Do not invent new
 parts; when the design has no answer, ask.
 

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>contr, every screen: Herdr layout, contr tokens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the contr design system, dark theme. Glass is drawn as opaque fills
+   (the system's "reduce transparency" rule), so the Herdr layout stays flat. */
+:root{
+  --win:#141518;            /* glass-window over ground */
+  --side:#111214;           /* panel over ground */
+  --float:#1f2024;          /* glass-float over win */
+  --hairline:rgba(255,255,255,0.06); --rail:rgba(255,255,255,0.07);
+  --panel-line:rgba(255,255,255,0.065); --window-line:rgba(255,255,255,0.09); --float-line:rgba(255,255,255,0.075);
+  --hover:rgba(255,255,255,0.045); --hover-strong:rgba(255,255,255,0.06);
+  --selected:rgba(255,255,255,0.085); --shadow-selected:inset 0 0 0 1px rgba(255,255,255,0.06);
+  --input-line:rgba(255,255,255,0.1);
+  --meter-track:rgba(255,255,255,0.07); --meter-fill:rgba(255,255,255,0.55); --tick:rgba(255,255,255,0.14);
+  --ink-100:#f4f4f5; --ink-95:#e9e9ea; --ink-90:rgba(255,255,255,.9); --ink-85:rgba(255,255,255,.85); --ink-62:rgba(255,255,255,.62); --ink-60:rgba(255,255,255,.6);
+  --ink-50:rgba(255,255,255,.5); --ink-45:rgba(255,255,255,.45); --ink-42:rgba(255,255,255,.42); --ink-38:rgba(255,255,255,.38); --ink-35:rgba(255,255,255,.35);
+  --ink-32:rgba(255,255,255,.32); --ink-30:rgba(255,255,255,.3); --ink-26:rgba(255,255,255,.26);
+  --blocked:#f07178; --claude:#d97757; --lights:rgba(255,255,255,0.14);
+  --shadow-float:0 12px 32px rgba(0,0,0,0.28);
+  --font-sans:Inter,-apple-system,system-ui,sans-serif; --font-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#050506;color:var(--ink-90);font-family:var(--font-sans)}
+.page{max-width:1500px;margin:0 auto;padding:44px 20px 80px;display:flex;flex-direction:column;gap:22px}
+.page h1{margin:0;font-size:22px;font-weight:600;color:var(--ink-100);letter-spacing:-.01em}
+.page p{margin:0;max-width:80ch;font-size:14px;line-height:22px;color:var(--ink-50)}
+.frame{overflow-x:auto}
+
+/* Window: Herdr's structure */
+.win{width:1440px;height:900px;grid-template-rows:100%;border-radius:14px;border:1px solid var(--window-line);overflow:hidden;display:grid;grid-template-columns:268px 1fr;background:var(--win);font-size:13px;line-height:18px;color:var(--ink-95);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.row{display:flex;align-items:center;gap:8px;min-width:0}
+.grow{flex:1;min-width:0}
+.cut{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mono{font-family:var(--font-mono)}
+svg{flex:none}
+.icb{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--ink-50)}
+.icb svg{width:14px;height:14px}
+
+/* Sidebar */
+.side{min-height:0;overflow:hidden;background:var(--side);border-right:1px solid var(--hairline);display:flex;flex-direction:column;min-width:0}
+.side-top{height:40px;padding:0 8px 0 14px;gap:8px}
+.lights{display:flex;gap:8px}.lights span{width:12px;height:12px;border-radius:6px;background:var(--lights)}
+.brand{font-weight:600;color:var(--ink-100)}
+.machine{font-size:12px;color:var(--ink-45)}
+.head{height:34px;padding:0 8px 0 18px;margin-top:6px;font-size:12px;font-weight:500;color:var(--ink-45)}
+.list{padding:0 8px;display:flex;flex-direction:column;gap:1px}
+.proj{height:30px;padding:0 10px 0 8px;color:var(--ink-85);font-weight:500;margin-top:6px}
+.proj .chev{color:var(--ink-35);font-size:9px;width:10px;text-align:center}
+.proj svg{width:15px;height:15px;color:var(--ink-42)}
+.proj .br{font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--ink-26)}
+.proj .end{margin-left:auto;font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--ink-38)}
+.ag{padding:6px 10px 6px 26px;border-radius:8px;color:var(--ink-60);align-items:flex-start;gap:10px}
+.ag.is-selected{color:var(--ink-100);background:var(--selected);box-shadow:var(--shadow-selected)}
+.ag .lines{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.ag .sub{font-size:11.5px;color:var(--ink-42)}
+.ag.is-selected .sub{color:var(--ink-62)}
+.ag .age{font-family:var(--font-mono);font-size:11px;color:var(--ink-38)}
+.kids{margin-left:34px;padding-left:9px;border-left:1px solid var(--rail);display:flex;flex-direction:column}
+.wk{height:28px;padding:0 10px 0 6px;border-radius:7px;font-size:12.5px;color:var(--ink-50);gap:8px}
+.wk .id{font-family:var(--font-mono);font-size:11px;color:var(--ink-35)}
+.wk.is-ask{color:var(--ink-100)}
+.wk.is-ask .id{color:var(--ink-62)}
+.foot{margin-top:auto;padding:12px 18px 10px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--ink-42)}
+.meter{height:4px;border-radius:2px;background:var(--meter-track);overflow:hidden;flex:1}
+.meter span{display:block;height:100%;background:var(--meter-fill)}
+.foot .v{font-family:var(--font-mono);font-size:11px;color:var(--ink-62);white-space:nowrap}
+.foot .set{color:var(--ink-60);margin-top:4px}
+
+/* Glyphs */
+.g{font-family:var(--font-mono);font-size:15px;line-height:16px;width:14px;text-align:center;flex-shrink:0;color:var(--ink-100)}
+.g.is-working::before{content:"⠋";animation:braille .9s steps(1,end) infinite}
+.g.is-slow::before{animation-duration:1.4s}
+.g.is-blocked{color:var(--blocked)}.g.is-blocked::before{content:"⠿";animation:pulse 1.6s ease-in-out infinite}
+.g.is-idle{color:var(--ink-30)}.g.is-idle::before{content:"⠶"}
+@keyframes braille{0%{content:"⠋"}10%{content:"⠙"}20%{content:"⠹"}30%{content:"⠸"}40%{content:"⠼"}50%{content:"⠴"}60%{content:"⠦"}70%{content:"⠧"}80%{content:"⠇"}90%{content:"⠏"}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.g::before{animation:none!important}}
+.cl{width:15px;height:15px;fill:var(--claude);stroke:none}
+.cl.is-small{width:13px;height:13px}
+.cl.is-idle{opacity:.45}
+
+/* Main */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
+.tabs{height:40px;padding:0 10px;gap:2px;border-bottom:1px solid var(--hairline);flex:none}
+.tab{height:28px;padding:0 10px;border-radius:8px;gap:8px;font-size:12.5px;color:var(--ink-50);white-space:nowrap}
+.tab.is-on{background:var(--side);box-shadow:inset 0 0 0 1px var(--panel-line);color:var(--ink-100)}
+.tab .x{color:var(--ink-45);display:flex}
+.tlink{gap:6px;font-size:12px;color:var(--ink-50);padding:0 8px}
+.tlink svg{width:13px;height:13px}
+.seg{position:absolute;right:14px;top:52px;display:flex;gap:2px;padding:2px;border-radius:8px;box-shadow:inset 0 0 0 1px var(--panel-line);background:var(--win);z-index:2}
+.seg span{font-size:11.5px;padding:3px 10px;border-radius:6px;color:var(--ink-45)}
+.seg .is-on{background:var(--selected);box-shadow:var(--shadow-selected);color:var(--ink-100)}
+.scroll{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 56px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 64px);mask-image:linear-gradient(to bottom,transparent 0,#000 64px)}
+.col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-bottom:16px;font-size:13.5px;line-height:21px;color:var(--ink-85)}
+.col p{margin:0}
+.col code{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-62)}
+.ref{font-family:var(--font-mono);font-size:12px;color:var(--ink-100)}
+.tool{font-size:12px;color:var(--ink-42)}
+.tool::before{content:"› ";font-family:var(--font-mono);color:var(--ink-30)}
+.done{display:flex;gap:10px;align-items:baseline}
+.done b{font-size:12px;font-weight:500;color:var(--ink-100);flex:none}
+.workers{display:flex;flex-direction:column;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);padding:4px 0}
+.wr{display:grid;grid-template-columns:16px 46px 44px 1fr auto;gap:12px;align-items:center;height:30px;padding:0 6px;font-size:13px;color:var(--ink-60)}
+.wr .id{font-family:var(--font-mono);font-size:11px;color:var(--ink-38)}
+.wr .end{font-family:var(--font-mono);font-size:11px;color:var(--ink-38)}
+.wr.is-ask{color:var(--ink-100)}
+.wr.is-ask .end{color:var(--blocked)}
+.col h3{margin:8px 0 0;font-size:14px;line-height:20px;font-weight:500;color:var(--ink-100)}
+.col ol,.col ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.col li::marker{color:var(--ink-35)}
+.meta{display:flex;gap:14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-30)}
+.fold{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-35)}
+.fold::before,.fold::after{content:"";flex:1;border-top:1px solid var(--hairline)}
+.fold b{font-weight:400;color:var(--ink-50)}
+
+/* Bottom: question card and reply box */
+.bottom{padding:0 56px 16px}
+.bottom>div{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.q{background:var(--side);border:1px solid var(--input-line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.qh{gap:9px;padding:0 12px 6px;font-size:11.5px;color:var(--ink-45)}
+.qh .mono{font-size:11px}
+.qt{font-size:14px;line-height:20px;color:var(--ink-100);padding:2px 12px}
+.qc{font-family:var(--font-mono);font-size:11.5px;line-height:17px;color:var(--ink-62);padding:2px 12px 8px}
+.opt{display:flex;gap:12px;padding:8px 12px;border-radius:9px;align-items:flex-start}
+.opt.is-picked{background:var(--hover)}
+.opt .k{font-family:var(--font-mono);font-size:11px;color:var(--ink-32);margin-top:2px}
+.opt .l{font-size:13px;color:var(--ink-90)}
+.opt .d{display:block;font-size:12px;line-height:17px;color:var(--ink-45);margin-top:2px}
+.qf{gap:12px;padding-top:6px}
+.field{flex:1;height:30px;border:1px solid var(--input-line);border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12.5px;color:var(--ink-30)}
+.keys{font-family:var(--font-mono);font-size:11px;color:var(--ink-32);white-space:nowrap;padding-right:6px}
+.reply{border:1px solid var(--input-line);border-radius:12px;padding:11px 12px 9px 14px;display:flex;flex-direction:column;gap:14px;background:var(--side)}
+.reply>span{color:var(--ink-30)}
+.rf{gap:12px;font-size:12px;color:var(--ink-50)}
+.rf .mono{font-size:11px;color:var(--ink-42)}
+.send{width:24px;height:24px;border-radius:12px;background:var(--hover-strong);display:grid;place-items:center;color:var(--ink-50);font-size:12px}
+.ticks{position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+.ticks i{display:block;height:2px;border-radius:1px;background:var(--tick)}
+.ticks i.is-new{background:var(--ink-100)}
+.ticks b{font:500 11px/14px var(--font-mono);color:var(--ink-100);margin-bottom:3px}
+
+/* Page */
+.page{max-width:1500px}
+.page>p{max-width:86ch}
+.screen{display:flex;flex-direction:column;gap:14px;padding-top:40px;border-top:1px solid var(--hairline)}
+.screen h2{margin:0;font-size:18px;font-weight:600;color:var(--ink-100)}
+.screen>p{margin:0;max-width:96ch;font-size:14px;line-height:22px;color:var(--ink-50)}
+.screen ul.changes{margin:0;padding-left:18px;font-size:14px;line-height:22px;color:var(--ink-62);max-width:110ch}
+.screen ul.changes b{color:var(--ink-90);font-weight:500}
+.cap{font:500 11px/14px var(--font-mono);color:var(--ink-45);letter-spacing:.04em;text-transform:uppercase;margin-top:6px}
+.shot{width:1440px;max-width:100%;border-radius:14px;border:1px solid var(--window-line);display:block}
+.toc{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
+.toc a{color:var(--ink-62);text-decoration:none;border-bottom:1px solid var(--hairline)}
+
+/* Sidebar extras */
+.nav{height:30px;padding:0 10px;border-radius:8px;color:var(--ink-85);gap:10px;margin:2px 8px 0}
+.nav svg{width:15px;height:15px;color:var(--ink-60)}
+.nav .n{margin-left:auto;font:500 11px/14px var(--font-mono);color:var(--ink-100)}
+.nav.is-selected{background:var(--selected);box-shadow:var(--shadow-selected);color:var(--ink-100)}
+.wk.is-idle{color:var(--ink-38)}
+.g.is-waiting::before{content:"⠿";animation:pulse 1.6s ease-in-out infinite}
+.g.is-done{color:var(--ink-42)}.g.is-done::before{content:"⠿"}
+
+/* Chat extras */
+.status{gap:10px;font-size:12px;color:var(--ink-50);padding:0 4px}
+.status .mono{font-size:11px;color:var(--ink-38)}
+.sec{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-100);margin-top:6px}
+.queue .wr{grid-template-columns:16px 44px 1fr auto}
+.queue .n{font-family:var(--font-mono);font-size:11px;color:var(--ink-35);text-align:center}
+.wr.is-dim{color:var(--ink-42)}
+.todo{border:1px solid var(--panel-line);border-radius:12px;background:var(--side);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.todo .h{gap:8px;font-size:11.5px;color:var(--ink-45)}
+.todo .h .mono{font-size:11px}
+.todo .t{font-size:13.5px;color:var(--ink-90)}
+.cmd{display:flex;align-items:center;gap:10px;height:30px;padding:0 6px 0 10px;border-radius:8px;border:1px solid var(--hairline);font-family:var(--font-mono);font-size:12px;color:var(--ink-85)}
+.cmd .grow{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cmd .icb{width:22px;height:22px;color:var(--ink-42)}
+.btn{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border-radius:8px;font-size:12.5px;color:var(--ink-90);box-shadow:inset 0 0 0 1px var(--input-line);white-space:nowrap}
+.btn.is-primary{background:var(--selected);color:var(--ink-100)}
+.btn kbd{font:11px var(--font-mono);color:var(--ink-38)}
+.code{border:1px solid var(--hairline);border-radius:10px;overflow:hidden}
+.code .ch{display:flex;align-items:center;height:28px;padding:0 6px 0 12px;font:11px var(--font-mono);color:var(--ink-38);border-bottom:1px solid var(--hairline)}
+.code pre{margin:0;padding:10px 12px;font:12px/18px var(--font-mono);color:var(--ink-85)}
+.code pre i{font-style:normal;color:var(--ink-50)}
+.tbl{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--hairline);font-size:13px}
+.tbl>span{padding:7px 4px;border-bottom:1px solid var(--hairline);color:var(--ink-62)}
+.tbl>span.h{font-size:12px;font-weight:500;color:var(--ink-45)}
+.chk{width:14px;height:14px;border-radius:4px;box-shadow:inset 0 0 0 1px var(--ink-35);flex:none;margin-top:2px;display:grid;place-items:center;font-size:10px;color:var(--ink-100)}
+.chk.is-on{background:var(--ink-85);box-shadow:none;color:#141518}
+.opt .hint{font-family:var(--font-mono);font-size:11px;color:var(--ink-42);margin-left:8px}
+.remarks{display:grid;grid-template-columns:110px 1fr;row-gap:10px;column-gap:16px;align-items:baseline}
+.remarks .k{font-size:12px;font-weight:500;color:var(--ink-45)}
+.remarks .k.is-you{color:var(--blocked)}
+.remarks .v{color:var(--ink-85)}
+.imgs{display:flex;gap:10px}
+.imgs span{display:block;border-radius:8px;border:1px solid var(--hairline)}
+.lnk{color:var(--ink-100);border-bottom:1px solid var(--ink-30)}
+
+/* Inbox */
+.view{flex:1;min-height:0;overflow:hidden;padding:28px 56px 20px;display:flex;flex-direction:column}
+.view .col{justify-content:flex-start;gap:0}
+.vh{display:flex;align-items:baseline;gap:12px;padding-bottom:14px}
+.vh h1{margin:0;font-size:16px;font-weight:600;color:var(--ink-100)}
+.vh span{font:11px var(--font-mono);color:var(--ink-42)}
+.ibx{display:grid;grid-template-columns:16px 36px 1fr auto;gap:12px;align-items:center;min-height:44px;padding:8px 10px;border-top:1px solid var(--hairline);font-size:13px;color:var(--ink-62)}
+.ibx .id{font:11px var(--font-mono);color:var(--ink-38)}
+.ibx .lines{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ibx .t{color:var(--ink-90)}
+.ibx .s{font-size:11.5px;color:var(--ink-42)}
+.ibx .end{font:11px var(--font-mono);color:var(--ink-38)}
+.ibx.is-open{background:var(--side);border:1px solid var(--panel-line);border-radius:12px;margin:6px 0;align-items:start;padding:12px 12px 12px 10px}
+.ibx.is-open+.ibx{border-top:0}
+.ibx.is-open .body{grid-column:2/5;display:flex;flex-direction:column;gap:2px;margin-left:-8px}
+.kind{font-size:11.5px;color:var(--ink-45)}
+
+/* Terminal */
+.term{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 24px 18px;font:13px/20px var(--font-mono);color:rgba(255,255,255,.82);white-space:pre}
+.term .d{color:var(--ink-42)}
+.term .w{color:var(--ink-100)}
+.term .c{color:var(--claude)}
+.term .sep{border-top:1px solid var(--hairline);margin:6px 0}
+.notice{max-width:520px;margin:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.notice .t{font-size:14px;color:var(--ink-100)}
+.notice .d{font:12px/18px var(--font-mono);color:var(--ink-45)}
+
+/* Settings */
+.set .col{max-width:640px}
+.grp{font-size:12px;font-weight:500;color:var(--ink-45);padding:20px 4px 8px}
+.rows{border-top:1px solid var(--hairline)}
+.sr{display:flex;align-items:center;gap:12px;min-height:38px;padding:6px 4px;border-bottom:1px solid var(--hairline);font-size:13px;color:var(--ink-85)}
+.sr .v{margin-left:auto;font:11.5px var(--font-mono);color:var(--ink-62);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+.sr .d{font:11px var(--font-mono);color:var(--ink-38)}
+.sr .ok{font:11px var(--font-mono);color:var(--ink-62);margin-left:auto}
+.sr .bad{font:11px var(--font-mono);color:var(--blocked);margin-left:auto}
+.sr .g{font-size:13px}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>contr, every screen: Herdr layout, contr tokens</h1>
+  <p>Six screens of the app on main (d4bcc2b), shot today with the fake helper, hc and orchestration tool. Under each one is its redesign, made the way the chat screen you approved was made: Herdr's layout, and the contr design system's colors, type, glyphs and question card. All the redesigns use the same fake data as the screenshots, so you can compare them line by line.</p>
+  <div class="toc"><a href="#s1">1 Chat: board and cards</a><a href="#s2">2 Chat: a question</a><a href="#s3">3 Chat: remarks and images</a><a href="#s4">4 Inbox</a><a href="#s5">5 Terminal</a><a href="#s6">6 Settings</a></div>
+
+  <section class="screen" id="s1">
+    <h2>1 Chat: board, merge order, a to-do and a permission</h2>
+    <ul class="changes">
+      <li><b>Board:</b> each worker gets a status mark instead of a colored dot or a check; only the coordinator's own wait is red.</li>
+      <li><b>Merge order:</b> plain rows with hairlines, not a boxed table.</li>
+      <li><b>To-do:</b> one line with Show and Done; Show opens its three commands, each a row with Copy. The full to-do is in the Inbox too.</li>
+      <li><b>Permission:</b> it moves to the question card above the reply box, with keys 1 and 2.</li>
+      <li><b>Status line:</b> the glyph, "Hashing…" and the tokens on the left; "Orchestrating · 3 workers" on the right.</li>
+    </ul>
+    <div class="cap">Now</div><img class="shot" src="shots/s1-chat-blocks.png" alt="The chat now: board, merge order, to-do and bash card">
+    <div class="cap">Proposed</div><div class="frame"><div class="win" data-s="1"></div></div>
+  </section>
+
+  <section class="screen" id="s2">
+    <h2>2 Chat: a question with several answers</h2>
+    <ul class="changes">
+      <li><b>Question card:</b> the same card as the permission. Check boxes for "pick any", the recommended answer first, the keys line, and Next.</li>
+      <li><b>Code and tables:</b> hairline frames; the language label stays; issue and PR numbers are mono text in the brightest ink.</li>
+    </ul>
+    <div class="cap">Now</div><img class="shot" src="shots/s6-chat-question.png" alt="The chat now with a multi-question card">
+    <div class="cap">Proposed</div><div class="frame"><div class="win" data-s="2"></div></div>
+  </section>
+
+  <section class="screen" id="s3">
+    <h2>3 Chat: remarks and images</h2>
+    <ul class="changes">
+      <li><b>Remarks:</b> a label column and the text, no colored bars (the design system forbids left-border cards and accent colors). "Decision needed" is the only red label, because it waits for you.</li>
+      <li><b>Images and links:</b> a hairline frame on images; links in the brightest ink with a quiet underline.</li>
+    </ul>
+    <div class="cap">Now</div><img class="shot" src="shots/s7-chat-remarks.png" alt="The chat now with remarks and images">
+    <div class="cap">Proposed</div><div class="frame"><div class="win" data-s="3"></div></div>
+  </section>
+
+  <section class="screen" id="s4">
+    <h2>4 Inbox</h2>
+    <ul class="changes">
+      <li><b>A list:</b> one row per item, oldest first, with its kind, id, text, where it is from, and the agent it belongs to.</li>
+      <li><b>One open item:</b> the first item opens as the question card; the others stay one line each until you go to them.</li>
+      <li><b>Waiting agent:</b> the agent's own prompt is a row too, with the red mark.</li>
+    </ul>
+    <div class="cap">Now</div><img class="shot" src="shots/s2-inbox.png" alt="The Inbox now">
+    <div class="cap">Proposed</div><div class="frame"><div class="win" data-s="4"></div></div>
+  </section>
+
+  <section class="screen" id="s5">
+    <h2>5 Terminal</h2>
+    <ul class="changes">
+      <li><b>The terminal is the work:</b> it fills the area under the tab bar with no frame, in JetBrains Mono 13/20.</li>
+      <li><b>When hc ends:</b> one centered note with the reason and Retry, not a boxed card. The screenshot shows this state, because the test app has no hc.</li>
+      <li>The terminal text in the redesign is an example.</li>
+    </ul>
+    <div class="cap">Now</div><img class="shot" src="shots/s5-terminal.png" alt="The Terminal view now, with the hc error">
+    <div class="cap">Proposed</div><div class="frame"><div class="win" data-s="5"></div></div>
+    <div class="cap">Proposed, when hc ends</div><div class="frame"><div class="win" data-s="5b" style="height:560px"></div></div>
+  </section>
+
+  <section class="screen" id="s6">
+    <h2>6 Settings, with the health check (#177)</h2>
+    <ul class="changes">
+      <li><b>Rows, not boxes:</b> label on the left, value on the right in mono, hairlines between rows.</li>
+      <li><b>Health check:</b> a new group from #177. It lists hc core, the helper, the orchestration tool, agents.json, the Claude Code kit and gh, each with what it found. A failure is the only red text. These rows are an example: #177 needs a check command in contr-core first.</li>
+    </ul>
+    <div class="cap">Now</div><img class="shot" src="shots/s3-settings.png" alt="Settings now">
+    <div class="cap">Proposed</div><div class="frame"><div class="win" data-s="6"></div></div>
+  </section>
+</div>
+<script>
+(() => {
+const cl = (c = '') => `<svg class="cl ${c}" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></svg>`;
+const ic = {
+  search:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>`,
+  side:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 3v10"/></svg>`,
+  plus:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>`,
+  folder:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2 4.2c0-.7.5-1.2 1.2-1.2h3l1.4 1.6h5.2c.7 0 1.2.5 1.2 1.2v6c0 .7-.5 1.2-1.2 1.2H3.2c-.7 0-1.2-.5-1.2-1.2z"/></svg>`,
+  file:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/></svg>`,
+  branch:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="5" cy="3.5" r="1.5"/><circle cx="5" cy="12.5" r="1.5"/><circle cx="11" cy="5.5" r="1.5"/><path d="M5 5v6M11 7c0 3-6 2-6 4"/></svg>`,
+  gear:`<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/></svg>`,
+  inbox:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 4 3h8l2 6.5V13H2z"/><path d="M2 9.5h3.5l1 1.5h3l1-1.5H14"/></svg>`,
+  copy:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5V3.8c0-.7-.5-1.3-1.3-1.3H3.8c-.7 0-1.3.6-1.3 1.3v5.4c0 .7.6 1.3 1.3 1.3h1.7"/></svg>`,
+  x:`<svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="m2 2 6 6M8 2 2 8"/></svg>`,
+};
+const r = n => `<span class="ref">#${n}</span>`;
+const AGENT = 'Chat panel usability audit';
+
+const side = sel => `
+<aside class="side">
+  <div class="row side-top"><span class="lights"><span></span><span></span><span></span></span><span class="brand">contr</span><span class="machine cut">This computer ▾</span><span class="grow"></span><span class="icb">${ic.search}</span><span class="icb">${ic.side}</span></div>
+  <div class="row nav ${sel === 'inbox' ? 'is-selected' : ''}">${ic.inbox}<span>Inbox</span><span class="n">5</span></div>
+  <div class="row head"><span class="grow">Projects</span><span class="icb">${ic.plus}</span></div>
+  <div class="list">
+    <div class="row proj"><span class="chev">▼</span>${ic.folder}<span>contr-desktop</span><span class="br">main</span></div>
+    <div class="row ag ${sel === 'coord' ? 'is-selected' : ''}">${cl()}<div class="lines"><span class="cut">${AGENT}</span><span class="sub">Orchestrating · 3 workers</span></div><span class="g is-blocked"></span></div>
+    <div class="kids">
+      <div class="row wk">${cl('is-small')}<span class="grow cut">Flow and sequence diagrams</span><span class="id">b-30</span><span class="g is-working"></span></div>
+      <div class="row wk">${cl('is-small')}<span class="grow cut">Cards for prompts and questions</span><span class="id">b-40</span><span class="g is-waiting"></span></div>
+      <div class="row wk is-idle">${cl('is-small is-idle')}<span class="grow cut">Virtual list</span><span class="id">b-50</span><span class="g is-idle"></span></div>
+    </div>
+    <div class="row ag">${cl('is-idle')}<span class="grow cut">Release notes draft</span><span class="age">&lt;1m</span></div>
+    <div class="row proj"><span class="chev">▼</span>${ic.folder}<span>herdr-contr</span><span class="br">main</span></div>
+    <div class="row ag">${cl()}<span class="grow cut">Install health check</span><span class="g is-working is-slow"></span></div>
+  </div>
+  <div class="foot">
+    <div class="row" style="gap:12px"><span style="width:44px">Claude</span><span class="meter"><span style="width:64%"></span></span><span class="v">64% wk · 4d</span></div>
+    <div class="row" style="gap:12px"><span style="width:44px">Codex</span><span class="meter"><span style="width:21%"></span></span><span class="v">21% 5h · 3h</span></div>
+    <div class="row set" style="${sel === 'settings' ? 'color:var(--ink-100)' : ''}">${ic.gear}<span class="grow">Settings</span><span class="icb" style="width:20px;height:20px">${ic.plus}</span></div>
+  </div>
+</aside>`;
+
+const tabs = (on, seg) => `
+  <div class="row tabs">
+    <div class="row tab ${on ? 'is-on' : ''}">${cl()}<span>${AGENT}</span><span class="g is-blocked" style="font-size:12px;width:10px"></span><span class="x">${ic.x}</span></div>
+    <span class="icb">${ic.plus}</span>
+    <span class="grow"></span>
+    <span class="row tlink">${ic.file}<span>Files</span></span>
+    <span class="row tlink">${ic.branch}<span>Changes</span></span>
+  </div>
+  ${seg ? `<div class="seg"><span class="${seg === 'chat' ? 'is-on' : ''}">Chat</span><span class="${seg === 'term' ? 'is-on' : ''}">Terminal</span></div>` : ''}`;
+
+const reply = `
+    <div class="row status"><span class="g is-working" style="font-size:13px"></span><span>Hashing…</span><span class="mono">35s · ↓ 1.2k tokens</span><span class="grow"></span><span>Orchestrating · 3 workers</span></div>
+    <div class="reply"><span>Reply to ${AGENT}</span>
+      <div class="row rf"><span class="icb" style="width:18px;height:18px">${ic.plus}</span>${cl()}<span style="color:var(--ink-85)">Opus 5.5</span><span>medium ▾</span><span class="grow"></span><span class="mono">37%</span><span class="send">↑</span></div>
+    </div>`;
+
+const chat = (body, card) => `${side('coord')}
+<div class="main">${tabs(true, 'chat')}
+  <div class="scroll"><div class="col">${body}</div></div>
+  <div class="bottom"><div>${card || ''}${reply}</div></div>
+</div>`;
+
+const qhead = (meta) => `<div class="row qh"><span class="g is-blocked" style="font-size:13px"></span><span>${meta}</span></div>`;
+
+const S = {};
+
+S['1'] = chat(`
+  <div class="sec">Workers</div>
+  <div class="workers">
+    <div class="wr"><span class="g is-working"></span><span class="id">b-30</span>${r(30)}<span>Status board</span><span class="end">works</span></div>
+    <div class="wr"><span class="g is-waiting"></span><span class="id">b-40</span>${r(40)}<span>Queue block</span><span class="end">waits</span></div>
+    <div class="wr is-dim"><span class="g is-idle"></span><span class="id">b-50</span>${r(50)}<span>Fake orch</span><span class="end">idle</span></div>
+    <div class="wr is-dim"><span class="g is-done"></span><span class="id">b-60</span>${r(60)}<span>Fixture rows</span><span class="end">done</span></div>
+  </div>
+  <div class="sec">Merge order</div>
+  <div class="workers queue">
+    <div class="wr"><span class="n">1</span>${r(70)}<span>Parse the blocks</span><span class="end"></span></div>
+    <div class="wr"><span class="n">2</span>${r(31)}<span>Status board</span><span class="end">waits for #70</span></div>
+    <div class="wr"><span class="n">3</span>${r(41)}<span>Queue block</span><span class="end">waits for #31</span></div>
+  </div>
+  <div class="todo" style="flex-direction:row;align-items:center;gap:12px;padding:8px 8px 8px 14px">
+    <span class="mono" style="font-size:11px;color:var(--ink-45)">T3</span>
+    <span class="grow cut" style="color:var(--ink-90)">Log in to the staging server, then run <code>pnpm e2e</code> in <code>apps/desktop</code>.</span>
+    <span style="font-size:11.5px;color:var(--ink-42);white-space:nowrap">To do · from b-15 · 3 commands</span>
+    <span class="btn">Show</span><span class="btn">Done</span>
+  </div>`,
+`<div class="q">
+  ${qhead(`${AGENT} · Bash command`)}
+  <div class="qt">Run this command?</div>
+  <div class="qc">pnpm --filter desktop exec playwright test e2e/app.spec.ts</div>
+  <div class="opt is-picked"><span class="k">1</span><span class="l">Allow once</span></div>
+  <div class="opt"><span class="k">2</span><span class="l">Deny</span></div>
+  <div class="row qf"><div class="field">Or type an answer</div><span class="keys">1-2 pick  ⏎ send  esc close</span></div>
+</div>`);
+
+S['2'] = chat(`
+  <ul style="list-style:none;padding:0"><li class="row" style="gap:10px"><span class="chk is-on">✓</span>Remember-me box stays</li><li class="row" style="gap:10px"><span class="chk"></span>Check the screen reader label</li></ul>
+  <p>Run it with:</p>
+  <div class="code"><div class="ch"><span class="grow">sh</span><span class="icb" style="width:22px;height:22px">${ic.copy}</span></div><pre>pnpm test auth <i>--watch=false</i></pre></div>
+  <div class="sec">Chips</div>
+  <p>Merged in ${r(12)}, open in ${r(14)}, a draft in ${r(15)}, and ${r(20)} was closed. Issue ${r(9)} is done, ${r(21)} is open and ${r(22)} is not planned. #99 is not known, and <code>#12</code> stays code.</p>
+  <ul><li>The list item links ${r(21)}.</li></ul>
+  <div class="tbl"><span class="h">Item</span><span class="h">State</span><span>${r(14)}</span><span>open</span><span><span class="lnk">#12</span></span><span>a link</span></div>
+  <div class="code"><div class="ch"><span class="grow">sh</span><span class="icb" style="width:22px;height:22px">${ic.copy}</span></div><pre>gh pr view <i>#12</i></pre></div>`,
+`<div class="q">
+  ${qhead(`${AGENT} · Checks · 1 of 2 · pick any`)}
+  <div class="qt">Which checks should run before the push?</div>
+  <div class="opt is-picked"><span class="chk is-on">✓</span><span><span class="l">Tests · recommended</span><span class="hint">vitest and Playwright</span></span></div>
+  <div class="opt"><span class="chk"></span><span><span class="l">Typecheck</span><span class="hint">tsc --noEmit</span></span></div>
+  <div class="opt"><span class="chk"></span><span><span class="l">Lint</span><span class="hint">eslint</span></span></div>
+  <div class="row qf"><div class="field">Or type an answer</div><span class="keys">1-3 toggle  ⏎ next  esc close</span><span class="btn is-primary">Next</span></div>
+</div>`);
+
+S['3'] = chat(`
+  <div class="sec">Remarks</div>
+  <div class="remarks">
+    <span class="k">Done</span><span class="v">The login test passes.</span>
+    <span class="k is-you">Decision needed</span><span class="v">Keep the old flag one more release, or remove it now?</span>
+    <span class="k">Warning</span><span class="v">PR ${r(14)} touches the same file.</span>
+    <span class="k">Not verified</span><span class="v">The Windows build.</span>
+    <span class="k">Note</span><span class="v">The cache is cold on the first run.</span>
+  </div>
+  <div class="sec">Images</div>
+  <div class="imgs"><span style="width:166px;height:94px;background:#2f6fd6"></span><span style="width:124px;height:62px;background:#5bbf62"></span></div>
+  <p><span class="lnk">A web image</span></p>
+  <p><span class="lnk">Not an image</span></p>
+  <div style="height:40px"></div>`);
+
+S['4'] = `${side('inbox')}
+<div class="main">${tabs(false)}
+  <div class="view"><div class="col">
+    <div class="vh"><h1>Inbox</h1><span>5 open · oldest first</span></div>
+    <div class="ibx is-open">
+      <span class="g is-blocked" style="margin-top:1px"></span>
+      <div class="body">
+        <div class="row" style="gap:10px;padding:0 12px 6px"><span class="mono" style="font-size:11px;color:var(--ink-45)">D7</span><span class="kind">Question · Inbox order · from b-15 · ${AGENT}</span></div>
+        <div class="qt">Which items show first in the inbox?</div>
+        <div class="opt is-picked" style="margin-top:6px"><span class="k">1</span><span><span class="l">Oldest first · recommended</span><span class="d">Matches the design; nothing waits forever.</span></span></div>
+        <div class="opt"><span class="k">2</span><span><span class="l">Newest first</span><span class="d">New work shows at once; old items wait.</span></span></div>
+        <div class="row" style="gap:8px;padding:6px 12px 2px;font-size:12px;color:var(--ink-42)"><span>Refs</span>${r(15)}<span class="mono" style="font-size:11px;color:var(--ink-62)">docs/design/recipe-herdr.md</span></div>
+        <div class="row qf" style="padding-left:0"><div class="field">Or type an answer</div><span class="keys">1-2 pick  ⏎ send</span><span class="btn is-primary">Send answer</span></div>
+      </div>
+    </div>
+    <div class="ibx"><span class="g is-blocked"></span><span class="id">D8</span><div class="lines"><span class="t">Does the Dock badge count to-dos?</span><span class="s">Question · Dock badge · from b-16 · ${AGENT}</span></div><span class="end">2 answers</span></div>
+    <div class="ibx"><span class="g is-blocked"></span><span class="id">D9</span><div class="lines"><span class="t">Not for this chat.</span><span class="s">Question · Other · from b-30 · Install health check</span></div><span class="end">1 answer</span></div>
+    <div class="ibx"><span class="g is-idle"></span><span class="id">T3</span><div class="lines"><span class="t">Log in to the staging server, then run pnpm e2e in apps/desktop.</span><span class="s">To do · from b-15 · ${AGENT}</span></div><span class="end">Done</span></div>
+    <div class="ibx"><span class="g is-blocked"></span><span class="id"></span><div class="lines"><span class="t">Bash: pnpm --filter desktop exec playwright test e2e/app.spec.ts</span><span class="s">Permission · ${AGENT} waits</span></div><span class="end">Open chat</span></div>
+  </div></div>
+</div>`;
+
+S['5'] = `${side('coord')}
+<div class="main">${tabs(true, 'term')}
+  <div class="term"><div><span class="c">✻</span> <span class="w">Claude Code</span>  <span class="d">~/contr-desktop</span>
+
+<span class="w">&gt; Check the board blocks against the design.</span>
+
+<span class="w">⏺</span> I read docs/design/README.md and the fixture.
+
+<span class="w">⏺</span> Bash(pnpm --filter desktop exec playwright test e2e/blocks.spec.ts)
+  <span class="d">⎿  12 passed (14.2s)</span>
+
+<span class="w">⏺</span> The board parses all four workers; the queue keeps its order.
+  b-40 waits for #70 to merge before it starts the queue block.
+
+<span class="c">✻</span> Hashing… <span class="d">(35s · ↓ 1.2k tokens)</span>
+<div class="sep"></div><span class="w">&gt; </span><span style="background:var(--ink-85);display:inline-block;width:8px;height:16px;vertical-align:-3px"></span>
+<div class="sep"></div><span class="d">  Opus 5.5 · medium · ctx 37%                                   ⏵⏵ auto mode on</span></div></div>
+</div>`;
+
+S['5b'] = `${side('coord')}
+<div class="main">${tabs(true, 'term')}
+  <div class="view"><div class="notice">
+    <span class="t">The connection to hc ended.</span>
+    <span class="d">hc closed the connection</span>
+    <span class="btn">Retry</span>
+  </div></div>
+</div>`;
+
+const hrow = (name, detail, state, bad) => `<div class="sr"><span>${name}</span><span class="d">${detail}</span><span class="${bad ? 'bad' : 'ok'}">${state}</span></div>`;
+S['6'] = `${side('settings')}
+<div class="main">${tabs(false)}
+  <div class="view set"><div class="col">
+    <div class="vh"><h1>Settings</h1></div>
+    <div class="grp">Appearance</div>
+    <div class="rows"><div class="sr"><span>Theme</span><span class="grow"></span><div class="seg" style="position:static"><span class="is-on">System</span><span>Dark</span><span>Light</span></div></div></div>
+    <div class="grp">Updates</div>
+    <div class="rows">
+      <div class="sr"><span>Version</span><span class="v">0.0.0</span></div>
+      <div class="sr"><span>Newest</span><span class="v">Development build</span></div>
+    </div>
+    <div class="grp">Core</div>
+    <div class="rows">
+      <div class="sr"><span>Version</span><span class="v">Unknown</span></div>
+      <div class="sr"><span>Newest</span><span class="v">Development build</span></div>
+    </div>
+    <div class="grp">Helper</div>
+    <div class="rows"><div class="sr"><span>Path</span><span class="v">…/apps/desktop/e2e/fake-helper.mjs</span><span class="icb" style="width:22px;height:22px">${ic.copy}</span></div></div>
+    <div class="row grp" style="gap:10px"><span class="grow">Health check</span><span class="mono" style="font-size:11px;font-weight:400;color:var(--ink-38)">checked 14:38</span><span class="btn" style="font-weight:400">Check again</span></div>
+    <div class="rows">
+      ${hrow('hc core', 'session default · 6 terminals', 'runs')}
+      ${hrow('Helper', 'herdr-contr-feed · answers', 'ok')}
+      ${hrow('Orchestration tool', 'herdr-contr-orch · found', 'ok')}
+      ${hrow('agents.json', '7 profiles · flow read', 'ok')}
+      ${hrow('Claude Code kit', 'hooks and MCP tools', 'ok')}
+      ${hrow('gh', 'not signed in', 'run gh auth login', true)}
+    </div>
+  </div></div>
+</div>`;
+
+document.querySelectorAll('.win[data-s]').forEach(w => { w.innerHTML = S[w.dataset.s]; });
+})();
+</script>
+</body>
+</html>
