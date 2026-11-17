@@ -116,15 +116,6 @@ export function readSessionFolder(json: string): string | null {
   }
 }
 
-/** Runs `hc ls --json` and keeps why it failed: stderr, else the error message ("spawn hc ENOENT"). `error` is null when hc exited 0. */
-export function runHcList(hc: string): Promise<{ out: string; error: string | null }> {
-  return new Promise((resolve) => {
-    execFile(hc, ["ls", "--json"], { timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (e, stdout, stderr) =>
-      resolve({ out: String(stdout ?? ""), error: e ? String(stderr ?? "").trim() || e.message : null }),
-    );
-  });
-}
-
 /** The terminals of an `hc ls --json` answer, and the error text when hc failed or gave no JSON. */
 export function readHcList(out: string, error: string | null): { terms: HcTerminal[]; error: string | undefined } {
   if (error) return { terms: [], error };

@@ -3,81 +3,52 @@ import { BrowserWindow, ipcMain } from "electron";
 import { SELECT_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, type Sidebar } from "../../shared/api";
 import { orchPath } from "../board/board";
 import { chatTerminal, selectTerminal } from "../helper";
-import { readTitle } from "../helper/title";
 import { setBlockedCount } from "../owner/ipc";
 import { blockedAgents } from "../../shared/inbox";
-import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, run, runHcList } from "./agents";
-import { faviconUrl, gitState } from "./git";
+import { sidebarReader } from "./reader";
+import { lineSplitter, readScheduler } from "./schedule";
 
-/** Without hc events (hc gone or too old), the list is read again every 10 s. */
+/** Without hc events (hc gone or too old), the list is read again every 10 s. While `hc events` runs, there is no poll for hc. */
 const POLL_MS = 10_000;
-/** hc events come in bursts: one read for a burst. */
+/** hc events come in bursts: one read for a burst, 500 ms after its last line... */
 const DEBOUNCE_MS = 500;
-/** git has no event for a commit or a fetch: the branch and the commits ahead and behind are read again every 30 s too. */
+/** ...but no later than 2 s after its first line, so a steady stream still updates the list. */
+const MAX_WAIT_MS = 2_000;
+/** git has no event for a commit or a fetch: the branch and the commits ahead and behind of the shown projects are read again every 30 s. */
 const GIT_POLL_MS = 30_000;
 
-/** The Projects list: agents from `hc ls --json`, each under the project of its session folder (`hc get --json`), workers' names from the orchestration tool, read again on each `hc events` line. */
+/** The Projects list: agents from `hc ls --json`, each under the project of its session folder (`hc get --json`), workers' names from the orchestration tool, read again on each `hc events` burst (`reader.ts`). */
 export function registerSidebarIpc(appRoot: string): void {
   const hc = process.env.CONTR_HC ?? "hc";
-  const git = process.env.CONTR_GIT ?? "git";
-  const projects = new Map<string, Promise<string>>();
-  const projectOf = (cwd: string) => {
-    if (!projects.has(cwd)) projects.set(cwd, run(git, ["-C", cwd, "rev-parse", "--git-common-dir"]).then((out) => projectFromCommonDir(cwd, out.trim() || null)));
-    return projects.get(cwd)!;
-  };
-  // A folder is looked at for a favicon once.
-  const favicons = new Map<string, string | null>();
-  const favicon = (cwd: string) => {
-    if (!favicons.has(cwd)) favicons.set(cwd, faviconUrl(cwd));
-    return favicons.get(cwd)!;
-  };
+  const reader = sidebarReader({ hc, git: process.env.CONTR_GIT ?? "git", orch: () => orchPath(appRoot) });
   let last: Sidebar = { projects: [], selected: chatTerminal() };
 
-  const read = async (): Promise<Sidebar> => {
-    const [hcList, orchOut] = await Promise.all([runHcList(hc), run(orchPath(appRoot), ["agents", "ls", "--all", "--json"])]);
-    const list = hcList.out;
-    // hc failed: no agents, and the renderer shows why.
-    const { terms, error: hcError } = readHcList(list, hcList.error);
-    const titles = new Map<string, string>();
-    const folders = new Map<string, string>();
-    await Promise.all(
-      terms.map(async (t) => {
-        if (typeof t.address !== "string") return;
-        const got = await run(hc, ["get", "--json", t.address]);
-        const title = readTitle(got, "");
-        if (title) titles.set(t.address, title);
-        const folder = readSessionFolder(got);
-        if (folder) folders.set(t.address, folder);
-      }),
-    );
-    const cwds = [...new Set([...terms.map((t) => t.cwd), ...folders.values()].filter((c): c is string => typeof c === "string" && c !== ""))];
-    const names = new Map<string, string>();
-    await Promise.all(cwds.map(async (c) => names.set(c, await projectOf(c))));
-    const built = buildProjects({ hc: list, orch: orchOut, titles, folders, projectOf: (c) => names.get(c) ?? c });
-    const projects = await Promise.all(built.map(async (p) => ({ ...p, ...(await gitState(git, p.cwd)), favicon: favicon(p.cwd) })));
-    return { projects, selected: chatTerminal(), ...(hcError ? { hcError } : {}) };
-  };
-
-  let timer: NodeJS.Timeout | undefined;
-  const refresh = () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      void read().then((s) => {
-        last = s;
+  const refresh = readScheduler(
+    () =>
+      reader.read().then((s) => {
+        last = { ...s, selected: chatTerminal() };
         setBlockedCount(blockedAgents(s.projects).length);
-        for (const w of BrowserWindow.getAllWindows()) w.webContents.send(SIDEBAR_EVENT, s);
-      });
-    }, DEBOUNCE_MS);
-  };
+        for (const w of BrowserWindow.getAllWindows()) w.webContents.send(SIDEBAR_EVENT, last);
+      }),
+    DEBOUNCE_MS,
+    MAX_WAIT_MS,
+  );
   const follow = () => {
     const events = spawn(hc, ["events", "--json"], { stdio: ["ignore", "pipe", "ignore"] });
-    events.stdout.on("data", refresh);
+    const lines = lineSplitter((line) => reader.event(line));
+    events.stdout.on("data", (d: Buffer) => {
+      lines(d);
+      refresh();
+    });
     events.on("error", () => undefined);
     events.on("close", () => setInterval(refresh, POLL_MS));
   };
   follow();
   refresh();
-  setInterval(refresh, GIT_POLL_MS);
+  setInterval(() => {
+    reader.gitDue();
+    refresh();
+  }, GIT_POLL_MS);
 
   // A read while hc failed (Retry) reads the list again at once; the new list comes as an event.
   ipcMain.handle(SIDEBAR_CHANNEL, () => {
