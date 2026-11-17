@@ -28,7 +28,7 @@ what to try and as the rubric for a screenshot.
 | `theme dark\|light` | Sets the page's color scheme (a hidden window does not follow macOS). |
 | `press <key> ...` | Presses keys in the page: `Enter`, `Tab`, `1`, `Alt+ArrowRight`, `Meta+a`. |
 | `type <text>` | Types text in the focused element. |
-| `click <role> [name] ...` | Clicks the element. Each role and name pair is inside the pair before it. The name is a substring, case does not matter. |
+| `click <role> [name] ...` | Clicks the element. Each role and name pair is inside the pair before it. The name is a substring, case does not matter. The role `label` finds by aria-label, `text` by text. One match only. |
 | `text [<role> [name] ...]` | Prints the element's text (no pair: the whole page). |
 | `roles [<role> [name] ...]` | Prints the ARIA tree of the element: roles, names, states. |
 | `title` | Prints the window title. |

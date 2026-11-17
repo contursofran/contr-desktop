@@ -64,10 +64,17 @@ function build() {
   if (done.status !== 0) throw new Error("pnpm build failed");
 }
 
-/** A locator from role and name pairs, each inside the one before: `navigation Projects button "Release notes draft"`. */
+/**
+ * A locator from role and name pairs, each inside the one before: `navigation Projects button "Release notes draft"`.
+ * The role `label` finds by aria-label (getByLabel) and `text` by text (getByText).
+ */
 function find(page: Page, words: string[]): Locator {
   let at: Page | Locator = page;
-  for (let i = 0; i < words.length; i += 2) at = at.getByRole(words[i] as Parameters<Page["getByRole"]>[0], words[i + 1] === undefined ? {} : { name: words[i + 1] });
+  for (let i = 0; i < words.length; i += 2) {
+    const [role, name] = [words[i]!, words[i + 1]];
+    if (role === "label" || role === "text") at = role === "label" ? at.getByLabel(name ?? "") : at.getByText(name ?? "");
+    else at = at.getByRole(role as Parameters<Page["getByRole"]>[0], name === undefined ? {} : { name });
+  }
   return at === page ? page.locator("body") : (at as Locator);
 }
 
