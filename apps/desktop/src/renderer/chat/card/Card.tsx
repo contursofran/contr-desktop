@@ -25,9 +25,14 @@ export function isCardKey(event: KeyboardEvent): boolean {
   return event.key !== "Enter" || !target?.closest?.(CONTROL);
 }
 
+/** True when `Card` shows `card`. A shown agent's card owns the card keys: it blocks the agent now (issue #139). */
+export function cardShows(card: CardData | null | undefined): card is CardData {
+  return !!card && !(card.kind === "question" && card.question.questions.length === 0);
+}
+
 /** The card above the reply box: answers the agent's approval prompt or question through the helper. */
 export function Card({ card }: { card: CardData }) {
-  if (card.kind === "question" && card.question.questions.length === 0) return null;
+  if (!cardShows(card)) return null;
   return card.kind === "approval" ? <Approval key={card.request} card={card} /> : <Question key={card.request} request={card.request} question={card.question} />;
 }
 
@@ -78,7 +83,10 @@ function Question({ request, question }: { request: string; question: QuestionCa
     setNote(resultNote(r));
     if (r.result !== "sent" && r.result !== "unconfirmed") setOff(false);
   }
+  // Enter, Next and Send need a pick or own text: an answer with nothing in it does not go out (issue #139).
+  const ready = (final = picks) => (final[at]?.length ?? 0) > 0 || !!other[at]?.trim();
   function next(final = picks) {
+    if (!ready(final)) return;
     if (last) void send(final);
     else setAt(at + 1);
   }
@@ -127,17 +135,21 @@ function Question({ request, question }: { request: string; question: QuestionCa
       </div>
       {note && <p role="status" className="mt-2 text-xs text-muted">{note}</p>}
       <div className="mt-2 flex justify-end">
-        <button type="button" disabled={off} aria-keyshortcuts="Enter" onClick={() => next()} className={`${button} bg-foreground text-canvas hover:bg-foreground`}>{last ? "Send" : "Next"}</button>
+        <button type="button" disabled={off || !ready()} aria-keyshortcuts="Enter" onClick={() => next()} className={`${button} bg-foreground text-canvas hover:bg-foreground`}>{last ? "Send" : "Next"}</button>
       </div>
     </section>
   );
 }
 
-/** Card keys (`isCardKey`): 1-9 and Enter, from anywhere in the window but a text field or a menu. */
-export function useKeys(onKey: (key: string) => void) {
+/**
+ * Card keys (`isCardKey`): 1-9 and Enter, from anywhere in the window but a text field or a menu.
+ * `on` false: the card does not own the keys; it takes none and leaves them to the default action.
+ */
+export function useKeys(onKey: (key: string) => void, on = true) {
   const ref = useRef(onKey);
   ref.current = onKey;
   useEffect(() => {
+    if (!on) return;
     const handler = (event: KeyboardEvent) => {
       if (!isCardKey(event)) return;
       if (/^[1-9]$/.test(event.key) || event.key === "Enter") {
@@ -147,5 +159,5 @@ export function useKeys(onKey: (key: string) => void) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [on]);
 }
