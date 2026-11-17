@@ -10,7 +10,7 @@ export function StateMark({ state, label }: { state: WorkerState; label: string 
     state === "working" ? <Spinner size={13} className="text-working" />
     : state === "done" ? <Check className="size-[13px] text-[var(--color-done)]" />
     : state === "blocked" ? <span className="size-[9px] rounded-full bg-[var(--color-blocked)]" />
-    : <span className="size-[12px] rounded-full border border-[var(--color-dim)]" />;
+    : <span className="size-[12px] rounded-full border border-[var(--color-faint)]" />;
   return <Tip label={label} side="top"><span className={box} tabIndex={0} aria-label={label} data-state={state}>{icon}</span></Tip>;
 }
 
