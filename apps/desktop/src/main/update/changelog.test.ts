@@ -9,6 +9,9 @@ describe("parseChanges", () => {
   it("reads the lines of the Changes part and stops at the signature lines", () => {
     expect(parseChanges(body("0.1.2", ["B (#2)", "A (#1)"]))).toEqual(["B (#2)", "A (#1)"]);
   });
+  it("stops at the first line that is not a change", () => {
+    expect(parseChanges("contr 0.1.2 from abc.\n\n## Changes\n\n- A (#1)\n\n## Other\n\n- not a change\n")).toEqual(["A (#1)"]);
+  });
   it("reads CRLF notes", () => expect(parseChanges(body("0.1.2", ["A (#1)"]).replaceAll("\n", "\r\n"))).toEqual(["A (#1)"]));
   it("gives no lines with no Changes part", () => expect(parseChanges(body("0.1.2"))).toEqual([]));
 });
