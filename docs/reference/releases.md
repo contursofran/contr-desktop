@@ -104,14 +104,15 @@ contr-core that is not a prerelease, and puts:
 - When `<root>/bin/herdr-contr-feed` exists and its build is the same as the
   bundle's, newer, or of an order that is not known, the app runs the home's
   helper and tool.
+- When the root has no `bin/herdr-contr-feed`, or its build is older than
+  the bundle's, the app first installs the bundle's core there (see "The
+  core's home").
 - When the home's helper does not answer `version` with protocol 1 in 5 s,
   the app runs the bundle.
 
-The app does not install into the root yet: a root with no helper, or an
-older one, runs the bundle. In dev and e2e the app uses `bin/` at the
-repository root, unless `CONTR_CORE_HOME` names a root (`CONTR_CORE_BUNDLE`
-can name a folder in place of the bundle). `CONTR_HELPER` and `CONTR_ORCH`
-override all.
+In dev and e2e the app uses `bin/` at the repository root, unless
+`CONTR_CORE_HOME` names a root (`CONTR_CORE_BUNDLE` can name a folder in place
+of the bundle). `CONTR_HELPER` and `CONTR_ORCH` override all.
 
 contr-core releases have no Linux `herdr-contr-orch`, so the AppImage has
 only the helper.
@@ -119,6 +120,35 @@ only the helper.
 The `CI` workflow runs the test of `scripts/fetch-helper`
 (`node --test scripts/fetch-helper.test.mjs`) with a fake `gh` and a fake
 zip; it reads no real release.
+
+## The core's home
+
+Which core the app runs, at each start (`main/core/start.ts`):
+
+| # | Case | The app runs | The app writes |
+|---|---|---|---|
+| 1 | Dev run, no `CONTR_CORE_HOME` | `bin/` at the repository root | nothing |
+| 2 | e2e run, no `CONTR_CORE_HOME` | `CONTR_HELPER` | nothing; it reads no folder under the home folder |
+| 3 | `CONTR_CORE_HOME=<folder>` | rows 5 to 10 with that folder as the root | only in that folder |
+| 4 | `CONTR_HELPER` or `CONTR_ORCH` is set | that program, for that name | rows 5 to 10 still apply to the root |
+| 5 | The root is shared with the Herdr app | bundle | nothing |
+| 6 | No root folder | home, after the install | the install into `~/.config/contr-core` |
+| 7 | The root has no `bin/herdr-contr-feed` | home, after the install | the install into the root |
+| 8 | The home's build is older than the bundle's | home, after the install | the install into the root |
+| 9 | The home is the same, newer, or the order is not known | home | nothing |
+| 10 | The home's helper does not start, or the install failed | bundle | nothing more |
+
+The install is `install --backend --helper <bundle helper> [--orch <bundle
+tool>]` of the bundle's helper, with `CONTR_HOME=<root>`, in 60 s at most. It
+writes `kit/`, `.claude-plugin/marketplace.json`, `bin/herdr-contr-feed`,
+`bin/herdr-contr-orch` and `install.json` in the root, and nothing else. A
+root that is not shared needs no question for it (owner, Q2 of #150).
+
+The app never makes `~/.config/contr-core` while `~/.config/contr-backend` or
+`~/.config/herdr-app/herdr-contr` exists: that new folder would change the
+default root of the Herdr mod, the tool and each agent. The app never runs
+`home move`, never writes `~/.claude`, and never starts, stops or sends input to
+the Herdr app or hc core.
 
 ## Name
 
