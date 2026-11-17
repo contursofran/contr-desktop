@@ -7,6 +7,7 @@ import { launchApp } from "./launch";
 // The reply box takes the keyboard when the chat shows (docs/design/recipe-herdr.md, issue #141).
 // The window never shows in e2e (launch.ts): a `focus` event sent to the page stands for "the window became active".
 const e2e = import.meta.dirname;
+const shots = path.resolve(e2e, "../../../tmp/shots");
 
 function launch(env: Record<string, string> = {}) {
   return launchApp({
@@ -117,6 +118,10 @@ test("a late first answer leaves the focus on a button that took it while the ch
   await expect(page.getByRole("list", { name: "Chat" })).toContainText("Next tick.", { timeout: 20_000 });
   await expect(attachButton).toBeFocused();
   await expect(replyBox(page)).not.toBeFocused();
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `focus-late-button-${scheme}.png`) });
+  }
   await app.close();
 });
 
