@@ -1,0 +1,8 @@
+# 157: The app knows its core (#150, slice S1)
+
+- The core is contr-core: the helper `herdr-contr-feed`, the tool `herdr-contr-orch` and the kit. Its root follows contr-core decision 3: `CONTR_HOME`, then `$HERDR_APP_HOME/herdr-contr`, then the first of `~/.config/contr-core`, `~/.config/contr-backend`, `~/.config/herdr-app/herdr-contr` that exists, else `~/.config/contr-core`.
+- `CONTR_CORE_HOME` names the root before all of these. An e2e run or a dev run with no `CONTR_CORE_HOME` has no root: the app runs `bin/` (or `CONTR_HELPER`) as before and reads no folder under the home folder. The e2e launcher takes `CONTR_CORE_HOME` only from the spec and only in the temp folder.
+- The Herdr app uses the root too when the root's `install.json` has a `files` record, or when the root is the Herdr app's folder by real path. Then the app runs its bundle and changes nothing there. The owner's machine is in this case now.
+- Else the app runs `<root>/bin/herdr-contr-feed` and `<root>/bin/herdr-contr-orch` when the home's helper exists, its build is not older than the bundle's (`bin/RELEASE`), and it answers `version` with protocol 1 in 5 s. The same date with another sha is "not known", and the home then wins, so the app never puts an older core over a newer one.
+- A root with no helper or an older one needs an install. This slice writes nothing and calls no `install` or `update`: it runs the bundle there. The install at start comes in slice S2.
+- `CONTR_HELPER` and `CONTR_ORCH` still win for their program. Each caller reads the path at each use, so a later update can change the copy with no restart of the app; `restartFeeds` starts each feed again for that.
