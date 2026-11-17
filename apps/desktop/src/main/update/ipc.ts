@@ -24,7 +24,7 @@ const CHECK_MS = 6 * 60 * 60_000;
  * and "Restart to update" swaps it in. Else a press downloads the .dmg into Downloads and opens it.
  * CONTR_INSTALL_DIR replaces the folder of the running app, CONTR_DOWNLOADS the Downloads folder.
  * With CONTR_E2E=1 nothing is opened, swapped or quit.
- * Settings > Change log reads the newest releases (docs/decisions/121-change-log.md) with each check;
+ * Settings > Change log reads the newest releases (docs/decisions/122-change-log.md) with each check;
  * CONTR_RELEASES_URL points it at a fake releases list (e2e). With CONTR_E2E=1, CONTR_VERSION replaces this app's
  * version, so a test can mark a release "Installed".
  */
