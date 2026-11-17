@@ -14,6 +14,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The release notes script (release.yml): its test, and a dry run that prints the notes for this commit.
+      - run: node --test scripts/release-notes.test.mjs
+      - run: node scripts/release-notes.mjs --dry-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
