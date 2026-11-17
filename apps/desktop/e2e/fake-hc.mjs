@@ -21,7 +21,7 @@ if (process.env.FAKE_HC_DOWN && existsSync(process.env.FAKE_HC_DOWN)) {
   process.stderr.write("fake hc: the core is not running\n");
   process.exit(1);
 }
-if (cmd === "connect" && process.env.FAKE_HC_CONNECT === "1") connect();
+if (cmd === "connect" && ["1", "bad-hello"].includes(process.env.FAKE_HC_CONNECT)) connect();
 else if (cmd === "get") {
   // FAKE_HC_GONE: a comma list of addresses hc does not list; `get` fails for them.
   if ((process.env.FAKE_HC_GONE ?? "").split(",").includes(terminal)) process.exit(1);
@@ -51,6 +51,7 @@ else if (cmd === "get") {
 /**
  * FAKE_HC_CONNECT=1: `connect` answers as hc does (main/terminal/hc-attach.ts): the `hello` line, then framed JSON-RPC.
  * `terminal.attach` opens channel 1 and writes one line into it. The process ends when the app closes stdin.
+ * FAKE_HC_CONNECT=bad-hello: the `hello` answer is a line that is not JSON.
  */
 function connect() {
   const frame = (channel, payload) => {
@@ -68,7 +69,8 @@ function connect() {
       if (nl < 0) return;
       buf = buf.subarray(nl + 1);
       framed = true;
-      process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id: 0, result: {} })}\n`);
+      const ok = JSON.stringify({ jsonrpc: "2.0", id: 0, result: {} });
+      process.stdout.write(`${process.env.FAKE_HC_CONNECT === "bad-hello" ? "warning: not JSON" : ok}\n`);
     }
     while (buf.length >= 9 && buf.length >= 9 + buf.readUInt32LE(5)) {
       const [channel, n] = [buf.readUInt32LE(0), buf.readUInt32LE(5)];

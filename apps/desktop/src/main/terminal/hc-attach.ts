@@ -18,6 +18,19 @@ export interface AttachEvents {
   end(reason: string): void;
 }
 
+/** The end reason when a line or a channel-0 frame from hc is not JSON (a warning, another protocol version). */
+export const NOT_JSON = "hc sent data that is not JSON";
+
+/** A JSON object from hc, or undefined when the bytes are not JSON or not an object. */
+function parse<T extends object>(bytes: Buffer): T | undefined {
+  try {
+    const v: unknown = JSON.parse(bytes.toString());
+    return typeof v === "object" && v !== null ? (v as T) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export class HcAttach {
   private proc: ChildProcessWithoutNullStreams;
   private buf: Buffer = Buffer.alloc(0);
@@ -34,6 +47,8 @@ export class HcAttach {
     this.proc = spawn(target.hc ?? "hc", args, { stdio: "pipe" });
     this.proc.on("error", (e) => this.finish(`hc: ${e.message}`));
     this.proc.stderr.on("data", (d: Buffer) => (this.stderr += d.toString()));
+    // A write after hc closed its stdin (EPIPE) must not throw in the main process: the `close` event gives the reason.
+    this.proc.stdin.on("error", () => undefined);
     // `close`, not `exit`: an error line on stdout or stderr is read before the end.
     this.proc.on("close", () => this.finish(this.stderr.trim() ? `hc closed the connection: ${this.stderr.trim()}` : "hc closed the connection"));
     this.proc.stdout.on("data", (d: Buffer) => this.read(d, target.terminal, cols, rows));
@@ -41,16 +56,19 @@ export class HcAttach {
   }
 
   input(text: string): void {
+    if (this.ended) return;
     if (this.channel) this.proc.stdin.write(encode(this.channel, KIND_DATA, Buffer.from(text)));
     else this.pending.push(text);
   }
 
   resize(cols: number, rows: number): void {
+    if (this.ended) return;
     if (this.channel) this.proc.stdin.write(encode(this.channel, KIND_RESIZE, resizePayload(cols, rows)));
   }
 
   /** Detach. The terminal keeps running. */
   close(): void {
+    if (this.ended) return;
     if (this.channel) this.proc.stdin.write(encode(this.channel, KIND_CLOSE));
     this.proc.stdin.end();
     this.ended = true;
@@ -62,11 +80,13 @@ export class HcAttach {
   }
 
   private read(d: Buffer, terminal: string, cols: number, rows: number): void {
+    if (this.ended) return;
     this.buf = Buffer.concat([this.buf, d]);
     if (!this.framed) {
       const nl = this.buf.indexOf(10);
       if (nl < 0) return;
-      const hello = JSON.parse(this.buf.subarray(0, nl).toString()) as { error?: { message: string } };
+      const hello = parse<{ error?: { message: string } }>(this.buf.subarray(0, nl));
+      if (!hello) return this.finish(NOT_JSON);
       this.buf = this.buf.subarray(nl + 1);
       if (hello.error) return this.finish(hello.error.message);
       this.framed = true;
@@ -77,7 +97,8 @@ export class HcAttach {
     this.buf = rest;
     for (const f of frames) {
       if (f.channel === 0) {
-        const m = JSON.parse(f.payload.toString()) as { id?: number; result?: { channel: number }; error?: { message: string } };
+        const m = parse<{ id?: number; result?: { channel: number }; error?: { message: string } }>(f.payload);
+        if (!m) return this.finish(NOT_JSON);
         if (m.id !== 1) continue;
         if (m.error || !m.result) return this.finish(m.error?.message ?? "attach failed");
         this.channel = m.result.channel;

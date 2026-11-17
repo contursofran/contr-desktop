@@ -50,6 +50,21 @@ test("a terminal that cannot attach shows what failed and hc's words, and Retry 
   await app.close();
 });
 
+test("a hello line from hc that is not JSON shows a plain note, not an error in the main process", async () => {
+  const app = await launchApp({ ...env(""), FAKE_HC_CONNECT: "bad-hello" });
+  const errors: string[] = [];
+  app.process().stderr?.on("data", (d: Buffer) => errors.push(d.toString()));
+  const page = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
+  await page.getByRole("button", { name: "Terminal" }).click();
+  const note = page.getByRole("alert", { name: "Terminal error" });
+  await expect(note.locator("p")).toHaveText("hc sent data that contr cannot read.");
+  await expect(note.locator("pre")).toHaveText("hc sent data that is not JSON");
+  expect(errors.join("")).not.toMatch(/Uncaught|SyntaxError/);
+  await shoot(page, "terminal-not-json");
+  await app.close();
+});
+
 test("with hc down the main area and the sidebar say hc is not reachable, and Retry reads the list again", async () => {
   const down = hcDown();
   const app = await launchApp({ ...env(down), CONTR_TERMINAL: "" });

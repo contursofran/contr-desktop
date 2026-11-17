@@ -11,5 +11,7 @@ describe("terminalProblem", () => {
     expect(terminalProblem("hc closed the connection")).toBe("The connection to hc ended.");
     expect(terminalProblem("hc closed the connection: server not running")).toBe("The connection to hc ended.");
   });
+  it("says contr cannot read hc's data when it is not JSON", () =>
+    expect(terminalProblem("hc sent data that is not JSON")).toBe("hc sent data that contr cannot read."));
   it("falls back for another error", () => expect(terminalProblem("bad hello")).toBe("The terminal could not attach to hc."));
 });
