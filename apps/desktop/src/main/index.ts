@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { chatTerminal, setupHelper } from "./helper";
+import { registerCoreIpc } from "./core/ipc";
 import { startCore } from "./core/start";
 import { handleImageScheme, registerImageScheme } from "./localImages";
 import { registerBoardIpc } from "./board/ipc";
@@ -44,7 +45,7 @@ void app.whenReady().then(async () => {
   handleImageScheme();
   if (e2e && process.platform === "darwin") app.setActivationPolicy("accessory");
   // The core's root and copy (home or bundle) come before any helper or tool call.
-  await startCore(app.getAppPath(), app.isPackaged);
+  const core = await startCore(app.getAppPath(), app.isPackaged);
   setupHelper(app.getAppPath());
   registerTerminalIpc();
   registerRefsIpc(chatTerminal);
@@ -54,6 +55,7 @@ void app.whenReady().then(async () => {
   registerOwnerIpc(app.getAppPath());
   registerSettingsIpc(app.getAppPath());
   setAppMenu(registerUpdateIpc().check, e2e);
+  registerCoreIpc(app.getAppPath(), core);
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

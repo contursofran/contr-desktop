@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { UpdateState } from "../../shared/api";
-import { updateView } from "./updateView";
+import type { CoreState, UpdateState } from "../../shared/api";
+import { CORE_SHARED, updateView } from "./updateView";
 
 const T = 1_000_000;
 const base: UpdateState = { current: "0.1.1", dev: false, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null, checkFailed: false };
@@ -58,5 +58,16 @@ describe("updateView", () => {
 
   it("a new check after a failure: Checking…, the old failure hidden until it ends", () => {
     expect(at({ checked: T, checkFailed: true, error: "Update check failed: HTTP 500", checking: true })).toMatchObject({ newest: "Checking…", check: { label: "Checking…", disabled: true }, lastCheck: null, error: null });
+  });
+});
+
+describe("updateView for the core", () => {
+  const core: CoreState = { ...base, root: "/tmp/core", source: "bundle", shared: false, installing: false, updated: null };
+  it("a shared core says the Herdr text, Unknown, and has no Check now and no Update", () => {
+    expect(updateView({ ...core, shared: true, available: true }, T, "core")).toMatchObject({ newest: "Unknown", check: null, action: null, status: CORE_SHARED });
+  });
+  it("a core that is not shared has the app's texts", () => {
+    const state = { ...core, latest: "0.1.1", checked: T };
+    expect(updateView(state, T, "core")).toEqual(updateView(state, T));
   });
 });

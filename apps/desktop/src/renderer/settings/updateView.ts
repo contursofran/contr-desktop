@@ -1,4 +1,4 @@
-import type { UpdateState } from "../../shared/api";
+import type { CoreState, UpdateState } from "../../shared/api";
 import { checkedText } from "./checked";
 
 /** What the Updates section shows for one update state. Each text is null when it does not show. */
@@ -19,12 +19,19 @@ export interface UpdateView {
   error: string | null;
 }
 
+/** T6: the core's root is shared with the Herdr app; the app does not check or change it. */
+export const CORE_SHARED = "The Herdr app uses this core. contr runs its own copy and does not change this folder.";
+
 /**
- * The texts and buttons of Settings > Updates for `u` at the time `now`: one true thing at a time.
- * A failed check shows its message in place of "Checked …", and "Up to date" only follows a passed check.
+ * The texts and buttons of Settings > Updates (`kind` "app") or Settings > Core (`kind` "core") for `u` at the time
+ * `now`: one true thing at a time. A failed check shows its message in place of "Checked …", and "Up to date" only
+ * follows a passed check. A shared core has no check: it says T6 and "Unknown".
  */
-export function updateView(u: UpdateState | undefined, now: number): UpdateView {
+export function updateView(u: UpdateState | CoreState | undefined, now: number, kind: "app" | "core" = "app"): UpdateView {
   if (!u) return { newest: "Checking…", check: null, action: null, lastCheck: null, progress: null, status: null, error: null };
+  if (kind === "core" && "shared" in u && u.shared && !u.dev) {
+    return { newest: "Unknown", check: null, action: null, lastCheck: null, progress: null, status: CORE_SHARED, error: u.error };
+  }
   const failed = u.checkFailed === true;
   const upToDate = !failed && u.latest != null && u.latest === u.current && !u.available && !u.ready;
   const newest = u.dev ? "Development build" : upToDate ? "Up to date" : (u.latest ?? (failed && !u.checking ? "Unknown" : "Checking…"));

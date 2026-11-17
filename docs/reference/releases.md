@@ -150,6 +150,33 @@ default root of the Herdr mod, the tool and each agent. The app never runs
 `home move`, never writes `~/.claude`, and never starts, stops or sends input to
 the Herdr app or hc core.
 
+## The Core part
+
+Settings > Core shows the core that the app runs (`main/core/ipc.ts`,
+`renderer/settings/SettingsView.tsx`), with the look and the texts of
+Updates (`updateView.ts`):
+
+- Version: the home's build (`install.json` `build`), or the bundle's stamp
+  when the app runs the bundle. After a check of the home: the `update`
+  line's `installed_version` (contr-core issue C2), else `installed`.
+- Newest: `newest_version` (C2), else `newest`; "Up to date" when there is
+  nothing newer. Update shows when `newer` (C2), else `differs`, is true; the
+  foot's Settings button then has the dot. The button does nothing yet.
+- Folder: the root.
+
+The source is the helper's `update check` with `CONTR_HOME=<root>`. The app
+reads no GitHub API for the core. The core keeps its answer for a day
+(`update.json`): the check at start and at each open of Settings takes it;
+Check now and the 6-hour timer pass `--force`. `update check` of a core from
+before C2 needs the GitHub CLI with a login; with none, the check says "Core
+check failed: GitHub CLI (gh) is not installed or not logged in."
+
+With no root (dev, e2e with no `CONTR_CORE_HOME`) the part says
+"Development build". A root shared with the Herdr app is not checked: the
+part says "The Herdr app uses this core. contr runs its own copy and does not
+change this folder." A failed start install or a home that does not start
+shows its text under the part.
+
 ## Name
 
 The app is `contr.app`. It replaces the older Go contr app of the same name

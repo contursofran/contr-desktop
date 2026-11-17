@@ -149,6 +149,10 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   // A plain arrow does not move it.
   await page.keyboard.press("ArrowRight");
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
+  // The shown agent is stored too (`tabs.shown`), and a start shows it again while hc lists it, with its tab. With b
+  // shown here, the last start below opens b's tab again some time after it starts (issue #159): a shows instead.
+  await tabs.getByRole("tab", { name: a }).click();
+  await expect(tabs.getByRole("tab", { name: a })).toHaveAttribute("aria-selected", "true");
   await app.close();
 
   app = await launchApp(env, dataDir);

@@ -15,7 +15,7 @@ import { DMG, getJson, newer, parseRelease, readReleaseFile, RELEASE_FILE_URL, R
  * GitHub has no release event for an app: the newest release is read at start, every 6 hours, each time the
  * Settings view opens, on "Check now" and on the app menu's "Check for Updates…".
  */
-const CHECK_MS = 6 * 60 * 60_000;
+export const CHECK_MS = 6 * 60 * 60_000;
 
 /**
  * The Update button (owner decision, docs/decisions/80-auto-install.md). Only a packaged app checks; dev and e2e
