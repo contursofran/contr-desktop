@@ -1,5 +1,6 @@
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
-import { useEffect, useRef } from "react";
+import { ArrowDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "../../../shared/api";
 import { Row } from "../rows/Row";
 
@@ -8,11 +9,24 @@ import { Row } from "../rows/Row";
 // and height changes while it is at the end, and stays put when the owner
 // scrolled up. Size anchoring keeps the rows on screen still when a row above
 // changes height (Markdown, tables, open tool chips).
+// While the owner reads older rows, a round ↓ button (as herdr-contr's chat) goes back to the end. Its arrow
+// takes the accent color when a new row came in after the owner scrolled up.
 export function ChatList({ rows }: { rows: FeedRow[] }) {
   const list = useRef<LegendListRef>(null);
   const box = useRef<HTMLDivElement>(null);
   // At the end until the owner scrolls up. Read on scroll, before a resize changes it.
   const atEnd = useRef(true);
+  // The same as `atEnd`, for the ↓ button. `fresh`: a new last row came in while not at the end.
+  const [following, setFollowing] = useState(true);
+  const [fresh, setFresh] = useState(false);
+  const last = rows.at(-1)?.id;
+  const seen = useRef(last);
+  // Older rows that load at the top do not change the last row, so they do not mark the button.
+  useEffect(() => {
+    if (last === seen.current) return;
+    seen.current = last;
+    if (!atEnd.current) setFresh(true);
+  }, [last]);
 
   // Legend skips its own follow on a resize that comes before its first scroll
   // to the end is done (a card that opens under the list on a slow machine).
@@ -28,7 +42,21 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
   }, []);
 
   return (
-    <div ref={box} className="flex min-h-0 flex-1 flex-col">
+    <div ref={box} className="relative flex min-h-0 flex-1 flex-col">
+      {/* Before the rows in the DOM, so Tab reaches it right after the reply box (App renders that first) and
+          before the rows' controls. It shows only away from the end, so it never covers the last row there. */}
+      {!following && (
+        <button
+          type="button"
+          aria-label="Jump to the end"
+          aria-description={fresh ? "New messages" : undefined}
+          data-fresh={fresh || undefined}
+          onClick={() => void list.current?.scrollToEnd({ animated: true })}
+          className={`absolute bottom-3 left-1/2 z-10 flex size-[34px] -translate-x-1/2 items-center justify-center rounded-full border border-border bg-raised shadow-sm hover:bg-hover ${fresh ? "text-accent" : "text-foreground"}`}
+        >
+          <ArrowDown size={15} aria-hidden />
+        </button>
+      )}
       <LegendList
         ref={list}
         aria-label="Chat"
@@ -45,7 +73,10 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
         maintainVisibleContentPosition
         onScroll={() => {
           const state = list.current?.getState();
-          if (state) atEnd.current = state.isFollowingEnd || state.isWithinMaintainScrollAtEndThreshold;
+          if (!state) return;
+          atEnd.current = state.isFollowingEnd || state.isWithinMaintainScrollAtEndThreshold;
+          setFollowing(atEnd.current);
+          if (atEnd.current) setFresh(false);
         }}
         renderItem={({ item }) => (
           <div role="listitem" data-kind={item.k} data-row-id={item.id} className="mx-auto w-full max-w-3xl py-1">
