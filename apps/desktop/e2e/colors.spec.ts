@@ -67,6 +67,9 @@ test("the palette, the agent icons and the loader are herdr-contr's", async () =
   const blocked = tab("Cards for prompts and questions").locator('[data-state="blocked"]');
   await expect(done).toHaveCSS("width", "6px");
   await expect(tab("Release notes draft").getByRole("status")).toHaveCount(0);
+  // The screenshots show b-40's own chat: wait for its model and its permission card (#90).
+  await expect(page.getByRole("button", { name: "Model" })).toHaveText("Opus 5.5high");
+  await expect(page.getByRole("region", { name: "Approval" })).toBeVisible();
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     expect(await done.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(THEME[scheme].done);

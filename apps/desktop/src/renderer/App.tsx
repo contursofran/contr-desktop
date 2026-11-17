@@ -11,7 +11,7 @@ import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { Sidebar } from "./sidebar/Sidebar";
-import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs } from "./topbar/TopBar";
+import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import type { Sidebar as SidebarData } from "../shared/api";
 
 type Side = "chat" | "terminal";
@@ -70,7 +70,7 @@ export function App() {
       <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} />
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
-        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} side={side} />}
+        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} />}
       </main>
     </div>
   );
@@ -96,10 +96,9 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
   );
 }
 
-function Chat({ terminal, side }: { terminal: string; side: Side }) {
+/** `title` is the tab's title (`tabLabel`): the reply box names the agent as the tab and the sidebar do, never by its hc name. */
+function Chat({ terminal, title, side }: { terminal: string; title: string; side: Side }) {
   const [feed, setFeed] = useState(emptyFeed);
-  const [title, setTitle] = useState("");
-  useEffect(() => void window.contr.title().then(setTitle), []);
   useEffect(() => window.contr.onFeed((event) => setFeed((state) => applyFeed(state, event))), []);
   const board = useBoard(NO_ISSUES);
   const workers = board?.orchestrating ?? 0;
