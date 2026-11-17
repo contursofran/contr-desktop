@@ -24,6 +24,13 @@ async function open(card?: string) {
   return { app, page, answers };
 }
 
+async function shoot(page: Page, name: string) {
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `${name}-${scheme}.png`) });
+  }
+}
+
 const blur = (page: Page) => page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
 test("a 1 typed in the reply box with a permission card shown stays text; a 1 with the focus on the page answers", async () => {
@@ -39,6 +46,7 @@ test("a 1 typed in the reply box with a permission card shown stays text; a 1 wi
   await page.waitForTimeout(300);
   await expect(card.getByRole("status")).toHaveCount(0);
   expect(answers()).toEqual([]);
+  await shoot(page, "keys-card-reply-text");
   await blur(page);
   await page.keyboard.press("1");
   await expect(card).toContainText("Answer sent. Waiting for the agent.");
@@ -101,10 +109,7 @@ test("Tab goes from the top bar to the card and the reply box before the chat ro
   const list = (await page.getByRole("list", { name: "Chat" }).boundingBox())!;
   const box = (await reply.boundingBox())!;
   expect(box.y).toBeGreaterThan(list.y + list.height - 1);
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    await page.screenshot({ path: path.join(shots, `keys-reply-focus-${scheme}.png`) });
-  }
+  await shoot(page, "keys-reply-focus");
   await app.close();
 });
 
@@ -119,5 +124,8 @@ test("a code block is a Tab stop only when it scrolls sideways", async () => {
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(640, 600));
   await expect.poll(async () => (await state()).some((p) => p.stop)).toBe(true);
   expect((await state()).every((p) => p.stop === p.scrolls)).toBe(true);
+  // The block that scrolls can take the focus.
+  await pres.and(page.locator("[tabindex='0']")).first().focus();
+  await shoot(page, "keys-code-scroll");
   await app.close();
 });
