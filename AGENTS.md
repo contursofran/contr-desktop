@@ -56,6 +56,10 @@ parts; when the design has no answer, ask.
   `pnpm test` (unit) and `pnpm e2e` (Playwright on the Electron app, with
   the fake helper). `pnpm dev` runs the app with hot reload. The e2e
   screenshots go to `tmp/shots/`.
+- To run, drive and look at the app, use the `verify` skill
+  (`.claude/skills/verify/SKILL.md`), not a new launch script;
+  `docs/feature-map.md` lists each feature with its keys, selector,
+  expected result and spec.
 - e2e runs must never show a window, take the owner's focus or input: every spec launches
   through `apps/desktop/e2e/launch.ts` (`CONTR_E2E=1`), and tests use no
   OS-level keys or mouse.
@@ -94,6 +98,10 @@ parts; when the design has no answer, ask.
   send input to the owner's `herdr-app` or hc core. Tests use a fake helper
   and a fake hc; an e2e test that needs a real hc starts its own with a
   scratch `HC_SESSION` and stops it after.
+- The e2e launcher (`apps/desktop/e2e/launch-env.ts`) gives each run a fake
+  hc, helper, orchestration tool, git and gh by default. A program switch
+  must name a file in the repository or the temp folder; only its
+  `realHcSession` option runs the real hc, on a scratch session.
 - Tests use fakes and fixtures. No test reads the owner's session logs
   (`~/.claude`, `~/.codex`) and no test starts the real `claude` program.
 - Do not install anything into the owner's Herdr home.

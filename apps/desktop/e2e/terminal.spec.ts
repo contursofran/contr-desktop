@@ -30,13 +30,10 @@ test.setTimeout(60_000);
 
 test("the Terminal side shows an hc terminal and sends keys to it", async () => {
   const run = JSON.parse(hc("run", "--bg", "--json", "printf '\\033]0;Build watcher\\007ready\\n'; seq 1 200; exec sh")) as { address: string };
-  const app = await launchApp({
-    CONTR_HELPER: fakeHelper,
-    FAKE_HELPER_FIXTURE: fixture,
-    CONTR_HC_SESSION: session,
-    // The reply box reads the title with `hc get`: it goes to the scratch core too.
-    HC_SESSION: session,
-    CONTR_TERMINAL: run.address,
+  // The launcher's real-hc option: the app runs the real hc, and each of its hc calls (the attach, `ls`, `get`,
+  // `events`) carries the scratch session.
+  const app = await launchApp({ CONTR_HELPER: fakeHelper, FAKE_HELPER_FIXTURE: fixture, CONTR_TERMINAL: run.address }, undefined, {
+    realHcSession: session,
   });
   const page = await app.firstWindow();
   await expect(chatList(page).locator('[data-row-id="a6"]')).toBeVisible();
