@@ -136,7 +136,8 @@ test("a newer release shows the dot and the Update button; a press downloads the
   await page.screenshot({ path: path.join(shots, "update-light.png") });
   await view.getByRole("button", { name: "Update" }).click();
   const file = path.join(downloads, "contr-mac-universal.dmg");
-  await expect(view.getByRole("status")).toHaveText(`Opened ${file}. Drag contr to Applications.`);
+  // The file name, not its folder: no local path in a text.
+  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal.dmg. Drag contr to Applications.");
   expect(readFileSync(file).equals(DMG)).toBe(true);
   await page.screenshot({ path: path.join(shots, "update-done-light.png") });
   await app.close();
@@ -146,14 +147,29 @@ test("a newer release shows the dot and the Update button; a press downloads the
 test("a failed check and a failed download show their message", async () => {
   const { server, url } = await fakeGitHub();
   let app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/nothing` });
-  let view = await openSettings(await app.firstWindow());
+  let page = await app.firstWindow();
+  let view = await openSettings(page);
   await expect(view.getByRole("alert")).toHaveText("Update check failed: HTTP 500");
+  // A failed first check: no version is known, and no "Checked …" line claims a passed check.
+  await expect(view.getByLabel("Newest version")).toHaveText("Unknown");
+  await expect(view.getByLabel("Last check")).toHaveCount(0);
+  await expect(view.getByRole("button", { name: "Check now" })).toBeEnabled();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(shots, "update-first-failed-dark.png") });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.screenshot({ path: path.join(shots, "update-first-failed-light.png") });
   await app.close();
 
   app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/release-bad-dmg`, CONTR_DOWNLOADS: mkdtempSync(path.join(os.tmpdir(), "contr-e2e-downloads-")) });
-  view = await openSettings(await app.firstWindow());
+  page = await app.firstWindow();
+  view = await openSettings(page);
   await view.getByRole("button", { name: "Update" }).click();
   await expect(view.getByRole("alert")).toHaveText("Download failed: HTTP 500");
+  await expect(view.getByLabel("Last check")).toHaveText("Checked just now");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(shots, "update-download-failed-dark.png") });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.screenshot({ path: path.join(shots, "update-download-failed-light.png") });
   await app.close();
   server.close();
 });
@@ -189,7 +205,8 @@ test("a read-only app folder or a release with no .zip falls back to the .dmg", 
     const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/${release}`, CONTR_INSTALL_DIR: dir, CONTR_DOWNLOADS: downloads });
     const view = await openSettings(await app.firstWindow());
     await view.getByRole("button", { name: "Update" }).click();
-    await expect(view.getByRole("status")).toHaveText(`Opened ${path.join(downloads, "contr-mac-universal.dmg")}. Drag contr to Applications.`);
+    await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal.dmg. Drag contr to Applications.");
+    expect(readFileSync(path.join(downloads, "contr-mac-universal.dmg")).equals(DMG)).toBe(true);
     await app.close();
   }
   chmodSync(install, 0o755);
@@ -199,7 +216,8 @@ test("a read-only app folder or a release with no .zip falls back to the .dmg", 
 test("Check now and the app menu's Check for Updates… show a new release with no restart", async () => {
   const { server, url } = await fakeGitHub();
   Object.assign(live, { version: "0.0.0", fail: false, hold: null });
-  const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/live` });
+  const downloads = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-downloads-"));
+  const app = await launchApp({ ...base, CONTR_UPDATE_URL: `${url}/live`, CONTR_DOWNLOADS: downloads });
   const page = await app.firstWindow();
   await page.emulateMedia({ colorScheme: "dark" });
   const view = await openSettings(page);
@@ -229,14 +247,42 @@ test("Check now and the app menu's Check for Updates… show a new release with 
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "check-available-dark.png") });
 
-  // A failed check shows its error; the button works again, and a passed check clears the error.
+  // A failed check shows its error in place of "Checked …"; the known release and its Update button stay.
   live.fail = true;
   await check.click();
   await expect(view.getByRole("alert")).toHaveText("Update check failed: HTTP 500");
   await expect(check).toBeEnabled();
+  await expect(view.getByLabel("Last check")).toHaveCount(0);
+  await expect(view.getByLabel("Newest version")).toHaveText("9.1.42");
+  await expect(view.getByRole("alert")).toHaveCSS("color", "rgb(255, 159, 10)");
+  await expect(view.getByRole("button", { name: "Update" })).toBeVisible();
+  await page.screenshot({ path: path.join(shots, "check-failed-dark.png") });
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(view.getByRole("alert")).toHaveCSS("color", "rgb(168, 80, 0)");
+  await page.screenshot({ path: path.join(shots, "check-failed-light.png") });
+
+  // A new check after the failure: while it runs, the old failure does not show; a passed check clears it.
   live.fail = false;
+  live.hold = new Promise<void>((r) => (release = r));
   await check.click();
+  await expect(checking).toBeDisabled();
   await expect(view.getByRole("alert")).toHaveCount(0);
+  await expect(view.getByLabel("Last check")).toHaveCount(0);
+  release();
+  live.hold = null;
+  await expect(view.getByLabel("Last check")).toHaveText("Checked just now");
+  await expect(view.getByRole("alert")).toHaveCount(0);
+
+  // The .dmg opens; a new check that finds a newer release takes away the old "Opened …" line.
+  await view.getByRole("button", { name: "Update" }).click();
+  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal.dmg. Drag contr to Applications.");
+  await page.screenshot({ path: path.join(shots, "check-opened-light.png") });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.screenshot({ path: path.join(shots, "check-opened-dark.png") });
+  live.version = "9.1.43";
+  await check.click();
+  await expect(view.getByLabel("Newest version")).toHaveText("9.1.43");
+  await expect(view.getByRole("status")).toHaveCount(0);
 
   // Each open of the Settings view checks once.
   live.version = "9.1.50";

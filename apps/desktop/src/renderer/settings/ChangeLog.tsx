@@ -31,7 +31,7 @@ export function ChangeLog({ current, checked }: { current: string | undefined; c
         {loading && !log?.releases && <span role="status" className="text-xs text-muted">Loading the change log…</span>}
         {!loading && log?.error && (
           <div className="flex items-center justify-between gap-4">
-            <span role="alert" className="text-xs text-blocked">{log.error}</span>
+            <span role="alert" className="text-xs text-error">{log.error}</span>
             <button type="button" onClick={() => load(true)} className={button}>Retry</button>
           </div>
         )}

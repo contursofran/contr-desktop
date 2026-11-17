@@ -11,4 +11,5 @@
   | `muted` `#5f5f64` | 5.37 | 5.82 | 6.35 |
   | `dim` `#6a6a6f` | 4.55 | 4.93 | 5.38 |
 
-  `src/renderer/contrast.test.ts` checks this. The token `faint` keeps the file's pale `#a1a1a6` for marks that are not text (the usage bar, the idle ring) and for inert or disabled controls (New tab, Search, Add machine, the Send button with no text). The dark theme keeps the file's values; there `dim` and `faint` are both `#6a6a6a`.
+  `src/renderer/contrast.test.ts` checks this.
+- Error text in Settings (Updates and Change log, #117) uses the token `error`: in light `#a85000`, a darker `blocked` orange (the file's `#ff9500` is 2.20:1 on `raised`); it reaches 5.51 on `raised`, 5.05 on `chrome` and 4.66 on `canvas`. In dark it is `blocked`'s `#ff9f0a` (7.36 on `raised`). `contrast.test.ts` checks it. The token `faint` keeps the file's pale `#a1a1a6` for marks that are not text (the usage bar, the idle ring) and for inert or disabled controls (New tab, Search, Add machine, the Send button with no text). The dark theme keeps the file's values; there `dim` and `faint` are both `#6a6a6a`.

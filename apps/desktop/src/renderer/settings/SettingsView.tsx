@@ -2,7 +2,7 @@ import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } fro
 import { useEffect, useState } from "react";
 import type { Settings, ThemeChoice, UpdateState } from "../../shared/api";
 import { ChangeLog } from "./ChangeLog";
-import { checkedText } from "./checked";
+import { updateView } from "./updateView";
 
 const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: "system", label: "System" },
@@ -76,8 +76,7 @@ function Updates() {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
-  const upToDate = u?.latest != null && u.latest === u.current && !u.available && !u.ready;
-  const newest = u?.dev ? "Development build" : upToDate ? "Up to date" : (u?.latest ?? "Checking…");
+  const v = updateView(u, now);
   return (
     <>
     <div className="flex flex-col gap-2">
@@ -87,9 +86,9 @@ function Updates() {
           <span className="text-[13px]">Version</span>
           <span className="flex items-center gap-3">
             <span aria-label="Current version" className="font-mono text-[11px] text-muted">{u?.current}</span>
-            {u && !u.dev && (
-              <button type="button" disabled={u.checking} onClick={() => void window.contr.checkUpdate()} className="rounded-md border border-border px-3 py-1 text-xs hover:bg-hover disabled:opacity-50">
-                {u.checking ? "Checking…" : "Check now"}
+            {v.check && (
+              <button type="button" disabled={v.check.disabled} onClick={() => void window.contr.checkUpdate()} className="rounded-md border border-border px-3 py-1 text-xs hover:bg-hover disabled:opacity-50">
+                {v.check.label}
               </button>
             )}
           </span>
@@ -97,22 +96,22 @@ function Updates() {
         <div className="flex items-center justify-between gap-4">
           <span className="text-[13px]">Newest</span>
           <span className="flex items-center gap-3">
-            <span aria-label="Newest version" className="font-mono text-[11px] text-muted">{newest}</span>
-            {u?.ready ? (
+            <span aria-label="Newest version" className="font-mono text-[11px] text-muted">{v.newest}</span>
+            {v.action?.kind === "restart" ? (
               <button type="button" onClick={() => void window.contr.restartToUpdate()} className="rounded-md bg-working px-3 py-1 text-xs text-white">
-                Restart to update
+                {v.action.label}
               </button>
-            ) : u?.available && (
-              <button type="button" disabled={u.progress !== null} onClick={() => void window.contr.downloadUpdate()} className="rounded-md bg-working px-3 py-1 text-xs text-white disabled:opacity-60">
-                {u.progress !== null ? `Downloading ${u.progress}%` : "Update"}
+            ) : v.action && (
+              <button type="button" disabled={v.action.disabled} onClick={() => void window.contr.downloadUpdate()} className="rounded-md bg-working px-3 py-1 text-xs text-white disabled:opacity-60">
+                {v.action.label}
               </button>
             )}
           </span>
         </div>
-        {u?.checked != null && !u.checking && <span aria-label="Last check" className="text-xs text-muted">{checkedText(u.checked, Math.max(now, u.checked))}</span>}
-        {u?.progress != null && <progress aria-label="Download" max={100} value={u.progress} className="h-1 w-full" />}
-        {u?.downloaded && <span role="status" className="text-xs text-muted">Opened {u.downloaded}. Drag contr to Applications.</span>}
-        {u?.error && <span role="alert" className="text-xs text-blocked">{u.error}</span>}
+        {v.lastCheck && <span aria-label="Last check" className="text-xs text-muted">{v.lastCheck}</span>}
+        {v.progress != null && <progress aria-label="Download" max={100} value={v.progress} className="h-1 w-full" />}
+        {v.status && <span role="status" className="text-xs text-muted">{v.status}</span>}
+        {v.error && <span role="alert" className="text-xs text-error">{v.error}</span>}
       </div>
     </div>
     <ChangeLog current={u?.current} checked={u?.checked} />

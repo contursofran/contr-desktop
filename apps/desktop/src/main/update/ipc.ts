@@ -34,7 +34,7 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
   const target = process.env.CONTR_INSTALL_DIR ? path.join(process.env.CONTR_INSTALL_DIR, "contr.app") : app.isPackaged ? bundleOf(app.getPath("exe")) : null;
   const log = changeLogSource(process.env.CONTR_RELEASES_URL ?? (app.isPackaged ? RELEASES_URL : null));
   const current = (e2e && process.env.CONTR_VERSION) || app.getVersion();
-  const state: UpdateState = { current, dev: url === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null };
+  const state: UpdateState = { current, dev: url === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null, checkFailed: false };
   let release: { version: string; dmgUrl: string | null; zipUrl: string | null } | null = null;
   let next: string | null = null;
   const set = (change: Partial<UpdateState>) => {
@@ -52,9 +52,10 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
       const found = parseRelease(await getJson(url));
       const { take, change } = afterCheck(state, found.version, zipUrl(found) !== null || found.dmgUrl !== null, newer(found.version, state.current), Date.now());
       if (take) release = found;
-      set(change);
+      // A release taken again makes an older "Opened …" line wrong; a running or ready download keeps its state.
+      set({ ...change, checkFailed: false, ...(take ? { downloaded: null } : {}) });
     } catch (e) {
-      set({ checking: false, checked: Date.now(), error: `Update check failed: ${(e as Error).message}` });
+      set({ checking: false, checked: Date.now(), checkFailed: true, error: `Update check failed: ${(e as Error).message}` });
     }
   });
   const fetchTo = async (from: string, file: string) => {
