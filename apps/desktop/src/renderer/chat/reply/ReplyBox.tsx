@@ -1,7 +1,8 @@
 import { Plus } from "lucide-react";
 import { Tip } from "../../ui/Tip";
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
-import { readDraft, saveDraft } from "./drafts";
+import { Attachments } from "./Attachments";
+import { addImage, readDraft, removeImage, saveDraft } from "./drafts";
 import { composeMessage, isSendKey } from "./message";
 import { serial } from "./menu";
 import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
@@ -15,6 +16,7 @@ export interface Draft {
 /**
  * The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V attaches an image.
  * A `draft` replaces the text, puts the caret at its end and focuses the box; it does not send.
+ * Each attached file has a × that removes it (`Attachments.tsx`).
  * The unsent text and images of each `terminal` stay in memory (`drafts.ts`) when another view shows.
  */
 export function ReplyBox({ terminal, title, draft }: { terminal: string; title: string; draft?: Draft }) {
@@ -66,20 +68,35 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
     void send();
   }
 
+  // The file goes to this terminal's stored draft too: if another agent shows before the pick ends, it stays here.
+  function attach(path: string) {
+    const next = addImage(readDraft(terminal), path);
+    saveDraft(terminal, next);
+    setImages(next.images);
+  }
+
+  function detach(index: number) {
+    const next = removeImage(readDraft(terminal), index);
+    saveDraft(terminal, next);
+    setImages(next.images);
+    // The removed × had the focus: give it to the text box.
+    box.current?.focus();
+  }
+
   async function onPaste(event: ClipboardEvent<HTMLTextAreaElement>) {
     // Only an image goes to the helper; plain text pastes as the DOM does it.
     if (!Array.from(event.clipboardData.items).some((item) => item.type.startsWith("image/"))) return;
     event.preventDefault();
     const result = await window.contr.pasteImage();
     if (!result.ok) return setError(result.message ?? "paste failed");
-    if (result.path) setImages((list) => [...list, result.path as string]);
+    if (result.path) attach(result.path);
   }
 
   async function onAttach() {
     // A picked file takes the same path as a pasted image.
     const result = await window.contr.pickImage().catch((e: unknown) => ({ ok: false, path: null, message: String(e) }));
     if (!result.ok) return setError(result.message ?? "attach failed");
-    if (result.path) setImages((list) => [...list, result.path as string]);
+    if (result.path) attach(result.path);
   }
 
   return (
@@ -91,15 +108,7 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
         void send();
       }}
     >
-      {images.length > 0 && (
-        <ul aria-label="Attachments" className="mb-1 flex flex-wrap gap-1">
-          {images.map((image) => (
-            <li key={image} className="rounded bg-selected px-2 py-0.5 text-xs text-muted">
-              {image.split("/").pop()}
-            </li>
-          ))}
-        </ul>
-      )}
+      <Attachments images={images} onRemove={detach} />
       <textarea
         ref={box}
         aria-label={`Reply to ${title}`}

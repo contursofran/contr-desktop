@@ -1,0 +1,50 @@
+[
+ {
+  "tag_name": "build-2026-11-15-1111111",
+  "name": "build-2026-11-15-1111111",
+  "draft": false,
+  "published_at": "2026-11-15T09:00:00Z",
+  "body": "contr 0.1.24 from 1111111.\n\n## Changes\n\n- Settings: the theme choice and the helper path (#60)\n- Release: an ad-hoc signed .zip for the Update button (Fixes #87) (#89)\n\nThe macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open\n(or run `xattr -dr com.apple.quarantine /Applications/contr.app`).\n",
+  "assets": []
+ },
+ {
+  "tag_name": "build-2026-11-17-8e9dfad",
+  "name": "build-2026-11-17-8e9dfad",
+  "draft": false,
+  "published_at": "2026-11-17T02:57:22Z",
+  "body": "contr 0.1.27 from 8e9dfad.\n\n## Changes\n\n- Error and empty states: helper error as a block in the column (Fixes #99) (#110)\n- Keys: card keys stay text in fields and menus (Fixes #101) (#109)\n- Light theme: dim text reaches 4.5:1 (Fixes #102) (#106)\n\nThe macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open\n(or run `xattr -dr com.apple.quarantine /Applications/contr.app`).\n",
+  "assets": []
+ },
+ {
+  "tag_name": "build-2026-11-16-74701e4",
+  "name": "build-2026-11-16-74701e4",
+  "draft": false,
+  "published_at": "2026-11-16T20:10:00Z",
+  "body": "contr 0.1.26 from 74701e4.\n\n## Changes\n\n- Chat: HTML and a missing picture show as text (Fixes #100) (#108)\n\nThe macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open\n(or run `xattr -dr com.apple.quarantine /Applications/contr.app`).\n",
+  "assets": []
+ },
+ {
+  "tag_name": "build-2026-11-16-6e4a1d8",
+  "name": "build-2026-11-16-6e4a1d8",
+  "draft": false,
+  "published_at": "2026-11-16T12:00:00Z",
+  "body": "contr 0.1.25 from 6e4a1d8.\n\n## Changes\n\n- Reply box: per-agent drafts, the box grows (Fixes #98) (#105)\n- Top bar: the shown tab scrolls into view (#104)\n\nThe macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open\n(or run `xattr -dr com.apple.quarantine /Applications/contr.app`).\n",
+  "assets": []
+ },
+ {
+  "tag_name": "build-2026-11-14-2222222",
+  "name": "build-2026-11-14-2222222",
+  "draft": false,
+  "published_at": "2026-11-14T18:30:00Z",
+  "body": "contr 0.1.23 from 2222222.\n\nThe macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open\n(or run `xattr -dr com.apple.quarantine /Applications/contr.app`).\n",
+  "assets": []
+ },
+ {
+  "tag_name": "build-2026-11-14-3333333",
+  "name": "build-2026-11-14-3333333",
+  "draft": false,
+  "published_at": "2026-11-14T08:00:00Z",
+  "body": "contr 0.1.22 from 3333333.\n\n## Changes\n\n- Sidebar: projects with their agents and workers (#46)\n\nThe macOS app is ad-hoc signed, with no certificate. The first time, open it with right-click > Open\n(or run `xattr -dr com.apple.quarantine /Applications/contr.app`).\n",
+  "assets": []
+ }
+]

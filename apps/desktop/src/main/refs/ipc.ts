@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
-import { appendFileSync } from "node:fs";
-import { ipcMain, shell } from "electron";
+import { ipcMain } from "electron";
 import { BRANCH_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL } from "../../shared/api";
+import { openExternal } from "../links";
 import { gitBranch } from "./branch";
 import { ghRefs, readCwd, RefCache } from "./gh";
 
@@ -36,9 +36,6 @@ export function registerRefsIpc(terminal: () => string): void {
     return cwd ? gitBranch(cwd) : null;
   });
   ipcMain.handle(OPEN_REF_CHANNEL, (_event, url: unknown) => {
-    if (typeof url !== "string" || !url.startsWith("https://")) return;
-    // e2e runs never open the owner's browser: they write the URL to CONTR_OPEN_LOG.
-    if (process.env.CONTR_E2E === "1") appendFileSync(process.env.CONTR_OPEN_LOG ?? "/dev/null", `${url}\n`);
-    else void shell.openExternal(url);
+    if (typeof url === "string" && url.startsWith("https://")) openExternal(url);
   });
 }
