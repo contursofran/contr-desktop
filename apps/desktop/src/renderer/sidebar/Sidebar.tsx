@@ -198,8 +198,8 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
     <nav aria-label="Projects" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5">
       <InboxRow count={inbox} shown={inboxShown} onOpen={onInbox} />
       <h2 className="px-2.5 pt-1.5 pb-1 text-xs font-medium text-muted">Projects</h2>
-      {/* 12 px `muted`, as the design's "N more projects, no agents" row. */}
-      {data.projects.length === 0 && <p className="px-2.5 py-1 text-xs text-muted">No agents</p>}
+      {/* 12 px `muted`, as the design's "N more projects, no agents" row. With hc down the list is unknown, not empty. */}
+      {data.projects.length === 0 && <p className="px-2.5 py-1 text-xs text-muted">{data.hcError ? "hc is not reachable" : "No agents"}</p>}
       {data.projects.map((p) => (
         <section key={p.name} aria-label={p.name} className="mb-2.5">
           <ProjectRow project={p} shown={contains(p.agents, data.selected)} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />

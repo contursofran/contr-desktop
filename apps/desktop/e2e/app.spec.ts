@@ -99,7 +99,7 @@ test("the window shows the helper's error", async () => {
   const app = await launch({ FAKE_HELPER_ERROR: "no-core" });
   const page = await app.firstWindow();
   const alert = page.getByRole("alert", { name: "Helper error" });
-  await expect(alert.locator("p").first()).toHaveText("herdr-core is not running.");
+  await expect(alert.locator("p").first()).toHaveText("hc is not running.");
   await expect(alert.locator("pre")).toHaveText("no-core: fake error no-core");
   await app.close();
 });
