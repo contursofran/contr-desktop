@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>contr chat, Herdr layout with contr tokens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Tokens: the contr design system, dark theme. Glass is drawn as opaque fills
+   (the system's "reduce transparency" rule), so the Herdr layout stays flat. */
+:root{
+  --win:#141518;            /* glass-window over ground */
+  --side:#111214;           /* panel over ground */
+  --float:#1f2024;          /* glass-float over win */
+  --hairline:rgba(255,255,255,0.06); --rail:rgba(255,255,255,0.07);
+  --panel-line:rgba(255,255,255,0.065); --window-line:rgba(255,255,255,0.09); --float-line:rgba(255,255,255,0.075);
+  --hover:rgba(255,255,255,0.045); --hover-strong:rgba(255,255,255,0.06);
+  --selected:rgba(255,255,255,0.085); --shadow-selected:inset 0 0 0 1px rgba(255,255,255,0.06);
+  --input-line:rgba(255,255,255,0.1);
+  --meter-track:rgba(255,255,255,0.07); --meter-fill:rgba(255,255,255,0.55); --tick:rgba(255,255,255,0.14);
+  --ink-100:#f4f4f5; --ink-95:#e9e9ea; --ink-90:rgba(255,255,255,.9); --ink-85:rgba(255,255,255,.85); --ink-62:rgba(255,255,255,.62); --ink-60:rgba(255,255,255,.6);
+  --ink-50:rgba(255,255,255,.5); --ink-45:rgba(255,255,255,.45); --ink-42:rgba(255,255,255,.42); --ink-38:rgba(255,255,255,.38); --ink-35:rgba(255,255,255,.35);
+  --ink-32:rgba(255,255,255,.32); --ink-30:rgba(255,255,255,.3); --ink-26:rgba(255,255,255,.26);
+  --blocked:#f07178; --claude:#d97757; --lights:rgba(255,255,255,0.14);
+  --shadow-float:0 12px 32px rgba(0,0,0,0.28);
+  --font-sans:Inter,-apple-system,system-ui,sans-serif; --font-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#050506;color:var(--ink-90);font-family:var(--font-sans)}
+.page{max-width:1500px;margin:0 auto;padding:44px 20px 80px;display:flex;flex-direction:column;gap:22px}
+.page h1{margin:0;font-size:22px;font-weight:600;color:var(--ink-100);letter-spacing:-.01em}
+.page p{margin:0;max-width:80ch;font-size:14px;line-height:22px;color:var(--ink-50)}
+.frame{overflow-x:auto}
+
+/* Window: Herdr's structure */
+.win{width:1440px;height:900px;grid-template-rows:100%;border-radius:14px;border:1px solid var(--window-line);overflow:hidden;display:grid;grid-template-columns:268px 1fr;background:var(--win);font-size:13px;line-height:18px;color:var(--ink-95);box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.row{display:flex;align-items:center;gap:8px;min-width:0}
+.grow{flex:1;min-width:0}
+.cut{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mono{font-family:var(--font-mono)}
+svg{flex:none}
+.icb{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--ink-50)}
+.icb svg{width:14px;height:14px}
+
+/* Sidebar */
+.side{min-height:0;overflow:hidden;background:var(--side);border-right:1px solid var(--hairline);display:flex;flex-direction:column;min-width:0}
+.side-top{height:40px;padding:0 8px 0 14px;gap:8px}
+.lights{display:flex;gap:8px}.lights span{width:12px;height:12px;border-radius:6px;background:var(--lights)}
+.brand{font-weight:600;color:var(--ink-100)}
+.machine{font-size:12px;color:var(--ink-45)}
+.head{height:34px;padding:0 8px 0 18px;margin-top:6px;font-size:12px;font-weight:500;color:var(--ink-45)}
+.list{padding:0 8px;display:flex;flex-direction:column;gap:1px}
+.proj{height:30px;padding:0 10px 0 8px;color:var(--ink-85);font-weight:500;margin-top:6px}
+.proj .chev{color:var(--ink-35);font-size:9px;width:10px;text-align:center}
+.proj svg{width:15px;height:15px;color:var(--ink-42)}
+.proj .br{font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--ink-26)}
+.proj .end{margin-left:auto;font-family:var(--font-mono);font-size:11px;font-weight:400;color:var(--ink-38)}
+.ag{padding:6px 10px 6px 26px;border-radius:8px;color:var(--ink-60);align-items:flex-start;gap:10px}
+.ag.is-selected{color:var(--ink-100);background:var(--selected);box-shadow:var(--shadow-selected)}
+.ag .lines{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.ag .sub{font-size:11.5px;color:var(--ink-42)}
+.ag.is-selected .sub{color:var(--ink-62)}
+.ag .age{font-family:var(--font-mono);font-size:11px;color:var(--ink-38)}
+.kids{margin-left:34px;padding-left:9px;border-left:1px solid var(--rail);display:flex;flex-direction:column}
+.wk{height:28px;padding:0 10px 0 6px;border-radius:7px;font-size:12.5px;color:var(--ink-50);gap:8px}
+.wk .id{font-family:var(--font-mono);font-size:11px;color:var(--ink-35)}
+.wk.is-ask{color:var(--ink-100)}
+.wk.is-ask .id{color:var(--ink-62)}
+.foot{margin-top:auto;padding:12px 18px 10px;border-top:1px solid var(--hairline);display:flex;flex-direction:column;gap:9px;font-size:12px;color:var(--ink-42)}
+.meter{height:4px;border-radius:2px;background:var(--meter-track);overflow:hidden;flex:1}
+.meter span{display:block;height:100%;background:var(--meter-fill)}
+.foot .v{font-family:var(--font-mono);font-size:11px;color:var(--ink-62);white-space:nowrap}
+.foot .set{color:var(--ink-60);margin-top:4px}
+
+/* Glyphs */
+.g{font-family:var(--font-mono);font-size:15px;line-height:16px;width:14px;text-align:center;flex-shrink:0;color:var(--ink-100)}
+.g.is-working::before{content:"⠋";animation:braille .9s steps(1,end) infinite}
+.g.is-slow::before{animation-duration:1.4s}
+.g.is-blocked{color:var(--blocked)}.g.is-blocked::before{content:"⠿";animation:pulse 1.6s ease-in-out infinite}
+.g.is-idle{color:var(--ink-30)}.g.is-idle::before{content:"⠶"}
+@keyframes braille{0%{content:"⠋"}10%{content:"⠙"}20%{content:"⠹"}30%{content:"⠸"}40%{content:"⠼"}50%{content:"⠴"}60%{content:"⠦"}70%{content:"⠧"}80%{content:"⠇"}90%{content:"⠏"}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.g::before{animation:none!important}}
+.cl{width:15px;height:15px;fill:var(--claude);stroke:none}
+.cl.is-small{width:13px;height:13px}
+.cl.is-idle{opacity:.45}
+
+/* Main */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;position:relative}
+.tabs{height:40px;padding:0 10px;gap:2px;border-bottom:1px solid var(--hairline);flex:none}
+.tab{height:28px;padding:0 10px;border-radius:8px;gap:8px;font-size:12.5px;color:var(--ink-50);white-space:nowrap}
+.tab.is-on{background:var(--side);box-shadow:inset 0 0 0 1px var(--panel-line);color:var(--ink-100)}
+.tab .x{color:var(--ink-45);display:flex}
+.tlink{gap:6px;font-size:12px;color:var(--ink-50);padding:0 8px}
+.tlink svg{width:13px;height:13px}
+.seg{position:absolute;right:14px;top:52px;display:flex;gap:2px;padding:2px;border-radius:8px;box-shadow:inset 0 0 0 1px var(--panel-line);background:var(--win);z-index:2}
+.seg span{font-size:11.5px;padding:3px 10px;border-radius:6px;color:var(--ink-45)}
+.seg .is-on{background:var(--selected);box-shadow:var(--shadow-selected);color:var(--ink-100)}
+.scroll{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 56px;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 64px);mask-image:linear-gradient(to bottom,transparent 0,#000 64px)}
+.col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-bottom:16px;font-size:13.5px;line-height:21px;color:var(--ink-85)}
+.col p{margin:0}
+.col code{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-62)}
+.ref{font-family:var(--font-mono);font-size:12px;color:var(--ink-100)}
+.tool{font-size:12px;color:var(--ink-42)}
+.tool::before{content:"› ";font-family:var(--font-mono);color:var(--ink-30)}
+.done{display:flex;gap:10px;align-items:baseline}
+.done b{font-size:12px;font-weight:500;color:var(--ink-100);flex:none}
+.workers{display:flex;flex-direction:column;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);padding:4px 0}
+.wr{display:grid;grid-template-columns:16px 46px 44px 1fr auto;gap:12px;align-items:center;height:30px;padding:0 6px;font-size:13px;color:var(--ink-60)}
+.wr .id{font-family:var(--font-mono);font-size:11px;color:var(--ink-38)}
+.wr .end{font-family:var(--font-mono);font-size:11px;color:var(--ink-38)}
+.wr.is-ask{color:var(--ink-100)}
+.wr.is-ask .end{color:var(--blocked)}
+.col h3{margin:8px 0 0;font-size:14px;line-height:20px;font-weight:500;color:var(--ink-100)}
+.col ol,.col ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.col li::marker{color:var(--ink-35)}
+.meta{display:flex;gap:14px;font-family:var(--font-mono);font-size:11px;color:var(--ink-30)}
+.fold{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-35)}
+.fold::before,.fold::after{content:"";flex:1;border-top:1px solid var(--hairline)}
+.fold b{font-weight:400;color:var(--ink-50)}
+
+/* Bottom: question card and reply box */
+.bottom{padding:0 56px 16px}
+.bottom>div{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
+.q{background:var(--side);border:1px solid var(--input-line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px}
+.qh{gap:9px;padding:0 12px 6px;font-size:11.5px;color:var(--ink-45)}
+.qh .mono{font-size:11px}
+.qt{font-size:14px;line-height:20px;color:var(--ink-100);padding:2px 12px}
+.qc{font-family:var(--font-mono);font-size:11.5px;line-height:17px;color:var(--ink-62);padding:2px 12px 8px}
+.opt{display:flex;gap:12px;padding:8px 12px;border-radius:9px;align-items:flex-start}
+.opt.is-picked{background:var(--hover)}
+.opt .k{font-family:var(--font-mono);font-size:11px;color:var(--ink-32);margin-top:2px}
+.opt .l{font-size:13px;color:var(--ink-90)}
+.opt .d{display:block;font-size:12px;line-height:17px;color:var(--ink-45);margin-top:2px}
+.qf{gap:12px;padding-top:6px}
+.field{flex:1;height:30px;border:1px solid var(--input-line);border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12.5px;color:var(--ink-30)}
+.keys{font-family:var(--font-mono);font-size:11px;color:var(--ink-32);white-space:nowrap;padding-right:6px}
+.reply{border:1px solid var(--input-line);border-radius:12px;padding:11px 12px 9px 14px;display:flex;flex-direction:column;gap:14px;background:var(--side)}
+.reply>span{color:var(--ink-30)}
+.rf{gap:12px;font-size:12px;color:var(--ink-50)}
+.rf .mono{font-size:11px;color:var(--ink-42)}
+.send{width:24px;height:24px;border-radius:12px;background:var(--hover-strong);display:grid;place-items:center;color:var(--ink-50);font-size:12px}
+.ticks{position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+.ticks i{display:block;height:2px;border-radius:1px;background:var(--tick)}
+.ticks i.is-new{background:var(--ink-100)}
+.ticks b{font:500 11px/14px var(--font-mono);color:var(--ink-100);margin-bottom:3px}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>contr chat: Herdr layout, contr tokens</h1>
+  <p>The layout is Herdr's as it is now: a full-height sidebar with the machine switch, Projects, agents and workers, usage and Settings; one tab bar with Files and Changes; Chat and Terminal at the top right; the reply box at the foot. The colors, type, glyphs and the question card come from the contr design system. The glass is drawn as solid fills, as the system says for reduced transparency. Red marks only the worker that waits for you.</p>
+  <div class="frame"><div class="win" id="win"></div></div>
+</div>
+<script>
+(() => {
+const cl = (c = '') => `<svg class="cl ${c}" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></svg>`;
+const ic = {
+  search:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>`,
+  side:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 3v10"/></svg>`,
+  plus:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>`,
+  folder:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M2 4.2c0-.7.5-1.2 1.2-1.2h3l1.4 1.6h5.2c.7 0 1.2.5 1.2 1.2v6c0 .7-.5 1.2-1.2 1.2H3.2c-.7 0-1.2-.5-1.2-1.2z"/></svg>`,
+  file:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/></svg>`,
+  branch:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="5" cy="3.5" r="1.5"/><circle cx="5" cy="12.5" r="1.5"/><circle cx="11" cy="5.5" r="1.5"/><path d="M5 5v6M11 7c0 3-6 2-6 4"/></svg>`,
+  gear:`<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2"/><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6 5 5M11 11l1.4 1.4M3.6 12.4 5 11M11 5l1.4-1.4"/></svg>`,
+  x:`<svg viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="m2 2 6 6M8 2 2 8"/></svg>`,
+};
+const r = n => `<span class="ref">#${n}</span>`;
+
+document.getElementById('win').innerHTML = `
+<aside class="side">
+  <div class="row side-top"><span class="lights"><span></span><span></span><span></span></span><span class="brand">contr</span><span class="machine cut">This Mac ▾</span><span class="grow"></span><span class="icb">${ic.search}</span><span class="icb">${ic.side}</span></div>
+  <div class="row head"><span class="grow">Projects</span><span class="icb">${ic.plus}</span></div>
+  <div class="list">
+    <div class="row proj"><span class="chev">▼</span>${ic.folder}<span>herdr-contr</span><span class="br">main</span><span class="end">↓8</span></div>
+    <div class="row ag">${cl('is-idle')}<span class="grow cut">Context not appearing</span><span class="age">22h</span></div>
+
+    <div class="row proj"><span class="chev">▼</span>${ic.folder}<span>sample-game</span><span class="br">main</span></div>
+    <div class="row ag is-selected">${cl()}<div class="lines"><span class="cut">Contr orchestrate coordinator</span><span class="sub">Orchestrating · 3 workers</span></div><span class="g is-working is-slow"></span></div>
+    <div class="kids">
+      <div class="row wk">${cl('is-small')}<span class="grow cut">Small things drawn and picked</span><span class="id">b-185</span><span class="g is-working"></span></div>
+      <div class="row wk">${cl('is-small')}<span class="grow cut">Tool rules in the simulation</span><span class="id">s-177</span><span class="g is-working is-slow"></span></div>
+      <div class="row wk is-ask">${cl('is-small')}<span class="grow cut">The crafting view</span><span class="id">b-174</span><span class="g is-blocked"></span></div>
+    </div>
+
+    <div class="row proj"><span class="chev">▼</span>${ic.folder}<span>contr-desktop</span><span class="br">main</span></div>
+    <div class="row ag">${cl('is-idle')}<span class="grow cut">Herdr tabs styling</span><span class="age">&lt;1m</span></div>
+  </div>
+  <div class="foot">
+    <div class="row" style="gap:12px"><span style="width:44px">Claude</span><span class="meter"><span style="width:2%"></span></span><span class="v">0% wk</span></div>
+    <div class="row" style="gap:12px"><span style="width:44px">Codex</span><span class="meter"><span style="width:3%"></span></span><span class="v">2% 5h · 5h</span></div>
+    <div class="row set">${ic.gear}<span class="grow">Settings</span><span class="icb" style="width:20px;height:20px">${ic.plus}</span></div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="row tabs">
+    <div class="row tab is-on">${cl()}<span>Contr orchestrate coordinator</span><span class="x">${ic.x}</span></div>
+    <span class="icb">${ic.plus}</span>
+    <span class="grow"></span>
+    <span class="row tlink">${ic.file}<span>Files</span></span>
+    <span class="row tlink">${ic.branch}<span>Changes</span></span>
+  </div>
+  <div class="seg"><span class="is-on">Chat</span><span>Terminal</span></div>
+
+  <div class="scroll"><div class="col">
+    <span class="tool">Ran a command</span>
+    <p>b-173 rebased ${r(193)}; its new head is <code>e58c90a</code>. The gate on that head runs in the background now. I merge ${r(193)} when it passes, then start the crafting view (${r(174)}) and the tool rules (${r(177)}).</p>
+    <span class="tool">Ran 4 commands, used connectors 3 times</span>
+    <div class="done"><b>Done</b><span>${r(193)} is merged: the counter now shows every item you have. <code>main</code> is at <code>8265ac1</code>.</span></div>
+    <p>The gate passed on the exact head after the rebase: 342 simulation tests, 449 edit-mode tests, 14 play-mode tests.</p>
+    <p>I started the next two slices, so three workers run:</p>
+    <div class="workers">
+      <div class="wr"><span class="g is-working"></span><span class="id">b-185</span>${r(185)}<span>Small things drawn and picked by hand</span><span class="end">4m</span></div>
+      <div class="wr is-ask"><span class="g is-blocked"></span><span class="id">b-174</span>${r(174)}<span>The crafting view</span><span class="end">asks you</span></div>
+      <div class="wr"><span class="g is-working is-slow"></span><span class="id">s-177</span>${r(177)}<span>Tool rules in the simulation</span><span class="end">2m</span></div>
+    </div>
+    <ul>
+      <li>${r(174)} builds the recipe cards as you chose: a round craft button under the counter, or the key C.</li>
+      <li>${r(177)} makes a tree need an axe and a rock need a pick. The game does not change until the slice after it (${r(178)}) turns the rule on.</li>
+    </ul>
+    <h3>Before your build</h3>
+    <ol>
+      <li>Empty hands and the held tool (${r(178)}): after ${r(177)} and ${r(185)}.</li>
+      <li>The bubble for the missing tool (${r(186)}): after ${r(177)} and ${r(174)}.</li>
+    </ol>
+    <p>I wait for the workers' reports now.</p>
+    <div class="meta"><span>18:38</span><span>2m 8s</span><span>8 tools</span></div>
+    <div class="fold"><span>2 notes from b-185's picture checker · <b>show</b></span></div>
+  </div></div>
+
+  <div class="bottom"><div>
+    <div class="q">
+      <div class="row qh"><span class="g is-blocked" style="font-size:13px"></span><span class="mono">b-174</span><span>The crafting view · 1m</span></div>
+      <div class="qt">Run the play-mode tests?</div>
+      <div class="qc">Unity -batchmode -runTests -testPlatform PlayMode -projectPath game</div>
+      <div class="opt is-picked"><span class="k">1</span><span><span class="l">Allow once · recommended</span><span class="d">The gate needs the 14 play-mode tests before the merge.</span></span></div>
+      <div class="opt"><span class="k">2</span><span><span class="l">Deny</span><span class="d">b-174 stops and reports without the tests.</span></span></div>
+      <div class="row qf"><div class="field">Or type an answer</div><span class="keys">1-2 pick  ⏎ send  esc close</span></div>
+    </div>
+    <div class="reply"><span>Reply to Contr orchestrate coordinator</span>
+      <div class="row rf"><span class="icb" style="width:18px;height:18px">${ic.plus}</span>${cl()}<span style="color:var(--ink-85)">fable</span><span>medium</span><span class="grow"></span><span class="mono">53%</span><span class="mono">main</span><span class="send">↑</span></div>
+    </div>
+  </div></div>
+
+  <div class="ticks"><b>2</b><i style="width:10px"></i><i style="width:14px"></i><i style="width:8px"></i><i style="width:12px"></i><i style="width:10px"></i><i class="is-new" style="width:14px"></i><i class="is-new" style="width:10px"></i></div>
+</div>`;
+})();
+</script>
+</body>
+</html>

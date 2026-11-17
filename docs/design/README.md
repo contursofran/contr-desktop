@@ -1,5 +1,10 @@
 # The design to aim for
 
+> [!NOTE]
+> The owner approved a redesign on 2026-11-17: `redesign/README.md`. It
+> wins for each part that it shows. This page stays the reference for the
+> parts that are not redone yet.
+
 The target is herdr-contr as the owner uses it on 2026-11-16:
 
 ![herdr-contr on 2026-11-16](herdr-contr-2026-11-16.png)
