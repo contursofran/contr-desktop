@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
@@ -20,7 +20,7 @@ async function open(name: string, env: Record<string, string> = {}) {
     ...env,
   });
   const page = await app.firstWindow();
-  const answers = () => readFileSync(log, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+  const answers = () => (existsSync(log) ? readFileSync(log, "utf8") : "").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
   return { app, page, answers };
 }
 
@@ -112,6 +112,32 @@ test("a multi-select question takes picks, then the next question's own answer",
   await section.getByRole("button", { name: "Send" }).click();
   await expect(section).toContainText("Answer sent. Waiting for the agent.");
   expect(answers()).toEqual([{ cmd: "answer", terminal: "t7", request: "toolu_01Wm3Fq8Lz5Yt2Nd6Xc9Bv4s", answers: [{ picks: [0, 2] }, { picks: [], other: "Only after CI passes" }] }]);
+  await app.close();
+});
+
+test("Enter with nothing picked and no own text does nothing; Next and Send are off until then", async () => {
+  test.setTimeout(60_000);
+  const { app, page, answers } = await open("multi-question");
+  const section = page.getByRole("region", { name: "Question" });
+  await expect(section).toContainText("Checks · 1 of 2 · pick any");
+  await expect(section.getByRole("button", { name: "Next" })).toBeDisabled();
+  await key(page, "Enter");
+  await key(page, "Enter");
+  await expect(section).toContainText("Checks · 1 of 2 · pick any");
+  await key(page, "1");
+  await expect(section.getByRole("button", { name: "Next" })).toBeEnabled();
+  await key(page, "Enter");
+  await expect(section).toContainText("Branch · 2 of 2");
+  await expect(section.getByRole("button", { name: "Send" })).toBeDisabled();
+  await key(page, "Enter");
+  // Enter in an empty "Own answer" field does nothing too.
+  await section.getByRole("textbox", { name: "Own answer" }).press("Enter");
+  await page.waitForTimeout(500);
+  await expect(section).toContainText("Branch · 2 of 2");
+  await expect(section.getByRole("status")).toHaveCount(0);
+  expect(answers()).toEqual([]);
+  await section.getByRole("textbox", { name: "Own answer" }).fill("Later");
+  await expect(section.getByRole("button", { name: "Send" })).toBeEnabled();
   await app.close();
 });
 

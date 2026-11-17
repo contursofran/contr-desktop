@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Card } from "./chat/card/Card";
+import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
@@ -139,9 +139,14 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
       {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window.
           They come before the chat rows in the DOM, so Tab reaches the reply box first; `order-last` shows them under the rows. */}
       {/* The same scrollbar gutters as the chat list, so the cards, status line and reply box line up with the rows. */}
-      <div className="order-last overflow-hidden px-4 [scrollbar-gutter:stable_both-edges]">
-        <OwnerCards items={owner} />
-        {feed.card && <Card card={feed.card} />}
+      {/* Stacked cards scroll in a block of at most 45% of the window; the status line and the reply box stay under it (issue #139). */}
+      <div className="order-last flex flex-col overflow-hidden px-4 [scrollbar-gutter:stable_both-edges]">
+        {/* `flex-col-reverse` starts the block scrolled to its end: the agent's card, next to the reply box, stays in view. */}
+        <div role="group" aria-label="Cards" className="flex max-h-[45vh] min-h-0 flex-col-reverse overflow-y-auto">
+          {feed.card && <Card card={feed.card} />}
+          {/* One card owns the digit and Enter keys: the agent's card first, as it blocks the agent; else the owner question. */}
+          <div><OwnerCards items={owner} keys={!cardShows(feed.card)} /></div>
+        </div>
         <StatusLine
           working={feed.working}
           right={down ? undefined : orchestratingText(workers)}
@@ -152,7 +157,8 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
           <ReplyBox terminal={terminal} title={title} draft={draft} />
         </fieldset>
       </div>
-      {feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}
+      {/* The chat list keeps at least 120 px: the cards block gives way first. */}
+      <div className="flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}</div>
     </>
   );
 }

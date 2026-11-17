@@ -44,15 +44,18 @@ export function useSavedNote(): [string | null, (n: string) => void] {
   }];
 }
 
-/** The owner question card, then the owner to-do card: the oldest open item of each, one at a time. */
-export function OwnerCards({ items }: { items: OwnerItems }) {
+/**
+ * The owner question card, then the owner to-do card: the oldest open item of each, one at a time.
+ * `keys` false: the agent's card owns the card keys, so the question takes none and shows no key badges.
+ */
+export function OwnerCards({ items, keys = true }: { items: OwnerItems; keys?: boolean }) {
   const [qNote, setQNote] = useSavedNote();
   const [tNote, setTNote] = useSavedNote();
   const q = items.questions[0];
   const t = items.todos[0];
   return (
     <>
-      {q ? <Question key={q.id} q={q} rest={items.questions.length - 1} onSaved={setQNote} /> : qNote && <Note text={qNote} />}
+      {q ? <Question key={q.id} q={q} rest={items.questions.length - 1} onSaved={setQNote} keys={keys} /> : qNote && <Note text={qNote} />}
       {t ? <Todo key={t.id} t={t} rest={items.todos.length - 1} onSaved={setTNote} /> : tNote && <Note text={tNote} />}
     </>
   );
@@ -78,19 +81,18 @@ function useRun(onSaved: (n: string) => void) {
   return { off, error, go };
 }
 
-/** `keys` false: the digit and Enter keys do not answer (the Inbox shows many cards at once). */
+/** `keys` false: the digit and Enter keys do not answer and no key badge shows (the Inbox shows many cards at once). */
 export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; rest: number; onSaved: (n: string) => void; keys?: boolean }) {
   const { off, error, go } = useRun(onSaved);
   const [other, setOther] = useState("");
   const otherRef = useRef<HTMLInputElement>(null);
   const send = (answer: string) => answer.trim() && void go(() => window.contr.ownerAnswer(q.id, answer.trim()));
   useKeys((k) => {
-    if (!keys) return;
     const n = Number(k);
     if (n >= 1 && n <= q.options.length) send(q.options[n - 1]!.label);
     else if (n === q.options.length + 1) otherRef.current?.focus();
     else if (k === "Enter") send(other);
-  });
+  }, keys);
   return (
     <section aria-label="Owner question" className={box}>
       <p className="text-xs text-muted">{q.id} · The coordinator asks{more(rest)}</p>
@@ -99,7 +101,7 @@ export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; 
       <div className="mt-2 flex flex-col gap-1">
         {q.options.map((o, i) => (
           <button key={o.label} type="button" disabled={off} onClick={() => send(o.label)} className={`${button} items-start text-left`}>
-            <span className={key}>{i + 1}</span>
+            {keys && <span className={key}>{i + 1}</span>}
             <span className="flex flex-col">
               <span>{o.label}{o.recommended ? <span className="text-muted"> (Recommended)</span> : null}</span>
               {o.impact && <span className="text-xs text-muted">{o.impact}</span>}
@@ -107,7 +109,7 @@ export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; 
           </button>
         ))}
         <label className="flex items-center gap-2 px-3 py-1">
-          <span className={key}>{q.options.length + 1}</span>
+          {keys && <span className={key}>{q.options.length + 1}</span>}
           <input
             ref={otherRef}
             aria-label="Own answer"
