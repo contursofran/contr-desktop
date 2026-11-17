@@ -4,7 +4,7 @@ import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerC
 import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
 import { blockedAgents } from "../shared/inbox";
-import { ChatList } from "./chat/list/ChatList";
+import { ChatList, ChatLoading } from "./chat/list/ChatList";
 import { Empty } from "./chat/Empty";
 import { HelperError } from "./chat/HelperError";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
@@ -154,11 +154,12 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
         />
         {/* A disabled fieldset turns off every control of the reply box; the draft stays. */}
         <fieldset disabled={down} className="min-w-0 disabled:opacity-50">
-          <ReplyBox terminal={terminal} title={title} draft={draft} />
+          {/* The box takes the keyboard once the first full answer tells whether a card owns the card keys. */}
+          <ReplyBox terminal={terminal} title={title} draft={draft} keyboard={feed.card === undefined ? undefined : !cardShows(feed.card) && owner.questions.length === 0} />
         </fieldset>
       </div>
       {/* The chat list keeps at least 120 px: the cards block gives way first. */}
-      <div className="flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}</div>
+      <div className="flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : feed.loaded ? <ChatList rows={feed.rows} /> : <ChatLoading />}</div>
     </>
   );
 }

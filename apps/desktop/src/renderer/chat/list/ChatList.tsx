@@ -3,6 +3,17 @@ import { ArrowDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "../../../shared/api";
 import { Row } from "../rows/Row";
+import { Spinner } from "../rows/Spinner";
+
+/** The chat before the helper's first answer (issue #141): the braille loader and a short muted text, not a blank area. */
+export function ChatLoading() {
+  return (
+    <div role="status" aria-label="Reading the chat" className="flex min-h-0 flex-1 items-center justify-center gap-2 px-8 text-[12.5px] text-muted">
+      <Spinner size={13} />
+      Reading the chat…
+    </div>
+  );
+}
 
 // The chat rows in a virtual list (Legend List, as t3code's MessagesTimeline).
 // Only the rows near the viewport are in the DOM. The list follows new rows

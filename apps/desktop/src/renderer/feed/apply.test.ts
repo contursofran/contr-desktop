@@ -46,3 +46,13 @@ describe("applyFeed card", () => {
     expect(applyFeed(withCard, { type: "card", card: null }).card).toBeNull();
   });
 });
+
+describe("applyFeed loaded", () => {
+  it("is false until the helper's first answer of any kind", () => {
+    expect(emptyFeed.loaded).toBe(false);
+    expect(applyFeed(emptyFeed, { type: "splice", at: 0, rows: [] }).loaded).toBe(true);
+    expect(applyFeed(emptyFeed, { type: "card", card: null }).loaded).toBe(true);
+    expect(applyFeed(emptyFeed, { type: "working", working: { text: "Hashing…", detail: "" } }).loaded).toBe(true);
+    expect(applyFeed(emptyFeed, { type: "error", code: "no-core", message: "down" }).loaded).toBe(true);
+  });
+});

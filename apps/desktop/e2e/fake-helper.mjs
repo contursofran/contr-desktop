@@ -13,6 +13,7 @@
 // `usage` gives Claude and Codex plans that reset some hours and days from now.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
 // FAKE_HELPER_ERROR_WHILE=<file> does the same with the code `no-core` while that file is there.
+// FAKE_HELPER_SLOW_FEED=<ms> and FAKE_HELPER_SLOW_SEND=<ms> make `feed` and `send` wait that long before they answer.
 // The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
 // `working` and `card` give that worker's data. FAKE_HELPER_CARD and FAKE_HELPER_MODEL=none still win.
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
@@ -34,6 +35,8 @@ const arg = (name) => {
 const out = (line) => process.stdout.write(`${JSON.stringify(line)}\n`);
 const end = (ok) => out({ ms: 1, ok, type: "end" });
 const worker = workers[arg("terminal")];
+const slow = { feed: process.env.FAKE_HELPER_SLOW_FEED, send: process.env.FAKE_HELPER_SLOW_SEND }[cmd];
+if (slow) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(slow));
 
 out({ build: "fake", cmd, protocol: 1, sidecar: "0.0.0-fake", type: "header" });
 const failing = process.env.FAKE_HELPER_ERROR || (process.env.FAKE_HELPER_ERROR_WHILE && existsSync(process.env.FAKE_HELPER_ERROR_WHILE) && "no-core");
