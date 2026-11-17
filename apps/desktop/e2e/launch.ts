@@ -2,7 +2,7 @@ import { _electron as electron } from "@playwright/test";
 import { mkdtempSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { launchEnv, type LaunchOptions } from "./launch-env";
+import { launchEnv, type LaunchOptions } from "./launch-env.ts";
 
 /**
  * Starts the app for e2e. CONTR_E2E=1 keeps the app in the background:
