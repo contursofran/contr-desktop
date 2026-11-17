@@ -49,8 +49,8 @@ export interface ContrApi {
   onFeed(listener: (event: FeedEvent) => void): () => void;
   /** Types a message into the agent's terminal and presses Enter. */
   send(text: string): Promise<{ ok: boolean; message?: string }>;
-  /** A tab's title for a terminal with no sidebar entry: hc `title`, else the program name, else "Terminal". Never the address. */
-  tabTitle(terminal: string): Promise<string | null>;
+  /** A tab's title for a terminal with no sidebar entry: hc `title`, else the program name, else "Terminal". Never the address. `gone`: hc runs and does not list the terminal. `error`: hc failed, so the tab stays. */
+  tabTitle(terminal: string): Promise<TabTitle>;
   /** Saves the clipboard's image as a PNG with the helper's `paste-image`. `path` is null when there is no image. */
   pasteImage(): Promise<{ ok: boolean; path?: string | null; message?: string }>;
   /** Opens the native file picker for an image (png, jpeg, gif, webp). `path` is null when the owner cancels. */
@@ -122,6 +122,9 @@ export interface ContrApi {
   onOpenSettings(listener: () => void): () => void;
   terminal: TerminalApi;
 }
+
+/** The answer of `tabTitle`: the title, the terminal is gone (hc runs and does not list it), or hc failed. */
+export type TabTitle = { title: string } | { gone: true } | { error: string };
 
 /** An agent row. An orchestrator has workers (hc `parent`). `name` is the worker's name, else hc's name. */
 export interface SidebarAgent {

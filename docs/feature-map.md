@@ -97,7 +97,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Terminal view | Clicks Terminal | Click | `button "Terminal"` | The agent's hc terminal (xterm.js); keys go to it | `terminal`, `fake-terminal` |
-| Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | "The connection to hc ended." and hc's words; Retry attaches when the file is gone; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `terminal-error` |
+| Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | "The connection to hc ended." and hc's words; Retry attaches when the file is gone; when the sidebar's "hc is not reachable" clears, the terminal attaches again with no Retry; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `terminal-error`, `hc-outage` |
 
 ## Inbox
 
@@ -121,7 +121,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Update | Clicks Update | `CONTR_UPDATE_URL`, `CONTR_VERSION` | `button "Update"`, label "Update ready" | A dot in the foot; the .dmg downloads, or the .zip installs and shows "Restart to update"; failures show their message | `update`, `update-file` |
 | Change log | Reads the releases | `CONTR_RELEASES_URL` | `region "Change log"`, `button "Show older"`, `button "Retry"` | Newest first, with marks and dates; Loading, a failure text with Retry | `changelog`, `update-file` |
 | Window size | Makes the window small | — | — | The window is at least 640 × 480 | `restart` |
-| Restart | Quits and starts the app | — | — | The shown agent, the Chat or Terminal pick, the tab order and the sidebar state stay | `restart`, `topbar`, `sidebar-head-foot` |
+| Restart | Quits and starts the app | — | — | The shown agent, the Chat or Terminal pick, the tab order and the sidebar state stay; with `FAKE_HC_DOWN=<a file that exists>` the saved tabs stay, and get their titles when hc is back | `restart`, `topbar`, `sidebar-head-foot`, `hc-outage` |
 
 ## Core
 

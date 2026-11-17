@@ -1,4 +1,5 @@
-import { execFile } from "node:child_process";
+import type { TabTitle } from "../../shared/api";
+import { readHcList, runRead } from "../sidebar/agents";
 
 /** The title of an hc terminal from `hc get --json`: its `title`, else its `name`, else the terminal address. */
 export function readTitle(json: string, terminal: string): string {
@@ -27,9 +28,16 @@ export function readTabTitle(json: string): string {
   return "Terminal";
 }
 
-/** Reads a tab's title once with `hc get --json` (read-only); null when hc does not list the terminal. CONTR_HC picks the hc program. */
-export function tabTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string | null> {
-  return new Promise((resolve) => {
-    execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (error, stdout) => resolve(error ? null : readTabTitle(String(stdout ?? ""))));
-  });
+/**
+ * Reads a tab's title once with `hc get --json` (read-only). CONTR_HC picks the hc program.
+ * When `hc get` fails, `hc ls --json` tells why: the terminal is `gone` only when hc runs and does not list it.
+ * When hc itself fails (no core, no answer), the answer is an `error` and the tab stays.
+ */
+export async function tabTitle(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<TabTitle> {
+  const get = await runRead(hc, ["get", "--json", terminal]);
+  if (!get.error) return { title: readTabTitle(get.out) };
+  const ls = await runRead(hc, ["ls", "--json"]);
+  const { terms, error } = readHcList(ls.out, ls.error);
+  if (error) return { error };
+  return terms.some((t) => t.address === terminal) ? { error: get.error } : { gone: true };
 }

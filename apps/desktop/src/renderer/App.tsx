@@ -28,7 +28,11 @@ export function App() {
   }, []);
   // The open tabs. Selecting an agent anywhere opens its tab.
   const [tabs, setTabs] = useState<string[]>(readTabs);
-  useEffect(() => saveTabs(tabs), [tabs]);
+  // While hc fails, the tab list is not saved: a restart in an hc outage keeps the saved tabs.
+  const hcDown = sidebar.hcError !== undefined;
+  useEffect(() => {
+    if (!hcDown) saveTabs(tabs);
+  }, [tabs, hcDown]);
   // The Chat / Terminal pick is one for the window: it stays when another agent shows and over a restart.
   const [side, setSide] = useState<Side>(readSide);
   useEffect(() => saveSide(side), [side]);
@@ -47,19 +51,25 @@ export function App() {
     saveShown(sidebar.selected);
   }, [sidebar]);
   useEffect(() => setTabs((t) => openTab(t, sidebar.selected)), [sidebar.selected]);
-  // Titles from hc for tabs with no sidebar entry, read once per terminal.
+  // Titles from hc for tabs with no sidebar entry, read once per terminal. While hc fails, no title is read and no tab closes.
   const [titles, setTitles] = useState<Record<string, string>>({});
   useEffect(() => {
+    if (hcDown) return;
     for (const t of tabs) {
       if (findAgent(sidebar, t) || t in titles) continue;
       setTitles((m) => ({ ...m, [t]: "" }));
-      void window.contr.tabTitle(t).then((title) => {
-        // hc does not list the terminal: a saved tab of a gone agent closes.
-        if (title === null) setTabs((open) => open.filter((x) => x !== t));
-        else setTitles((m) => ({ ...m, [t]: title }));
+      void window.contr.tabTitle(t).then((r) => {
+        // hc runs and does not list the terminal: a saved tab of a gone agent closes.
+        if ("gone" in r) setTabs((open) => open.filter((x) => x !== t));
+        else if ("title" in r) setTitles((m) => ({ ...m, [t]: r.title }));
+        // hc failed: the tab stays, and its title is read again after the next hc outage (below), not in a loop.
       });
     }
-  }, [tabs, sidebar, titles]);
+  }, [tabs, sidebar, titles, hcDown]);
+  // An hc outage starts: the titles not read yet are read again when it ends.
+  useEffect(() => {
+    if (hcDown) setTitles((m) => Object.fromEntries(Object.entries(m).filter(([, title]) => title !== "")));
+  }, [hcDown]);
   // The Inbox in the main pane (D95) until an agent is selected.
   const [inbox, setInbox] = useState(false);
   // The Settings view in the main pane, from the sidebar foot.
