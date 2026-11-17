@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ErrorNote } from "../ui/ErrorNote";
+import { PathText } from "../ui/PathText";
 
 /** The helper's error codes in plain words, as herdr-contr's chat says them (mods/herdr-contr/chat.js, `problem`). */
 const SAY: Record<string, string> = {
@@ -20,7 +21,7 @@ export function helperProblem(error: { code: string; message: string }): string 
 
 /**
  * A failed `feed` in the reading column (ui/ErrorNote.tsx): what failed, the error text in mono,
- * the helper's path as Settings shows it, and Retry, which starts the feed again.
+ * the helper's path as Settings shows it (with its tooltip and Copy), and Retry, which starts the feed again.
  */
 export function HelperError({ error, onRetry }: { error: { code: string; message: string }; onRetry: () => void }) {
   const [helper, setHelper] = useState("");
@@ -28,9 +29,9 @@ export function HelperError({ error, onRetry }: { error: { code: string; message
   return (
     <div className="flex min-h-0 flex-1 items-center px-4">
       <ErrorNote label="Helper error" problem={helperProblem(error)} detail={`${error.code}: ${error.message}`} onRetry={onRetry}>
-        <p className="mt-2 flex min-w-0 gap-2 text-xs text-muted">
+        <p className="mt-2 flex min-w-0 items-center gap-2 text-xs text-muted">
           <span className="shrink-0">Helper</span>
-          <span aria-label="Helper path" className="min-w-0 truncate font-mono text-[11px]">{helper}</span>
+          <PathText label="Helper path" path={helper} />
         </p>
       </ErrorNote>
     </div>

@@ -14,16 +14,15 @@ const inert = "flex size-7 items-center justify-center rounded-lg text-faint [-w
  * sidebar toggle on the first row, the machine switch on its own row under it, so the
  * machine name reads in full (decision: the PR of issue 50). The toggle hides the sidebar (`onHide`); the top bar then has the
  * toggle that shows it. Search and "Add machine…" do nothing yet, so they are inert as the top bar's +: `aria-disabled`, `faint`, "(not yet)".
- * The pick only changes the label: it filters no project yet, as the app reads agents of this computer only.
+ * The app reads agents of this computer only, so the other machines are inert as "Add machine…", with "(not yet)",
+ * and the label stays "This computer": a picked machine over this computer's agents would be wrong data.
  */
 export function Head({ onHide }: { onHide: () => void }) {
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => void window.contr.machines().then(setMachines), []);
-  const shown = machines.some((m) => m.name === picked) ? picked : null;
   const item = "flex h-8 w-full cursor-default items-center gap-2 rounded-md px-2 text-left text-[13px] outline-none data-highlighted:bg-hover";
   const row = (name: string | null, label: string, state?: string) => (
-    <MenuRadioItem key={label} value={name ?? ""} closeOnSelect className={item}>
+    <MenuRadioItem key={label} value={name ?? ""} disabled={name !== null} closeOnSelect className={`${item} ${name === null ? "" : "text-faint aria-disabled:data-highlighted:bg-transparent"}`}>
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {state && STATE[state] && <span className="text-xs text-dim">{STATE[state]}</span>}
       <MenuItemIndicator><Check aria-hidden className="size-3.5 text-muted" /></MenuItemIndicator>
@@ -40,13 +39,13 @@ export function Head({ onHide }: { onHide: () => void }) {
       <div className="flex px-3 pb-1">
         <Menu onOpenChange={(open) => open && void window.contr.machines().then(setMachines)}>
           <MenuTrigger aria-label="Machine" className="flex h-[26px] min-w-0 max-w-full items-center gap-1 rounded-md px-1.5 text-xs text-muted hover:bg-hover">
-            <span data-testid="machine-label" className="truncate">{shown ?? "This computer"}</span>
+            <span data-testid="machine-label" className="truncate">This computer</span>
             <ChevronDown aria-hidden className="size-3 shrink-0" />
           </MenuTrigger>
           <MenuContent side="bottom" align="start" sideOffset={4} className="m-0 w-[240px] rounded-xl border border-border bg-raised p-1 text-foreground shadow-lg [-webkit-app-region:no-drag]">
-            <MenuRadioGroup value={shown ?? ""} onValueChange={(v) => setPicked(v ? String(v) : null)}>
+            <MenuRadioGroup value="">
               {row(null, "This computer")}
-              {machines.map((m) => row(m.name, m.name, m.state))}
+              {machines.map((m) => <Tip key={m.name} label={`${m.name} (not yet)`} side="right">{row(m.name, m.name, m.state)}</Tip>)}
             </MenuRadioGroup>
             <MenuSeparator className="my-1 border-t border-border" />
             <Tip label="Add machine (not yet)" side="right">

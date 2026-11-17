@@ -39,3 +39,24 @@ export function serial() {
     return run;
   };
 }
+
+/** Program names by the helper's agent kind. Another kind shows as it is. */
+const PROGRAMS: Record<string, string> = { claude: "Claude Code", codex: "Codex" };
+
+/** The model button's tooltip (docs/design/recipe-herdr.md): "Opus 5.5 · medium effort · Claude Code", with only the known parts. */
+export function modelTip(label: string, effort: string | null, agent: string | null): string {
+  return [label, effort && `${effort} effort`, agent && (PROGRAMS[agent] ?? agent)].filter(Boolean).join(" · ");
+}
+
+/** The context ring's tooltip in plain words, not the helper's tag text. */
+export function contextTip(percent: number): string {
+  return `${percent}% of the model's context window`;
+}
+
+/**
+ * The reply box's placeholder: "Reply to <title>", else "Reply" while the title is not known.
+ * "Terminal" is the fallback of main/helper/title.ts `readTabTitle` for a terminal with no title and no agent: not a name.
+ */
+export function replyPlaceholder(title: string): string {
+  return title === "" || title === "Terminal" ? "Reply" : `Reply to ${title}`;
+}

@@ -40,9 +40,12 @@ export function nextAfterClose(tabs: string[], closed: string): string {
   return rest[Math.min(i, rest.length - 1)] ?? "";
 }
 
-/** The `scrollLeft` that puts an item (`left`, `width` in the row's content) in a row of `width` scrolled to `scroll`: the least move. */
+/**
+ * The `scrollLeft` that puts an item (`left`, `width` in the row's content) in a row of `width` scrolled to `scroll`: the least move.
+ * An item wider than the row shows from its start.
+ */
 export function scrollToShow(row: { width: number; scroll: number }, item: { left: number; width: number }): number {
-  if (item.left < row.scroll) return item.left;
+  if (item.left < row.scroll || item.width > row.width) return item.left;
   if (item.left + item.width > row.scroll + row.width) return item.left + item.width - row.width;
   return row.scroll;
 }
@@ -54,7 +57,8 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
  * As herdr-contr-tabs: an agent's tab has its program icon (ui/AgentIcon, one-color glyphs in `muted`),
  * then the title, then the loader in `working` while it works or a 6 px dot in `done` or `blocked`.
  * A tab with no agent keeps the sparkle: herdr-contr takes that icon from Herdr's program table, which we do not have.
- * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's:
+ * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's.
+ * A tab is at most as wide as the row: in a narrower row its label truncates. The scrollbar is
  * a 3 px `::-webkit-scrollbar` that takes its own room under the tabs (an overlay one drew over the shown tab),
  * and it scrolls the shown tab into view when the shown tab, the tabs or the row's width change (Herdr: `scroll_to_item(active)`).
  * With the sidebar hidden (`onShowSidebar`), the bar starts with the "Show sidebar" toggle, and on macOS it pads 76 px
@@ -104,7 +108,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
               const title = tabLabel(data, t, titles);
               const agent = findAgent(data, t);
               return (
-                <TabOrderItem key={t} value={t} className={`flex h-[29px] shrink-0 touch-none select-none items-center gap-[7px] rounded-[7px] border px-2.5 text-[12.8px] hover:bg-hover data-grabbed:w-0.5 data-grabbed:border-0 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:*:hidden ${shown ? "border-border bg-raised text-foreground" : "border-transparent text-muted"}`}>
+                <TabOrderItem key={t} value={t} className={`flex h-[29px] max-w-full shrink-0 touch-none select-none items-center gap-[7px] rounded-[7px] border px-2.5 text-[12.8px] hover:bg-hover data-grabbed:w-0.5 data-grabbed:border-0 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:*:hidden ${shown ? "border-border bg-raised text-foreground" : "border-transparent text-muted"}`}>
                   <Tip label={title}>
                     <button type="button" role="tab" aria-selected={shown} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-[7px]">
                       {agent ? <AgentIcon kind={agent.kind} size={14} color="var(--color-muted)" /> : <Sparkle aria-hidden className="size-3.5 shrink-0" />}
