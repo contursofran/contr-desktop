@@ -61,6 +61,11 @@ parts; when the design has no answer, ask.
   OS-level keys or mouse.
 - All must pass, and the `CI` check on the PR, before you report done.
 - The first PR sets these scripts up; until then, say which checks exist.
+- A test that fails at random: find the cause. Do not run it again to get
+  a green check, and add no sleep and no retry. If you cannot find the
+  cause, delete the test and write why in the PR.
+- A reviewer runs the items of `REVIEW.md` (read from `main`) whose
+  trigger matches the diff.
 
 ## Design rules (lessons from contr and herdr-contr)
 
@@ -109,5 +114,11 @@ parts; when the design has no answer, ask.
   messages. Do not @-mention people.
 - Temporary files go in `tmp/`, which git ignores.
 - When a change makes a doc wrong, update it in the same PR.
+- A PR that changes an assertion of an existing test, a fake or the CI
+  workflow says so in its body, with the reason for each. A change must not
+  change the check that judges it without a word.
+- Each PR body says how the change was verified (unit, e2e, real window,
+  screenshot, by hand), or "none". `.github/pull_request_template.md` has
+  these lines.
 - Report the PR number, the head SHA, the check status, the screenshot path
   and any deviation.
