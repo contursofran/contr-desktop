@@ -19,6 +19,7 @@
   --color-working: #0a84ff;
   --color-done: #30d158;
   --color-blocked: #ff9f0a;
+  --color-error: #ff9f0a;
   --color-pr-open: #3fb950;
   --color-pr-draft: #9198a1;
   --color-pr-merged: #ab7df8;
@@ -46,6 +47,8 @@
     --color-working: #007aff;
     --color-done: #34c759;
     --color-blocked: #ff9500;
+    /* Error text: `blocked`'s orange, dark enough for 4.5:1 on canvas, chrome and raised (docs/decisions/88-colors.md). */
+    --color-error: #a85000;
     --color-pr-open: #1a7f37;
     --color-pr-draft: #59636e;
     --color-pr-merged: #8250df;
