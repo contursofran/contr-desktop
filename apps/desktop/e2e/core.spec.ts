@@ -130,7 +130,8 @@ test.describe("the start install", () => {
     const page = await app.firstWindow();
     const view = await helperShown(page);
     await expect(view.getByLabel("Helper path")).toHaveText(path.join(core, "bin", "herdr-contr-feed"));
-    expect(calls().length).toBeGreaterThan(0);
+    // The log works: the feed's calls are in it.
+    await expect.poll(() => calls().length).toBeGreaterThan(0);
     expect(installs()).toEqual([]);
     await app.close();
   });
