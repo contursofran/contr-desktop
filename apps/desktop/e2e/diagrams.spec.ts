@@ -21,6 +21,18 @@ test("contr-flow and contr-seq draw; a block past a limit shows as code", async 
   expect(await flow.locator("[data-node]").allTextContents()).toEqual(["issue", "build", "review", "merge"]);
   await expect(flow.locator('[data-node="review"]')).toHaveAttribute("data-state", "waiting");
   await expect(flow.locator("[data-edge] text")).toHaveText(["plan", "PR", "blockers", "green"]);
+  // F18: a back arrow's label sits right of its curve, not on it.
+  const backEdge = await flow.locator('[data-edge="review->build"]').evaluate((g) => {
+    const curve = g.querySelector("path")!.getBBox();
+    const label = g.querySelector("text")!.getBBox();
+    return { curveRight: curve.x + curve.width, labelLeft: label.x };
+  });
+  expect(backEdge.labelLeft).toBeGreaterThan(backEdge.curveRight);
+  // F18: each diagram sits in the middle of its box.
+  for (const d of [flow, row.locator('[data-diagram="contr-seq"]')]) {
+    const [box, svg] = [(await d.boundingBox())!, (await d.locator("svg").boundingBox())!];
+    expect(Math.abs(svg.x + svg.width / 2 - (box.x + box.width / 2))).toBeLessThan(2);
+  }
 
   const seq = row.locator('[data-diagram="contr-seq"]');
   expect(await seq.locator("[data-actor]").allTextContents()).toEqual(["owner", "lead", "b-696"]);
