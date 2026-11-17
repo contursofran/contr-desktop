@@ -1,11 +1,13 @@
 // Draws `contr-flow` and `contr-seq` blocks as SVG (docs/design/chat-blocks.md).
 // Colors come from the theme tokens. Text width is estimated from the character count.
+// A diagram sits in the middle of its box, as herdr-contr draws a mermaid image (mdblocks.js).
 import { useId, type ReactNode } from "react";
 
 import { parseFlow, type Flow, type FlowState } from "./flow";
 import { parseSeq, type Seq } from "./seq";
 
 const CHAR = 7; // px for one character at 12 px
+const LABEL_CHAR = 6.5; // px for one character of an 11 px label
 const STATE_COLOR: Record<FlowState, string> = {
   done: "var(--color-done)",
   running: "var(--color-working)",
@@ -50,7 +52,11 @@ function FlowView({ flow }: { flow: Flow }) {
   const arrow = useId();
   const boxW = Math.max(72, Math.max(...flow.nodes.map((n) => n.name.length)) * CHAR + 32);
   const boxH = 28, gapX = 32, gapY = 52, side = 48;
-  const width = flow.width * (boxW + gapX) - gapX + side;
+  // A back arrow's label sits right of its curve, so the box is wider by the longest such label.
+  const layer = new Map(flow.nodes.map((n) => [n.name, n.layer]));
+  const back = flow.edges.filter((e) => e.label && layer.get(e.to)! <= layer.get(e.from)!);
+  const backLabel = Math.max(0, ...back.map((e) => e.label!.length * LABEL_CHAR + 6));
+  const width = flow.width * (boxW + gapX) - gapX + side + backLabel;
   const height = flow.layers * (boxH + gapY) - gapY;
   const pos = new Map(flow.nodes.map((n) => {
     const inLayer = flow.nodes.filter((m) => m.layer === n.layer).length;
@@ -58,7 +64,7 @@ function FlowView({ flow }: { flow: Flow }) {
     return [n.name, { x: left + n.slot * (boxW + gapX), y: n.layer * (boxH + gapY), node: n }];
   }));
   return (
-    <svg role="img" aria-label="Flow diagram" width={width} height={height + 2} viewBox={`0 -1 ${width} ${height + 2}`} className="block">
+    <svg role="img" aria-label="Flow diagram" width={width} height={height + 2} viewBox={`0 -1 ${width} ${height + 2}`} className="mx-auto block">
       <defs><Arrowhead id={arrow} /></defs>
       {flow.edges.map((e, i) => {
         const a = pos.get(e.from)!, b = pos.get(e.to)!;
@@ -72,12 +78,13 @@ function FlowView({ flow }: { flow: Flow }) {
           const [x1, y1, x2, y2] = [a.x + boxW, a.y + boxH / 2, b.x + boxW, b.y + boxH / 2 + (a === b ? 8 : 0)];
           const out = Math.max(x1, x2) + side * 0.6;
           d = `M${x1},${y1} C${out},${y1} ${out},${y2} ${x2},${y2}`;
-          [lx, ly] = [out - 12, (y1 + y2) / 2 + 4];
+          // The curve's far point (t = 0.5), and the label 6 px right of it.
+          [lx, ly] = [(x1 + x2) / 8 + (out * 3) / 4 + 6, (y1 + y2) / 2 + 4];
         }
         return (
           <g key={i} data-edge={`${e.from}->${e.to}`}>
             <path d={d} style={LINE} markerEnd={`url(#${arrow})`} />
-            {e.label && <text x={lx} y={ly} textAnchor="middle" style={LABEL}>{e.label}</text>}
+            {e.label && <text x={lx} y={ly} textAnchor={b.y > a.y ? "middle" : "start"} style={LABEL}>{e.label}</text>}
           </g>
         );
       })}
@@ -104,7 +111,7 @@ function SeqView({ seq }: { seq: Seq }) {
   const height = head + 12 + seq.messages.length * row;
   const cx = (a: string) => seq.actors.indexOf(a) * colW + colW / 2;
   return (
-    <svg role="img" aria-label="Sequence diagram" width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="block">
+    <svg role="img" aria-label="Sequence diagram" width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="mx-auto block">
       <defs><Arrowhead id={arrow} /></defs>
       {seq.actors.map((a) => {
         const w = a.length * CHAR + 24;

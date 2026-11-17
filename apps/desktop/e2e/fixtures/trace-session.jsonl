@@ -1,0 +1,8 @@
+{"id": "u1", "k": "user", "ts": 1793670000000, "text": "Show raw HTML, a missing picture and a tool call."}
+{"id": "a1", "k": "assistant", "ts": 1793670010000, "text": "An HTML block:\n\n<div>\nraw html <b>bold</b>\n</div>\n\nInline: a <kbd>Ctrl</kbd> key.\n\n![build graph](/nonexistent/path.png)\n\n![](/nonexistent/no-alt.png)"}
+{"id": "p1", "k": "perm", "ts": 1793670020000, "text": "Bash", "perm": {"title": "Bash", "command": "pnpm test", "tool": "Bash", "toolUseId": "toolu_1", "state": "pending"}}
+{"id": "p2", "k": "perm", "ts": 1793670030000, "text": "Edit", "perm": {"title": "Edit", "command": "", "tool": "Edit", "toolUseId": "toolu_2", "state": "resolved"}}
+{"id": "q1", "k": "question", "ts": 1793670040000, "question": {"agent": "claude", "delivery": "picker", "questions": [{"header": "Color", "id": "Pick a color?", "multi": false, "options": [{"label": "Red"}], "text": "Pick a color?"}], "state": "pending", "toolUseId": "toolu_3"}}
+{"id": "q2", "k": "question", "ts": 1793670050000, "question": {"agent": "claude", "delivery": "picker", "questions": [], "state": "resolved", "toolUseId": "toolu_4"}}
+{"id": "x1", "k": "later-kind", "ts": 1793670060000, "text": "Allow Bash? pnpm test"}
+{"id": "a2", "k": "assistant", "ts": 1793670070000, "text": "Done."}

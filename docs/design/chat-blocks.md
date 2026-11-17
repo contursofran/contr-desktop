@@ -23,7 +23,7 @@ Use headings for the parts of a long answer, and lists for items. Write a headin
 
 ## Tables
 
-Use a table when the items share two or more attributes (a comparison, a list of files with counts). Use a list when each item is one line of text. A column of numbers without an alignment goes to the right by itself. A cell wraps at about 340px, so keep cells short. A table wider than the text column takes the panel's width, and scrolls sideways when it is wider still: many columns are fine.
+Use a table when the items share two or more attributes (a comparison, a list of files with counts). Use a list when each item is one line of text. A column of numbers without an alignment goes to the right by itself. Each column is as wide as its longest cell needs; when the columns do not fit, the long cells wrap, so keep cells short. A table wider than the text column takes the panel's width, and scrolls sideways when it is wider still: many columns are fine.
 
 ```markdown
 | Option | Lines | Risk |
@@ -45,7 +45,7 @@ Write each item once. Do not write a row of blocks and then a table that names t
 
 ## Images
 
-To show a local PNG, JPEG or SVG, write `![alt](absolute path)` alone on its line; the chat draws the image. A web URL stays a link.
+To show a local PNG, JPEG or SVG, write `![alt](absolute path)` alone on its line; the chat draws the image. A web URL stays a link. When the file cannot load, the line shows the alt text (or the path when there is no alt text).
 
 ## Remarks
 
@@ -116,7 +116,7 @@ b-696 --> lead: PR open
 ## What the chat does not show
 
 - Diagrams other than `contr-flow` and `contr-seq`: a `mermaid` or other diagram block shows as code. Use a list of steps, a table, or a `contr-queue` block for an order.
-- Images: `![…](…)` shows only its description. Give the path of the file as text.
-- An HTML block shows as its source text. Use Markdown.
+- Images other than a local PNG, JPEG or SVG alone on its line: `![…](…)` shows only its description. Give the path of the file as text.
+- An HTML block, and inline HTML, shows as its source text. Use Markdown.
 - Math shows as its TeX source. Write the formula in a code span or in words.
 - Colored text: there is none. Use a remark for what needs attention.
