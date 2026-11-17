@@ -6,6 +6,8 @@ import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
 const shots = path.resolve(e2e, "../../../tmp/shots");
+// Programs that do not exist. The launcher allows a switch only in the repository or the temp folder.
+const missing = path.join(e2e, "missing");
 
 const base = {
   CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
@@ -71,12 +73,12 @@ test("a helper error is a block in the reading column: plain words, the error, t
 });
 
 test("a missing helper says so, with its path", async () => {
-  const app = await launchApp({ ...base, CONTR_HELPER: "/nonexistent/helper" });
+  const app = await launchApp({ ...base, CONTR_HELPER: path.join(missing, "helper") });
   const page = await app.firstWindow();
   const alert = page.getByRole("alert", { name: "Helper error" });
   await expect(alert.locator("p").first()).toHaveText("The herdr-contr helper is missing.");
-  await expect(alert.locator("pre")).toContainText("helper: spawn /nonexistent/helper ENOENT");
-  await expect(alert.getByLabel("Helper path")).toHaveText("/nonexistent/helper");
+  await expect(alert.locator("pre")).toContainText(`helper: spawn ${path.join(missing, "helper")} ENOENT`);
+  await expect(alert.getByLabel("Helper path")).toHaveText(path.join(missing, "helper"));
   await expect(page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Install health check" })).toBeVisible();
   await shoot(page, "helper-missing");
   await app.close();
@@ -93,11 +95,11 @@ test("with no agents the main area says how one shows, and the sidebar says No a
 });
 
 test("with an hc that cannot run the main area says hc is not reachable, with the error", async () => {
-  const app = await launchApp({ ...base, CONTR_HC: "/nonexistent/hc", CONTR_TERMINAL: "" });
+  const app = await launchApp({ ...base, CONTR_HC: path.join(missing, "hc"), CONTR_TERMINAL: "" });
   const page = await app.firstWindow();
   const note = page.getByRole("alert", { name: "hc error" });
   await expect(note.locator("p")).toHaveText("hc is not reachable.");
-  await expect(note.locator("pre")).toContainText("spawn /nonexistent/hc ENOENT");
+  await expect(note.locator("pre")).toContainText(`spawn ${path.join(missing, "hc")} ENOENT`);
   await expect(page.getByRole("navigation", { name: "Projects" }).getByText("hc is not reachable", { exact: true })).toBeVisible();
   await shoot(page, "no-hc");
   await app.close();
