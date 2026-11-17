@@ -190,7 +190,9 @@ test("in a narrow window the shown tab scrolls into view, and the tab row shows 
   const row = tabs.locator("[data-tab-row]");
   // The shown tab is all inside the row's visible part.
   const inView = () => row.evaluate((r) => {
-    const tab = r.querySelector('[role="tab"][aria-selected="true"]')!.parentElement!.getBoundingClientRect();
+    const shown = r.querySelector('[role="tab"][aria-selected="true"]')?.parentElement;
+    if (!shown) return false;
+    const tab = shown.getBoundingClientRect();
     const box = r.getBoundingClientRect();
     return tab.left >= box.left - 0.5 && tab.right <= box.right + 0.5;
   });
