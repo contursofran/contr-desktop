@@ -224,7 +224,7 @@ test("in a 900x600 window the status line and the reply box keep 16 px of side s
   await app.close();
 });
 
-test("in a narrow window the status line cuts its working text with an ellipsis and keeps the orchestrator text", async () => {
+test("in a narrow window the status line keeps its verb whole, cuts the detail with an ellipsis and keeps the orchestrator text", async () => {
   test.setTimeout(60_000);
   const log = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "send.jsonl");
   const app = await launchAgents(log);
@@ -239,7 +239,9 @@ test("in a narrow window the status line cuts its working text with an ellipsis 
   const line = (await status.boundingBox())!;
   const r = (await right.boundingBox())!;
   expect(r.x + r.width).toBeLessThanOrEqual(line.x + line.width);
-  // The working detail is cut with an ellipsis, not past the line's edge.
+  // The verb stays whole; the working detail is cut with an ellipsis, not past the line's edge.
+  const verb = status.getByText("Hashing…", { exact: true });
+  expect(await verb.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   const detail = status.getByText(/tokens/);
   expect(await detail.evaluate((el) => getComputedStyle(el).textOverflow)).toBe("ellipsis");
   expect(await detail.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);

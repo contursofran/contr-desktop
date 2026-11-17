@@ -9,11 +9,20 @@ export function resultNote(r: PromptResult): string {
   return r.message ?? r.result;
 }
 
-/** True when a key press is for the card: not typed into the reply box or another field. */
+/** Where a key is text: the reply box and other text fields, and a menu's typeahead. */
+const TYPING = "textarea, input, select, [contenteditable]:not([contenteditable=false]), [role=menu], [role=listbox], [role=combobox]";
+/** Where Enter is the control's own key: a focused button or link outside the cards presses itself. */
+const CONTROL = "button, a[href], summary, [role=button], [role=tab], [role=link]";
+
+/**
+ * True when a key press is for the card (owner's rule, issue #101): a number key answers always, except while
+ * the owner types in a text field or a menu. Enter goes on only when the focus is on no control.
+ */
 export function isCardKey(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
   if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return false;
-  return !target?.closest?.("textarea, input, [contenteditable=true]");
+  if (target?.closest?.(TYPING)) return false;
+  return event.key !== "Enter" || !target?.closest?.(CONTROL);
 }
 
 /** The card above the reply box: answers the agent's approval prompt or question through the helper. */
@@ -44,8 +53,8 @@ function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
       {card.command && <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border bg-canvas p-2 font-mono text-xs">{card.command}</pre>}
       {note && <p role="status" className="mt-2 text-xs text-muted">{note}</p>}
       <div className="mt-2 flex gap-2">
-        <button type="button" disabled={off} onClick={() => void press(true)} className={button}><span className={key}>1</span>Allow once</button>
-        <button type="button" disabled={off} onClick={() => void press(false)} className={button}><span className={key}>2</span>Deny</button>
+        <button type="button" disabled={off} aria-keyshortcuts="1" onClick={() => void press(true)} className={button}><span className={key}>1</span>Allow once</button>
+        <button type="button" disabled={off} aria-keyshortcuts="2" onClick={() => void press(false)} className={button}><span className={key}>2</span>Deny</button>
       </div>
     </section>
   );
@@ -93,7 +102,7 @@ function Question({ request, question }: { request: string; question: QuestionCa
       <p className="mt-1 font-semibold">{q.text}</p>
       <div className="mt-2 flex flex-col gap-1">
         {q.options.map((o, i) => (
-          <button key={o.label} type="button" disabled={off} aria-pressed={chosen.includes(i)} onClick={() => pick(i)} className={`${button} text-left ${chosen.includes(i) ? "bg-selected" : ""}`}>
+          <button key={o.label} type="button" disabled={off} aria-pressed={chosen.includes(i)} aria-keyshortcuts={String(i + 1)} onClick={() => pick(i)} className={`${button} text-left ${chosen.includes(i) ? "bg-selected" : ""}`}>
             <span className={key}>{i + 1}</span>
             <span>{o.label}{o.recommended ? <span className="text-muted"> (Recommended)</span> : null}</span>
             {o.detail && <span className="text-xs text-muted">{o.detail}</span>}
@@ -105,6 +114,7 @@ function Question({ request, question }: { request: string; question: QuestionCa
             <input
               ref={otherRef}
               aria-label="Own answer"
+              aria-keyshortcuts={String(q.options.length + 1)}
               placeholder="Type your own answer"
               disabled={off}
               value={other[at] ?? ""}
@@ -117,13 +127,13 @@ function Question({ request, question }: { request: string; question: QuestionCa
       </div>
       {note && <p role="status" className="mt-2 text-xs text-muted">{note}</p>}
       <div className="mt-2 flex justify-end">
-        <button type="button" disabled={off} onClick={() => next()} className={`${button} bg-foreground text-canvas hover:bg-foreground`}>{last ? "Send" : "Next"}</button>
+        <button type="button" disabled={off} aria-keyshortcuts="Enter" onClick={() => next()} className={`${button} bg-foreground text-canvas hover:bg-foreground`}>{last ? "Send" : "Next"}</button>
       </div>
     </section>
   );
 }
 
-/** Card keys work while focus is in the chat, not while the owner types in the reply box. */
+/** Card keys (`isCardKey`): 1-9 and Enter, from anywhere in the window but a text field or a menu. */
 export function useKeys(onKey: (key: string) => void) {
   const ref = useRef(onKey);
   ref.current = onKey;

@@ -4,7 +4,7 @@
 // streaming lines; a UI SDK tooltip on the copy button and our theme tokens.
 import { Tip } from "../../ui/Tip";
 import { CheckIcon, CopyIcon } from "lucide-react";
-import { use, type ReactNode } from "react";
+import { use, useEffect, useRef, type ReactNode } from "react";
 
 import { useCopy } from "./useCopy";
 import { DIFF_THEME_NAMES, getSyntaxHighlighterPromise } from "./syntaxHighlighting";
@@ -32,8 +32,11 @@ export function MarkdownCodeBlock({
 }) {
   const { copy, copied } = useCopy();
   const copyLabel = copied ? "Copied" : "Copy code";
+  const ref = useRef<HTMLDivElement>(null);
+  useScrollTabStop(ref);
   return (
     <div
+      ref={ref}
       dir="ltr"
       className="chat-markdown-codeblock my-[0.65rem] overflow-hidden rounded-lg border border-border bg-raised leading-snug"
       data-language={language}
@@ -54,6 +57,31 @@ export function MarkdownCodeBlock({
       {children}
     </div>
   );
+}
+
+/** A code block is a Tab stop only when it scrolls sideways: the keys then scroll it. Else Tab goes past it. */
+export function setScrollTabStop(pre: HTMLElement) {
+  if (pre.scrollWidth > pre.clientWidth) pre.tabIndex = 0;
+  else pre.removeAttribute("tabindex");
+}
+
+/** Keeps `setScrollTabStop` true for the `pre` in the block when its width or its code changes. */
+function useScrollTabStop(ref: { current: HTMLElement | null }) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => el.querySelectorAll("pre").forEach(setScrollTabStop);
+    update();
+    const size = new ResizeObserver(update);
+    size.observe(el);
+    // The highlighted code replaces the plain fallback after it loads.
+    const swap = new MutationObserver(update);
+    swap.observe(el, { childList: true, subtree: true });
+    return () => {
+      size.disconnect();
+      swap.disconnect();
+    };
+  }, [ref]);
 }
 
 export function HighlightedCode({
