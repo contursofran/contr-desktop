@@ -70,9 +70,10 @@ export function setupHelper(appRoot: string): void {
   ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper(), chatTerminal(), request, answers));
   ipcMain.handle(TAB_TITLE_CHANNEL, (_event, terminal: string) => tabTitle(terminal));
   // `commands` changes seldom: one good answer per agent and app run.
-  let commands = cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
+  const fresh = () => cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
+  let commands = fresh();
   clearCommands = () => {
-    commands = cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
+    commands = fresh();
   };
   ipcMain.handle(REPLY_INFO_CHANNEL, () => {
     const terminal = chatTerminal();
