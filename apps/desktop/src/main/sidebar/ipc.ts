@@ -6,7 +6,7 @@ import { chatTerminal, selectTerminal } from "../helper";
 import { readTitle } from "../helper/title";
 import { setBlockedCount } from "../owner/ipc";
 import { blockedAgents } from "../../shared/inbox";
-import { buildProjects, projectFromCommonDir, readHcList, run, runHcList } from "./agents";
+import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, run, runHcList } from "./agents";
 import { faviconUrl, gitState } from "./git";
 
 /** Without hc events (hc gone or too old), the list is read again every 10 s. */
@@ -16,7 +16,7 @@ const DEBOUNCE_MS = 500;
 /** git has no event for a commit or a fetch: the branch and the commits ahead and behind are read again every 30 s too. */
 const GIT_POLL_MS = 30_000;
 
-/** The Projects list: agents from `hc ls --json`, workers' names from the orchestration tool, read again on each `hc events` line. */
+/** The Projects list: agents from `hc ls --json`, each under the project of its session folder (`hc get --json`), workers' names from the orchestration tool, read again on each `hc events` line. */
 export function registerSidebarIpc(appRoot: string): void {
   const hc = process.env.CONTR_HC ?? "hc";
   const git = process.env.CONTR_GIT ?? "git";
@@ -39,18 +39,22 @@ export function registerSidebarIpc(appRoot: string): void {
     const list = hcList.out;
     // hc failed: no agents, and the renderer shows why.
     const { terms, error: hcError } = readHcList(list, hcList.error);
-    const cwds = [...new Set(terms.map((t) => t.cwd).filter((c): c is string => typeof c === "string" && c !== ""))];
-    const names = new Map<string, string>();
-    await Promise.all(cwds.map(async (c) => names.set(c, await projectOf(c))));
     const titles = new Map<string, string>();
+    const folders = new Map<string, string>();
     await Promise.all(
       terms.map(async (t) => {
         if (typeof t.address !== "string") return;
-        const title = readTitle(await run(hc, ["get", "--json", t.address]), "");
+        const got = await run(hc, ["get", "--json", t.address]);
+        const title = readTitle(got, "");
         if (title) titles.set(t.address, title);
+        const folder = readSessionFolder(got);
+        if (folder) folders.set(t.address, folder);
       }),
     );
-    const built = buildProjects({ hc: list, orch: orchOut, titles, projectOf: (c) => names.get(c) ?? c });
+    const cwds = [...new Set([...terms.map((t) => t.cwd), ...folders.values()].filter((c): c is string => typeof c === "string" && c !== ""))];
+    const names = new Map<string, string>();
+    await Promise.all(cwds.map(async (c) => names.set(c, await projectOf(c))));
+    const built = buildProjects({ hc: list, orch: orchOut, titles, folders, projectOf: (c) => names.get(c) ?? c });
     const projects = await Promise.all(built.map(async (p) => ({ ...p, ...(await gitState(git, p.cwd)), favicon: favicon(p.cwd) })));
     return { projects, selected: chatTerminal(), ...(hcError ? { hcError } : {}) };
   };

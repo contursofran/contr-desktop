@@ -23,6 +23,10 @@ describe("liveWorkerParents", () => {
     expect(countLiveWorkers(hc(term("t1")), o, "t1")).toBe(0);
     expect(countLiveWorkers(hc(term("t1"), term("t2", { state: "finished" })), o, "t1")).toBe(0);
   });
+  it("counts a live worker with no status yet (#136), not a finished one", () => {
+    const h = hc(term("t1"), { address: "t2", state: "live", parent: "t1" }, { address: "t3", state: "finished", parent: "t1" });
+    expect(countLiveWorkers(h, "", "t1")).toBe(1);
+  });
   it("counts only the workers of the given parent, the tool's parent first, else hc's", () => {
     const h = hc(term("t1"), term("t2", { parent: "t9" }), term("t3", { parent: "t1" }), term("t4", { parent: "t9" }));
     const o = JSON.stringify([{ address: "t2", parent: "t1", live: true }]);

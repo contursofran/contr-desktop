@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A fake herdr-contr-orch for tests. `agents ls --all --json` lists four workers of the chat's agent (t7), one in
 // each state, three of them live, and a b-30 of another agent (t12) that the board must not show: it has no hc terminal, so it is not live (#57).
-// With FAKE_ORCH_NONE=1 it lists no workers.
+// With FAKE_ORCH_NONE=1 it lists no workers; FAKE_ORCH_LIST (a JSON file) is the list in place of the one below.
 // The live ones of t7 are the hc terminals t8 to t10 of fake-hc.mjs.
 // `owner open --json` prints the list in FAKE_ORCH_OWNER (a file; none: an empty list). `owner answer <id> <answer>` and
 // `owner done <id>` remove the item from that file. FAKE_ORCH_OWNER_FAIL=1 makes them fail with a message and change nothing;
@@ -20,7 +20,8 @@ const args = argv.join(" ");
 const file = process.env.FAKE_ORCH_OWNER;
 const open = () => (file && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : []);
 if (args === "agents ls --all --json") {
-  process.stdout.write(JSON.stringify(process.env.FAKE_ORCH_NONE === "1" ? [] : workers));
+  const list = process.env.FAKE_ORCH_LIST ? JSON.parse(readFileSync(process.env.FAKE_ORCH_LIST, "utf8")) : workers;
+  process.stdout.write(JSON.stringify(process.env.FAKE_ORCH_NONE === "1" ? [] : list));
 } else if (args === "owner open --json") {
   process.stdout.write(JSON.stringify(open()));
 } else if (argv[0] === "owner" && (argv[1] === "answer" || argv[1] === "done") && argv[2]) {
