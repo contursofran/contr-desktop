@@ -1,6 +1,7 @@
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useEffect, useState } from "react";
 import type { Settings, ThemeChoice, UpdateState } from "../../shared/api";
+import { ChangeLog } from "./ChangeLog";
 import { checkedText } from "./checked";
 
 const THEMES: { value: ThemeChoice; label: string }[] = [
@@ -9,7 +10,7 @@ const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: "light", label: "Light" },
 ];
 
-/** The Settings view in the main pane: the theme choice, the updates and the helper path. All colors from the theme tokens. */
+/** The Settings view in the main pane: the theme choice, the updates with the change log, and the helper path. All colors from the theme tokens. */
 export function SettingsView() {
   const [data, setData] = useState<Settings>();
   useEffect(() => {
@@ -60,7 +61,7 @@ export function SettingsView() {
 
 /**
  * The Updates section: this version, the newest one, Check now, and the Update button (installs the .zip, else opens the .dmg).
- * Each open of the view runs one check.
+ * Each open of the view runs one check. The change log stands under it.
  */
 function Updates() {
   const [u, setU] = useState<UpdateState>();
@@ -78,6 +79,7 @@ function Updates() {
   const upToDate = u?.latest != null && u.latest === u.current && !u.available && !u.ready;
   const newest = u?.dev ? "Development build" : upToDate ? "Up to date" : (u?.latest ?? "Checking…");
   return (
+    <>
     <div className="flex flex-col gap-2">
       <h2 className="text-xs font-medium text-muted">Updates</h2>
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-raised px-4 py-3">
@@ -113,5 +115,7 @@ function Updates() {
         {u?.error && <span role="alert" className="text-xs text-blocked">{u.error}</span>}
       </div>
     </div>
+    <ChangeLog current={u?.current} checked={u?.checked} />
+    </>
   );
 }
