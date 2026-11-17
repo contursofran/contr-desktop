@@ -120,7 +120,10 @@ function Blockquote({ node, children, ...props }: WithNode<"blockquote">) {
   if (!word) return <blockquote {...props}>{children}</blockquote>;
   return (
     <blockquote {...props} className="chat-remark">
-      <p className="chat-remark-word">{word}</p>
+      {/* bdi: the English word does not decide the remark's direction (markdownDirection.ts). */}
+      <p className="chat-remark-word">
+        <bdi>{word}</bdi>
+      </p>
       {children}
     </blockquote>
   );

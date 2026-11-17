@@ -15,7 +15,7 @@ export function UserRow({ row }: { row: FeedRow }) {
   }
   return (
     <div className="flex flex-col items-end gap-1">
-      <p className="max-w-[80%] whitespace-pre-wrap rounded-2xl [overflow-wrap:anywhere] bg-raised px-4 py-2 text-sm">{text}</p>
+      <p dir="auto" className="max-w-[80%] whitespace-pre-wrap rounded-2xl [overflow-wrap:anywhere] bg-raised px-4 py-2 text-sm">{text}</p>
       {row.images ? <span className="text-xs text-dim">{row.images === 1 ? "1 picture" : `${row.images} pictures`}</span> : null}
     </div>
   );
