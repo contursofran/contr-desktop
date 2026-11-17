@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { Tip } from "../../ui/Tip";
-import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
+import { readDraft, saveDraft } from "./drafts";
 import { composeMessage, isSendKey } from "./message";
 import { serial } from "./menu";
 import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
@@ -14,10 +15,12 @@ export interface Draft {
 /**
  * The reply box (docs/design/README.md, part 6): Enter sends, Shift+Enter is a new line, ⌘V attaches an image.
  * A `draft` replaces the text, puts the caret at its end and focuses the box; it does not send.
+ * The unsent text and images of each `terminal` stay in memory (`drafts.ts`) when another view shows.
  */
-export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
-  const [text, setText] = useState("");
+export function ReplyBox({ terminal, title, draft }: { terminal: string; title: string; draft?: Draft }) {
+  const [text, setText] = useState(() => readDraft(terminal).text);
   const box = useRef<HTMLTextAreaElement>(null);
+  useGrow(box, text);
   useEffect(() => {
     if (!draft) return;
     setText(draft.text);
@@ -27,7 +30,8 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
     el.focus();
     el.setSelectionRange(draft.text.length, draft.text.length);
   }, [draft]);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>(() => readDraft(terminal).images);
+  useEffect(() => saveDraft(terminal, { text, images }), [terminal, text, images]);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const message = composeMessage(text, images);
@@ -50,6 +54,8 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
     const result = await sendText(message);
     setSending(false);
     if (!result.ok) return setError(result.message ?? "send failed");
+    // The chat can be gone by now: clear the stored draft too.
+    saveDraft(terminal, { text: "", images: [] });
     setText("");
     setImages([]);
   }
@@ -131,4 +137,25 @@ export function ReplyBox({ title, draft }: { title: string; draft?: Draft }) {
       </div>
     </form>
   );
+}
+
+/** The box's largest height, as a part of the window's height. Over it, the text scrolls inside the box. */
+export const GROW_LIMIT = 0.4;
+
+/** The box grows with its text from its `rows` height up to `GROW_LIMIT` of the window, and shrinks when the text gets shorter. */
+function useGrow(box: { current: HTMLTextAreaElement | null }, text: string) {
+  const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+  useEffect(() => {
+    const onResize = () => setWindowHeight(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const limit = Math.floor(windowHeight * GROW_LIMIT);
+    el.style.height = `${Math.min(el.scrollHeight, limit)}px`;
+    el.style.overflowY = el.scrollHeight > limit ? "auto" : "hidden";
+  }, [box, text, windowHeight]);
 }
