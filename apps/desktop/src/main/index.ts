@@ -14,6 +14,7 @@ import { setAppMenu } from "./menu";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 import { syncShellPath } from "./shell/path";
+import { guardLinks, openExternal } from "./links";
 
 /** e2e runs set CONTR_E2E=1: the window never shows, so it takes neither the owner's focus nor the screen. */
 const e2e = process.env.CONTR_E2E === "1";
@@ -35,6 +36,8 @@ function createWindow(): void {
 }
 
 registerImageScheme();
+// Each window: no new window and no navigation away from the app's page; web and mail links go to the system.
+app.on("web-contents-created", (_event, contents) => guardLinks(contents, openExternal));
 
 void app.whenReady().then(() => {
   handleImageScheme();
