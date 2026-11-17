@@ -79,3 +79,37 @@ export function HighlightedCode({
   }
   return <div className="chat-markdown-shiki" dangerouslySetInnerHTML={{ __html: html }} />;
 }
+
+/** A `diff` or `patch` fence colors its lines (docs/design/chat-blocks.md, Code). */
+export function isDiffLanguage(language: string): boolean {
+  return language === "diff" || language === "patch";
+}
+
+export type DiffLineKind = "add" | "del" | "meta" | "context";
+
+/** File headers and `@@` hunk lines are "meta"; then `+` adds and `-` removes. */
+export function diffLineKind(line: string): DiffLineKind {
+  if (/^(?:@@|\+\+\+ |--- |diff |index )/.test(line)) return "meta";
+  if (line.startsWith("+")) return "add";
+  if (line.startsWith("-")) return "del";
+  return "context";
+}
+
+/** The diff as plain text, one span per line with its kind: no syntax colors. */
+export function DiffCode({ code }: { code: string }) {
+  const lines = (code.endsWith("\n") ? code.slice(0, -1) : code).split("\n");
+  return (
+    <div className="chat-markdown-shiki">
+      <pre className="chat-diff">
+        <code>
+          {lines.map((line, i) => (
+            <span key={i} className="line" data-diff={diffLineKind(line)}>
+              {line}
+              {i < lines.length - 1 ? "\n" : null}
+            </span>
+          ))}
+        </code>
+      </pre>
+    </div>
+  );
+}
