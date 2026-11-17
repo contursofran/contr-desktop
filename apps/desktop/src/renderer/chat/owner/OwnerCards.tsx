@@ -10,7 +10,7 @@ const SAVED_NOTE_MS = 15_000;
 /** A copy button shows its check this long. */
 const COPY_MS = 1_500;
 
-const box = "mx-auto mb-2 w-full max-w-3xl rounded-lg border border-border bg-raised p-3 text-sm";
+const box = "mx-auto mb-2 w-full max-w-read rounded-lg border border-border bg-raised p-3 text-sm";
 const button = "flex items-center gap-2 rounded-md border border-border px-3 py-1 hover:bg-hover disabled:opacity-50";
 const primary = `${button} bg-foreground text-canvas hover:bg-foreground`;
 const key = "rounded bg-selected px-1.5 font-mono text-xs text-muted";

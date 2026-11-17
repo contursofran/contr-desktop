@@ -27,6 +27,9 @@
   --color-issue-open: #3fb950;
   --color-issue-done: #ab7df8;
   --color-issue-notplanned: #9198a1;
+  /* The chat's reading column (docs/design/recipe-herdr.md): `max-w-read` on the rows, the
+     status line, the reply box, the cards and the error note, so they line up. */
+  --container-read: 1000px;
 }
 
 @media (prefers-color-scheme: light) {

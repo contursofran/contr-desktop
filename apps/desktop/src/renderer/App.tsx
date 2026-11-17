@@ -138,7 +138,8 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
     <>
       {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window.
           They come before the chat rows in the DOM, so Tab reaches the reply box first; `order-last` shows them under the rows. */}
-      <div className="order-last px-4">
+      {/* The same scrollbar gutters as the chat list, so the cards, status line and reply box line up with the rows. */}
+      <div className="order-last overflow-hidden px-4 [scrollbar-gutter:stable_both-edges]">
         <OwnerCards items={owner} />
         {feed.card && <Card card={feed.card} />}
         <StatusLine

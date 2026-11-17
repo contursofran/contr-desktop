@@ -103,7 +103,7 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
   return (
     <form
       aria-label="Reply"
-      className="mx-auto mb-4 w-full max-w-3xl rounded-lg border border-border bg-raised p-2"
+      className="mx-auto mb-4 w-full max-w-read rounded-lg border border-border bg-raised p-2"
       onSubmit={(event) => {
         event.preventDefault();
         void send();

@@ -31,7 +31,7 @@ export function Card({ card }: { card: CardData }) {
   return card.kind === "approval" ? <Approval key={card.request} card={card} /> : <Question key={card.request} request={card.request} question={card.question} />;
 }
 
-const box = "mx-auto mb-2 w-full max-w-3xl rounded-lg border border-border bg-raised p-3 text-sm";
+const box = "mx-auto mb-2 w-full max-w-read rounded-lg border border-border bg-raised p-3 text-sm";
 const button = "flex items-center gap-2 rounded-md border border-border px-3 py-1 hover:bg-hover disabled:opacity-50";
 const key = "rounded bg-selected px-1.5 font-mono text-xs text-muted";
 

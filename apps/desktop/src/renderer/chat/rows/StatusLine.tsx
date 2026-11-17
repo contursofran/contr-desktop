@@ -15,7 +15,7 @@ export function StatusLine({
 }) {
   if (!working?.text && !right && !onOrchestrate) return null;
   return (
-    <div aria-label="Status" className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-1 text-xs text-muted">
+    <div aria-label="Status" className="mx-auto flex w-full max-w-read items-center gap-2 px-4 py-1 text-xs text-muted">
       {working?.text && (
         <>
           <Spinner size={14} className="shrink-0 text-foreground" />
