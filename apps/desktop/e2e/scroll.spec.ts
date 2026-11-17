@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { appendFileSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { chatList, chatRow } from "./chat";
+import { chatList, chatRow, chatSettled } from "./chat";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
@@ -48,21 +48,47 @@ test("the chat follows new rows at the end and stays put when scrolled up", asyn
   const middle = await chatRow(page, "r150");
   const before = await middle.boundingBox();
   const top = (await scroll(page)).top;
+  const height = await list.evaluate((el) => el.scrollHeight);
   appendFileSync(fixture, rows(330, 360));
-  await page.waitForTimeout(2500);
+  // The new rows are in when the list is taller.
+  await expect.poll(() => list.evaluate((el) => el.scrollHeight)).toBeGreaterThan(height);
+  await chatSettled(page);
   expect((await scroll(page)).top).toBe(top);
   expect((await middle.boundingBox())?.y).toBe(before?.y);
 
   // A row above the viewport that opens does not move the rows on screen.
   const below = await chatRow(page, "r160");
   await below.evaluate((el) => el.scrollIntoView({ block: "start" }));
-  await page.waitForTimeout(300);
+  await chatSettled(page);
   const y = (await below.boundingBox())?.y;
   const chip = list.locator('[data-row-id="r158"]').getByRole("button", { name: /Ran command 158/ });
   await chip.evaluate((el) => (el as HTMLElement).click());
   await expect(chip).toHaveAttribute("aria-expanded", "true");
-  await page.waitForTimeout(500);
+  await chatSettled(page);
   expect((await below.boundingBox())?.y).toBeCloseTo(y!, 0);
   await page.screenshot({ path: path.join(shots, "virtual-list-middle.png") });
+  await app.close();
+});
+
+test("chatRow finds a row while the list still pulls itself to its end", async () => {
+  test.setTimeout(60_000);
+  const app = await launchApp({
+    CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+    FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+    CONTR_TERMINAL: "t7",
+    CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+  });
+  const page = await app.firstWindow();
+  const list = chatList(page);
+  await list.locator("[role=listitem]").first().waitFor();
+  // As Legend List does while it settles at start: for 3 s, a scroll away from the end goes back to the end on the next frame.
+  await list.evaluate((el) => {
+    const end = performance.now() + 3000;
+    el.addEventListener("scroll", () => {
+      if (performance.now() < end) requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight }));
+    });
+  });
+  // sep-1 is the first row: it is in the DOM only near the top.
+  await expect(await chatRow(page, "sep-1")).toHaveText("14:05");
   await app.close();
 });
