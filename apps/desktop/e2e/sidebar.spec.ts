@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
@@ -87,5 +87,53 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(desktop.getByRole("listitem")).toHaveCount(0);
   await desktop.getByRole("button", { name: "Open contr-desktop" }).click();
   await expect(desktop.getByRole("listitem")).toHaveCount(5);
+  await app.close();
+});
+
+test("a worker's chat: the reply box names it as its tab does, and the chat, model, context and status line are its own (#90)", async () => {
+  test.setTimeout(60_000);
+  // b-40 (t9) waits on a permission prompt.
+  const status = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "status.json");
+  writeFileSync(status, JSON.stringify({ t9: "blocked" }));
+  const app = await launchApp({
+    CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+    FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+    CONTR_TERMINAL: "t7",
+    CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
+    FAKE_HC_STATUS: status,
+    CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
+    CONTR_GIT: path.join(e2e, "fake-git.mjs"),
+    FAKE_GIT_BRANCH: "agent/40-cards",
+  });
+  const page = await app.firstWindow();
+  const nav = page.getByRole("navigation", { name: "Projects" });
+  const tabs = page.getByRole("tablist", { name: "Tabs" });
+
+  // hc names the terminal b-40 and gives no title: the tab, the sidebar and the reply box all show the tool's title.
+  await nav.getByRole("button", { name: /Cards for prompts and questions/ }).click();
+  await expect(tabs.getByRole("tab", { name: "Cards for prompts and questions" })).toHaveAttribute("aria-selected", "true");
+  const box = page.getByRole("textbox", { name: "Reply to Cards for prompts and questions" });
+  await expect(box).toHaveAttribute("placeholder", "Reply to Cards for prompts and questions");
+  const chat = page.getByRole("list", { name: "Chat" });
+  await expect(chat).toContainText('Issue #40 of contr-desktop: "Cards for prompts and questions"');
+  await expect(chat).toContainText("Unit tests pass. Now the e2e test for the cards.");
+  await expect(page.getByRole("button", { name: "Model" })).toHaveText("Opus 5.5high");
+  await expect(page.getByLabel("Context 58%")).toHaveText("58%");
+  // The card comes on the same tick after the working line: once it shows, the status line has had b-40's answer.
+  await expect(page.getByRole("region", { name: "Approval" })).toBeVisible();
+  await expect(page.getByLabel("Status").getByRole("status")).toHaveCount(0);
+  await expect(page.getByLabel("Status")).not.toContainText("Hashing");
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `worker-chat-${scheme}.png`) });
+  }
+
+  // b-30 (t8) works: its own working line, model and effort.
+  await nav.getByRole("button", { name: /Flow and sequence diagrams/ }).click();
+  await expect(page.getByRole("textbox", { name: "Reply to Flow and sequence diagrams" })).toBeVisible();
+  await expect(page.getByLabel("Status")).toContainText("Drawing…");
+  await expect(page.getByRole("button", { name: "Model" })).toHaveText("Sonnet 5high");
+  await expect(page.getByLabel("Context 22%")).toHaveText("22%");
   await app.close();
 });

@@ -114,3 +114,20 @@ test("a multi-select question takes picks, then the next question's own answer",
   expect(answers()).toEqual([{ cmd: "answer", terminal: "t7", request: "toolu_01Wm3Fq8Lz5Yt2Nd6Xc9Bv4s", answers: [{ picks: [0, 2] }, { picks: [], other: "Only after CI passes" }] }]);
   await app.close();
 });
+
+test("in a 900x600 window a card keeps 16 px of side space, as the chat rows do", async () => {
+  const { app, page } = await open("question");
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(900, 600));
+  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(900);
+  const cardBox = page.getByRole("region", { name: "Question" });
+  await expect(cardBox).toBeVisible();
+  const main = (await page.locator("main").boundingBox())!;
+  const b = (await cardBox.boundingBox())!;
+  expect(b.x - main.x).toBeGreaterThanOrEqual(16);
+  expect(main.x + main.width - (b.x + b.width)).toBeGreaterThanOrEqual(16);
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.screenshot({ path: path.join(shots, `card-narrow-${scheme}.png`) });
+  }
+  await app.close();
+});
