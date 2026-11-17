@@ -39,8 +39,9 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
           Settings
           {ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
         </button>
-        <Tip label="Add machine" side="top">
-          <button type="button" aria-label="Add machine" className="flex size-7 items-center justify-center self-center rounded-lg text-muted hover:bg-hover">
+        {/* Add machine does nothing yet: inert as the top bar's +. */}
+        <Tip label="Add machine (not yet)" side="top">
+          <button type="button" aria-label="Add machine" aria-disabled="true" className="flex size-7 items-center justify-center self-center rounded-lg text-dim">
             <Plus aria-hidden className="size-4" />
           </button>
         </Tip>

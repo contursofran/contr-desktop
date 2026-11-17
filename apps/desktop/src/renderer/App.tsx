@@ -10,7 +10,7 @@ import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
-import { Sidebar } from "./sidebar/Sidebar";
+import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import type { Sidebar as SidebarData } from "../shared/api";
 
@@ -49,6 +49,10 @@ export function App() {
   const [settings, setSettings] = useState(false);
   // The app menu's "Check for Updates…" shows Settings too.
   useEffect(() => window.contr.onOpenSettings(() => setSettings(true)), []);
+  const [hidden, setHidden] = useState(readHidden);
+  useEffect(() => saveHidden(hidden), [hidden]);
+  // With the Inbox or Settings shown, no agent row and no tab looks selected.
+  const view = inbox || settings ? { ...sidebar, selected: "" } : sidebar;
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
@@ -67,9 +71,9 @@ export function App() {
   };
   return (
     <div className="flex h-screen bg-canvas text-foreground">
-      <Sidebar data={sidebar} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} />
+      {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={sidebar} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
+        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onShowSidebar={hidden ? () => setHidden(false) : undefined} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
         {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : sidebar.selected && <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} />}
       </main>
     </div>
