@@ -103,6 +103,11 @@ export interface ContrApi {
   restartToUpdate(): Promise<void>;
   /** Reads the newest release now. A call while a check runs waits for that check. */
   checkUpdate(): Promise<void>;
+  /**
+   * The newest releases for Settings > Change log, as the last read gave them; while a read runs, its result.
+   * `again` reads them now (Retry). Each update check reads them again.
+   */
+  changeLog(again?: boolean): Promise<ChangeLog>;
   /** Calls the listener when the app menu's "Check for Updates…" asks to show Settings. Returns the unsubscribe. */
   onOpenSettings(listener: () => void): () => void;
   terminal: TerminalApi;
@@ -302,5 +307,24 @@ export const UPDATE_EVENT = "contr:update-event";
 export const UPDATE_DOWNLOAD_CHANNEL = "contr:update-download";
 export const UPDATE_RESTART_CHANNEL = "contr:update-restart";
 export const UPDATE_CHECK_CHANNEL = "contr:update-check";
+export const CHANGELOG_CHANNEL = "contr:changelog";
+
+/** One release in Settings > Change log. */
+export interface ChangeLogRelease {
+  /** From the notes' first line, "contr 0.1.24 from <sha>.", as the update check reads it. */
+  version: string;
+  tag: string;
+  /** The day it was published, "2026-11-17" (UTC). */
+  date: string;
+  /** The lines of the notes' "## Changes" part, newest first; empty when the notes have no such part. */
+  changes: string[];
+}
+
+/** Settings > Change log. `releases` is null when nothing was read: dev and e2e with no fake URL, or a first read that failed. */
+export interface ChangeLog {
+  releases: ChangeLogRelease[] | null;
+  /** The message of the last failed read, else null. */
+  error: string | null;
+}
 /** Main to renderer: show the Settings view (the app menu's "Check for Updates…"). */
 export const OPEN_SETTINGS_EVENT = "contr:open-settings";

@@ -12,10 +12,41 @@ to `main` (or by hand, `workflow_dispatch`). It:
    build uses a macOS runner. The macOS job runs `scripts/check-bundle`, then
    unpacks the `.zip` with `ditto` and runs `codesign --verify --deep` on the
    app. When the check fails, the release fails.
-3. Publishes one GitHub release with the files and short notes. The file
+3. Publishes one GitHub release with the files and notes. The file
    names do not change between releases: `contr-mac-universal.dmg`,
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
    button finds the `.zip` and the `.dmg` of the newest release by these names.
+
+## Release notes
+
+`scripts/release-notes.mjs` writes the notes:
+
+1. `contr 0.1.<run> from <sha>.`: the update check reads the version here.
+2. `## Changes`: one `- ` line for each commit after the release before this
+   one, up to this release's commit, newest first. Each line is the commit
+   subject, which ends with `(#<PR>)`. The release before is the newest
+   published `build-*` release. With no release before, the part has the last
+   20 subjects. With no commits, there is no `## Changes` part.
+3. The lines about the ad-hoc signature (see Signing).
+
+The script reads the releases and the commits with the GitHub API (`gh api`,
+the compare API), so the job needs no git history. The API lists releases by
+tag name, not by time, so the script sorts them by `published_at`. The `CI`
+workflow runs its test (`node --test scripts/release-notes.test.mjs`) and a
+dry run (`node scripts/release-notes.mjs --dry-run`) that prints the notes for
+the pull request's head.
+
+## The change log in Settings
+
+Settings > Change log, under Updates, shows the newest 10 releases, newest
+first: version, date and the lines of `## Changes`. The installed version has
+the mark "Installed"; a newer one has the mark "New". The newest 3 are open; the
+rest are behind "Show older". A release with no `## Changes` part (each one
+before #120) shows its version and date only. The main process reads
+`releases?per_page=100` of contursofran/contr-desktop (no token) with each
+update check, keeps the result in memory, and sorts it by `published_at`. A
+failed read shows its message and Retry. Dev and e2e read nothing, unless
+`CONTR_RELEASES_URL` points at a fake list (e2e).
 
 The workflow reads the releases of herdr-contr, a public repository, with
 its own token. It needs no secret.
