@@ -7,15 +7,15 @@ const html = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} />
 describe("ChatMarkdown", () => {
   it("renders headings, task lists and tables", () => {
     const out = html("## Next\n\n- [x] done\n- [ ] open\n\n| A | B |\n|---|--:|\n| x | 1 |");
-    expect(out).toContain("<h2>Next</h2>");
+    expect(out).toContain('<h2 dir="auto">Next</h2>');
     expect(out).toContain('type="checkbox"');
     expect(out).toContain('class="chat-markdown-table-container"');
-    expect(out).toContain('<td style="text-align:right">1</td>');
+    expect(out).toContain('<td dir="auto" style="text-align:right">1</td>');
   });
 
   it("tags inline code, shows inline HTML as text and drops unsafe links", () => {
     const out = html("Use `pnpm` <script>alert(1)</script> [x](javascript:alert(1))");
-    expect(out).toContain('<code data-inline-code="">pnpm</code>');
+    expect(out).toContain('<code data-inline-code="" dir="ltr">pnpm</code>');
     expect(out).not.toContain("<script");
     expect(out).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(out).not.toContain("javascript:");
@@ -23,7 +23,7 @@ describe("ChatMarkdown", () => {
 
   it("shows an HTML block as its source text, line by line", () => {
     const out = html("<div>\nraw html <b>bold</b>\n</div>\n\nAfter");
-    expect(out).toContain("<p>&lt;div&gt;<br/>\nraw html &lt;b&gt;bold&lt;/b&gt;<br/>\n&lt;/div&gt;</p>");
+    expect(out).toContain('<p dir="auto">&lt;div&gt;<br/>\nraw html &lt;b&gt;bold&lt;/b&gt;<br/>\n&lt;/div&gt;</p>');
     expect(out).not.toContain("<b>");
     expect(html("> <span>in a quote</span>")).toContain("&lt;span&gt;in a quote&lt;/span&gt;");
   });
@@ -71,7 +71,7 @@ describe("PR and issue chips", () => {
     for (const text of ["`#12`", "[see #12](https://example.com)", "#404", "a#12 &#12; x/#12 #12a", "#13"]) {
       expect(html(text)).not.toContain("data-ref-state");
     }
-    expect(html("`#12`")).toContain("<code data-inline-code=\"\">#12</code>");
+    expect(html("`#12`")).toContain('<code data-inline-code="" dir="ltr">#12</code>');
   });
 });
 
@@ -86,14 +86,21 @@ describe("remarks", () => {
     ["CAUTION", "caution", "Caution"],
   ])("shows [!%s] with its word", (tag, alert, word) => {
     const out = html(`> [!${tag}]\n> Body text`);
-    expect(out).toContain(`data-alert="${alert}" class="chat-remark"`);
-    expect(out).toContain(`<p class="chat-remark-word">${word}</p>`);
+    expect(out).toContain(`data-alert="${alert}" dir="auto" class="chat-remark"`);
+    expect(out).toContain(`<p class="chat-remark-word"><bdi>${word}</bdi></p>`);
     expect(out).toContain("Body text");
     expect(out).not.toContain("[!");
   });
 
+  it("gives a remark the direction of its text: the word is in a bdi, the paragraphs follow the remark", () => {
+    const out = html("> [!NOTE]\n> שלום עולם.");
+    expect(out).toContain('<blockquote data-alert="note" dir="auto" class="chat-remark">');
+    expect(out).toContain('<p class="chat-remark-word"><bdi>Note</bdi></p>');
+    expect(out).toContain("<p>שלום עולם.</p>");
+  });
+
   it("keeps a plain quote and an unknown tag as a quote", () => {
-    expect(html("> just a quote")).toBe('<div class="chat-markdown"><blockquote>\n<p>just a quote</p>\n</blockquote></div>');
+    expect(html("> just a quote")).toBe('<div class="chat-markdown"><blockquote dir="auto">\n<p>just a quote</p>\n</blockquote></div>');
     expect(html("> [!OTHER]\n> x")).not.toContain("chat-remark");
   });
 });

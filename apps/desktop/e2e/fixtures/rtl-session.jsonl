@@ -1,0 +1,4 @@
+{"id": "u1", "k": "user", "ts": 1793670000000, "text": "مرحبا، هل يمكنك فحص الملف؟ please check main.ts"}
+{"id": "u2", "k": "user", "ts": 1793670005000, "text": "Please check the Hebrew notes, שלום."}
+{"id": "a1", "k": "assistant", "ts": 1793670010000, "text": "## כותרת בעברית\n\nשלום עולם, זה טקסט מימין לשמאל.\n\nشغّل `pnpm test` ثم **راجع النتيجة** الآن.\n\nThe English line keeps its base, עם מילה בעברית.\n\nשורה בעברית with English words in it.\n\n- פריט ראשון ברשימה.\n- An English item.\n\n> ציטוט בעברית, עם נקודה.\n\n> [!NOTE]\n> הערה בעברית.\n\n| שם | ערך |\n|---|---|\n| אחד | 1 |\n\n```ts\nconst a = 1; // a code block stays left to right\n```"}
+{"id": "a2", "k": "assistant", "ts": 1793670020000, "text": "A plain English answer.\n\n- one\n- two\n\n> An English quote."}
