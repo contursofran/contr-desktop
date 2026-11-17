@@ -103,7 +103,7 @@ test("while the first feed answer has not come, the chat shows the loader and 'R
   const page = await app.firstWindow();
   const loading = page.getByRole("status", { name: "Reading the chat" });
   await expect(loading).toHaveText(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]Reading the chat…$/);
-  await expect(page.getByRole("list", { name: "Chat" })).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Chat" }).getByRole("listitem")).toHaveCount(0);
   // The rest of the window is ready; only the feed is slow.
   await expect(page.getByRole("button", { name: "Model" })).toHaveText("Opus 5.5medium");
   await expect(replyBox(page)).toHaveAccessibleName("Reply to Chat panel usability audit");

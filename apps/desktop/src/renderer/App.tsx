@@ -159,7 +159,8 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
         </fieldset>
       </div>
       {/* The chat list keeps at least 120 px: the cards block gives way first. */}
-      <div className="flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : feed.loaded ? <ChatList rows={feed.rows} /> : <ChatLoading />}</div>
+      {/* The loader covers the empty list until the first answer: the list mounts as before, with no rows. */}
+      <div className="relative flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}{!feed.error && !feed.loaded && <ChatLoading />}</div>
     </>
   );
 }
