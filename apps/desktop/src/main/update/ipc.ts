@@ -27,7 +27,7 @@ const CHECK_MS = 6 * 60 * 60_000;
  * Settings > Change log reads the newest releases (docs/decisions/122-change-log.md) with each check;
  * CONTR_RELEASES_URL points it at a fake releases list (e2e). With CONTR_E2E=1, CONTR_VERSION replaces this app's
  * version, so a test can mark a release "Installed".
- * A check reads release.json first (docs/decisions/<PR>-release-file.md): one read gives the release and the change
+ * A check reads release.json first (docs/decisions/131-release-file.md): one read gives the release and the change
  * log, with no API rate limit. With no such file (HTTP 404) or a bad one, it reads the API as before.
  * CONTR_RELEASE_FILE_URL points it at a fake release.json (e2e); e2e with no such switch reads no release.json.
  */
