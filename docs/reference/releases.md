@@ -5,7 +5,7 @@
 `.github/workflows/release.yml` runs when the `CI` workflow passes on a push
 to `main` (or by hand, `workflow_dispatch`). It:
 
-1. Sets the tag `build-<commit date>-<short sha>` (as herdr-contr does) and the
+1. Sets the tag `build-<commit date>-<short sha>` (as contr-core does) and the
    app version `0.1.<run number>`.
 2. Builds the app in two jobs: macOS (`pnpm dist`, universal `.dmg` and
    `.zip`) and Linux (`pnpm dist:linux`, x86_64 AppImage). Only the macOS
@@ -81,13 +81,13 @@ the result in memory. A failed read shows its message and Retry; Retry reads
 `release.json` again. Dev and e2e read nothing, unless `CONTR_RELEASE_FILE_URL`
 or `CONTR_RELEASES_URL` points at a fake file or list (e2e).
 
-The workflow reads the releases of herdr-contr, a public repository, with
+The workflow reads the releases of contr-core, a public repository, with
 its own token. It needs no secret.
 
 ## Where the binaries come from
 
 `scripts/fetch-helper` downloads the newest `build-*` release of
-herdr-contr and puts:
+contr-core that is not a prerelease, and puts:
 
 - `herdr-contr-feed` and `herdr-contr-orch` (macOS universal) in `bin/`;
 - the Linux x86_64 helper in `bin/linux-x64/`;
@@ -98,8 +98,12 @@ herdr-contr and puts:
 `apps/desktop/src/main/helper/binPath.ts`). In dev and e2e the app uses `bin/` at
 the repository root. `CONTR_HELPER` and `CONTR_ORCH` override both.
 
-herdr-contr releases have no Linux `herdr-contr-orch`, so the AppImage has
+contr-core releases have no Linux `herdr-contr-orch`, so the AppImage has
 only the helper.
+
+The `CI` workflow runs the test of `scripts/fetch-helper`
+(`node --test scripts/fetch-helper.test.mjs`) with a fake `gh` and a fake
+zip; it reads no real release.
 
 ## Name
 

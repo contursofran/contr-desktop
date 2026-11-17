@@ -2,7 +2,7 @@ name: Release
 
 # A release for each commit on main that passes CI: the macOS app (universal .dmg and .zip, ad-hoc signed,
 # no certificate)
-# and the Linux AppImage, with the helper and herdr-contr-orch from herdr-contr's newest release.
+# and the Linux AppImage, with the helper and herdr-contr-orch from contr-core's newest release.
 # Tag: build-<commit date>-<short sha>. App version: 0.1.<run number>. See docs/reference/releases.md.
 on:
   workflow_run:
@@ -62,7 +62,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # herdr-contr is public: the workflow token can read its releases.
+      # contr-core is public: the workflow token can read its releases.
       - run: scripts/fetch-helper
         env:
           GH_TOKEN: ${{ github.token }}
