@@ -79,4 +79,28 @@ describe("changeLogSource", () => {
     expect(failed.error).toBe("Could not load the change log: HTTP 503");
     expect(failed.releases?.[0].version).toBe("0.1.1");
   });
+  const fileJson = { schema: 1, version: "0.1.30", tag: "build-x", assets: [], releases: [{ version: "0.1.30", tag: "build-x", date: "2026-11-17", changes: ["A (#1)"] }] };
+  it("reads release.json first and does not read the API list when it is there", async () => {
+    const { get, calls } = fakeFetch(fileJson);
+    const log = changeLogSource("https://x/releases", get, "https://x/latest/download/release.json");
+    expect(await log.get()).toEqual({ releases: fileJson.releases, error: null });
+    expect(calls).toEqual(["https://x/latest/download/release.json"]);
+  });
+  it("reads the API list when release.json is not there (HTTP 404)", async () => {
+    const { get, calls } = fakeFetch(404, [raw("0.1.1", "2026-11-16T00:00:00Z")]);
+    const log = changeLogSource("https://x/releases", get, "https://x/latest/download/release.json");
+    expect((await log.get()).releases?.[0].version).toBe("0.1.1");
+    expect(calls).toEqual(["https://x/latest/download/release.json", "https://x/releases"]);
+  });
+  it("put gives the releases of an update check's read, with no read of its own", async () => {
+    const { get, calls } = fakeFetch();
+    const log = changeLogSource("https://x/releases", get, "https://x/latest/download/release.json");
+    log.put(fileJson.releases);
+    expect(await log.get()).toEqual({ releases: fileJson.releases, error: null });
+    expect(calls).toEqual([]);
+  });
+  it("a rate limit gives the plain words", async () => {
+    const get = (async () => new Response("", { status: 403, headers: { "x-ratelimit-remaining": "0", "x-ratelimit-reset": String(new Date(2026, 10, 17, 9, 7).getTime() / 1000) } })) as typeof fetch;
+    expect((await changeLogSource("https://x/releases", get).get()).error).toBe("Could not load the change log: GitHub's limit for this network is reached. Try again after 09:07.");
+  });
 });

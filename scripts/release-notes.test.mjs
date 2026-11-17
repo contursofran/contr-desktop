@@ -1,7 +1,7 @@
 // node --test scripts/release-notes.test.mjs (CI runs it on each pull request).
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { main, notesText } from "./release-notes.mjs";
+import { main, notesText, release } from "./release-notes.mjs";
 
 const commit = (message) => ({ commit: { message } });
 
@@ -69,4 +69,42 @@ test("a dry run uses version 0.0.0 and the sha from SHA or GITHUB_SHA", () => {
 
 test("with no version or sha and no dry run it throws the usage", () => {
   assert.throws(() => main(["--sha", "ccc"], {}, () => []), /usage/);
+});
+
+const notes = (v, changes = "") => `contr ${v} from x.\n\n${changes}The macOS app is ad-hoc signed.\n`;
+
+test("release.json has this release first, then the newest 9 published releases by time with their changes", () => {
+  const releases = [
+    { tag_name: "build-2026-11-17-ccccccc", published_at: "2026-11-17T09:00:00Z", body: notes("0.1.30") },
+    { tag_name: "build-2026-11-16-ddddddd", draft: true, published_at: "2026-11-16T13:00:00Z", body: notes("0.1.29") },
+    { tag_name: "v1", published_at: "2026-11-16T14:00:00Z", body: "no version" },
+    { tag_name: "build-2026-11-15-bbbbbbb", published_at: "2026-11-15T12:00:00Z", body: notes("0.1.27") },
+    { tag_name: "build-2026-11-16-aaaaaaa", published_at: "2026-11-16T12:00:00Z", body: notes("0.1.28", "## Changes\n\n- Old change (#5)\n\n") },
+    ...Array.from({ length: 12 }, (_, i) => ({ tag_name: `build-2026-10-${10 + i}-eeeeeee`, published_at: `2026-10-${10 + i}T00:00:00Z`, body: notes(`0.0.${i}`) })),
+  ];
+  const { api } = fakeApi(releases, [commit("New change (#6)")]);
+  const argv = ["--version", "0.1.30", "--sha", "ccc", "--tag", "build-2026-11-17-ccccccc", "--repo", "o/r"];
+  const { file } = release(argv, {}, api, new Date("2026-11-17T09:30:00Z"), ["contr-mac-universal.dmg", "contr-mac-universal.zip"]);
+  assert.deepEqual({ ...file, releases: file.releases.slice(0, 3) }, {
+    schema: 1,
+    version: "0.1.30",
+    tag: "build-2026-11-17-ccccccc",
+    sha: "ccc",
+    date: "2026-11-17T09:30:00.000Z",
+    assets: ["contr-mac-universal.dmg", "contr-mac-universal.zip"],
+    releases: [
+      { version: "0.1.30", tag: "build-2026-11-17-ccccccc", date: "2026-11-17", changes: ["New change (#6)"] },
+      { version: "0.1.28", tag: "build-2026-11-16-aaaaaaa", date: "2026-11-16", changes: ["Old change (#5)"] },
+      { version: "0.1.27", tag: "build-2026-11-15-bbbbbbb", date: "2026-11-15", changes: [] },
+    ],
+  });
+  assert.equal(file.releases.length, 10);
+  assert.equal(file.releases[9].version, "0.0.5");
+});
+
+test("a dry run gives release.json with no assets and only this release when there is no release before", () => {
+  const { api } = fakeApi([], [], [commit("A (#3)")]);
+  const { file } = release(["--dry-run"], { GITHUB_REPOSITORY: "o/r", SHA: "head1" }, api, new Date("2026-11-17T00:00:00Z"));
+  assert.deepEqual(file.releases, [{ version: "0.0.0", tag: "build-dry-run", date: "2026-11-17", changes: ["A (#3)"] }]);
+  assert.deepEqual(file.assets, []);
 });

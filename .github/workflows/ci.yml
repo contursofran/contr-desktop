@@ -14,9 +14,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The release notes script (release.yml): its test, and a dry run that prints the notes for this commit.
+      # The release notes script (release.yml): its test, and a dry run that prints the notes and release.json for this commit.
       - run: node --test scripts/release-notes.test.mjs
-      - run: node scripts/release-notes.mjs --dry-run
+      - run: node scripts/release-notes.mjs --dry-run --json "$RUNNER_TEMP/release.json" && cat "$RUNNER_TEMP/release.json"
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
