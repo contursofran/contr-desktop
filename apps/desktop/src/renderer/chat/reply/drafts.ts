@@ -21,3 +21,13 @@ export function saveDraft(terminal: string, draft: Unsent): void {
   if (draft.text === "" && draft.images.length === 0) drafts.delete(terminal);
   else drafts.set(terminal, draft);
 }
+
+/** The draft with the file at `path` attached after the others. */
+export function addImage(draft: Unsent, path: string): Unsent {
+  return { ...draft, images: [...draft.images, path] };
+}
+
+/** The draft without the attachment at `index`. The same path can be attached twice, so the index tells which one. */
+export function removeImage(draft: Unsent, index: number): Unsent {
+  return { ...draft, images: draft.images.filter((_, i) => i !== index) };
+}
