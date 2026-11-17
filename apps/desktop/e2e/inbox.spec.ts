@@ -63,6 +63,9 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   // Digit keys do not answer in the Inbox: many cards show at once.
   await page.keyboard.press("1");
   await list.locator('[data-item="D9"]').getByRole("button", { name: /Ok/ }).click();
+  // Each press starts its own orch run. Two runs at once append to the log in either order (#119),
+  // so the second press waits until the first item has closed.
+  await expect(list.locator('[data-item="D9"]')).toHaveCount(0);
   await list.locator('[data-item="T3"]').getByRole("button", { name: "Done" }).click();
   await expect(list.locator("[data-item]")).toHaveCount(3);
   await expect(row).toHaveText("Inbox · 3");
@@ -116,5 +119,25 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
   writeFileSync(status, JSON.stringify({ t11: "working" }));
   await expect(row).toHaveText("Inbox · 1", { timeout: 20_000 });
   await expect.poll(() => count(app), { timeout: 20_000 }).toEqual(["contr · Inbox 1", 1]);
+  await app.close();
+});
+
+test("a worker blocked on a prompt is an Inbox item under its title; a press opens the worker's chat with its card", async () => {
+  test.setTimeout(60_000);
+  const status = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "status.json");
+  // b-40 (t9), a worker of t7, waits on a permission prompt.
+  writeFileSync(status, JSON.stringify({ t9: "blocked" }));
+  const { app, page } = await open([], { FAKE_HC_STATUS: status });
+  const nav = page.getByRole("navigation", { name: "Projects" });
+  const row = nav.getByRole("button", { name: /^Inbox/ });
+  await expect(row).toHaveText("Inbox · 1");
+  await expect(nav.getByRole("button", { name: /Cards for prompts and questions/ }).getByLabel("blocked")).toBeVisible();
+  await row.click();
+  const list = page.getByRole("region", { name: "Inbox" });
+  await expect(list.locator("[data-item]")).toHaveText([/^(blocked)?Cards for prompts and questionsWaits on a prompt$/]);
+  await list.locator('[data-item="t9"]').getByRole("button").click();
+  await expect(list).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Reply to Cards for prompts and questions" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Approval" })).toBeVisible();
   await app.close();
 });
