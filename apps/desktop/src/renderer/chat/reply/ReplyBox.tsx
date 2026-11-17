@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type
 import { Attachments } from "./Attachments";
 import { addImage, readDraft, removeImage, saveDraft } from "./drafts";
 import { composeMessage, isSendKey } from "./message";
-import { serial } from "./menu";
+import { replyPlaceholder, serial } from "./menu";
 import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
 
 /** A text to put in the box. A new `id` puts it again. */
@@ -37,6 +37,7 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const message = composeMessage(text, images);
+  const placeholder = replyPlaceholder(title);
   const { info, branch } = useReplyInfo();
   // Messages and menu commands go one after the other: a menu choice made during a send is not lost.
   const queue = useRef(serial()).current;
@@ -111,8 +112,8 @@ export function ReplyBox({ terminal, title, draft }: { terminal: string; title: 
       <Attachments images={images} onRemove={detach} />
       <textarea
         ref={box}
-        aria-label={`Reply to ${title}`}
-        placeholder={`Reply to ${title}`}
+        aria-label={placeholder}
+        placeholder={placeholder}
         rows={2}
         value={text}
         onChange={(event) => setText(event.target.value)}
