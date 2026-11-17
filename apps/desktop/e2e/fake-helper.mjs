@@ -12,8 +12,18 @@
 // `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model.
 // `usage` gives Claude and Codex plans that reset some hours and days from now.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
+// The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
+// `working` and `card` give that worker's data. FAKE_HELPER_CARD and FAKE_HELPER_MODEL=none still win.
 import { appendFileSync, readFileSync } from "node:fs";
 import path from "node:path";
+
+const workerDir = path.join(import.meta.dirname, "fixtures", "workers");
+// b-30 works, b-40 waits on a permission prompt (no working line), b-50 is done (no working line).
+const workers = {
+  t8: { fixture: "b-30.jsonl", model: "claude-sonnet-5", effort: "high", context: 22, working: { text: "Drawing…", detail: "2m 4s · ↓ 3.1k tokens" } },
+  t9: { fixture: "b-40.jsonl", model: "claude-opus-5-5", effort: "high", context: 58, working: null, card: "b-40-card.json" },
+  t10: { fixture: "b-50.jsonl", model: "claude-opus-5-5", effort: "medium", context: 71, working: null },
+};
 
 const [cmd, ...rest] = process.argv.slice(2);
 const arg = (name) => {
@@ -22,6 +32,7 @@ const arg = (name) => {
 };
 const out = (line) => process.stdout.write(`${JSON.stringify(line)}\n`);
 const end = (ok) => out({ ms: 1, ok, type: "end" });
+const worker = workers[arg("terminal")];
 
 out({ build: "fake", cmd, protocol: 1, sidecar: "0.0.0-fake", type: "header" });
 if (process.env.FAKE_HELPER_ERROR) {
@@ -29,12 +40,13 @@ if (process.env.FAKE_HELPER_ERROR) {
   end(false);
 } else if (cmd === "feed") {
   // The cursor is the row count: rows appended to the fixture since then come as a splice.
-  const rows = readFileSync(process.env.FAKE_HELPER_FIXTURE, "utf8").split("\n").filter((l) => l.trim());
+  const fixture = worker ? path.join(workerDir, worker.fixture) : process.env.FAKE_HELPER_FIXTURE;
+  const rows = readFileSync(fixture, "utf8").split("\n").filter((l) => l.trim());
   const seen = Number(arg("cursor")?.slice("fake.".length) ?? 0);
-  out({ agent: "claude", cursor: `fake.${rows.length}`, model: "claude-opus-5-5", path: "fixture", size: 1, start: 0, type: "log" });
+  out({ agent: "claude", cursor: `fake.${rows.length}`, model: worker?.model ?? "claude-opus-5-5", path: "fixture", size: 1, start: 0, type: "log" });
   if (seen >= rows.length) out({ type: "unchanged" });
   else {
-    const fixtures = path.dirname(process.env.FAKE_HELPER_FIXTURE);
+    const fixtures = path.dirname(fixture);
     out({ at: seen, count: rows.length - seen, type: "splice" });
     for (const r of rows.slice(seen)) out({ ...JSON.parse(r.replaceAll("$FIXTURES", fixtures)), type: "row" });
   }
@@ -57,10 +69,13 @@ if (process.env.FAKE_HELPER_ERROR) {
   });
   end(true);
 } else if (cmd === "working") {
-  out({ type: "working", text: "Hashing…", detail: "35s · ↓ 1.2k tokens" });
+  // The helper gives null text and detail when the agent does not work.
+  const line = worker ? (worker.working ?? { text: null, detail: null }) : { text: "Hashing…", detail: "35s · ↓ 1.2k tokens" };
+  out({ type: "working", ...line });
   end(true);
 } else if (cmd === "card") {
-  const card = process.env.FAKE_HELPER_CARD ? JSON.parse(readFileSync(process.env.FAKE_HELPER_CARD, "utf8")) : {};
+  const file = process.env.FAKE_HELPER_CARD ?? (worker?.card && path.join(workerDir, worker.card));
+  const card = file ? JSON.parse(readFileSync(file, "utf8")) : {};
   out({ ...card, type: "card" });
   end(true);
 } else if (cmd === "approve" || cmd === "answer") {
@@ -72,10 +87,11 @@ if (process.env.FAKE_HELPER_ERROR) {
   end(true);
 } else if (cmd === "model") {
   const none = process.env.FAKE_HELPER_MODEL === "none";
-  out({ type: "model", agent: "claude", model: none ? null : "claude-opus-5-5", effort: none ? null : "medium" });
+  out({ type: "model", agent: "claude", model: none ? null : (worker?.model ?? "claude-opus-5-5"), effort: none ? null : (worker?.effort ?? "medium") });
   end(true);
 } else if (cmd === "status") {
-  out({ type: "status", agent: "claude", source: "statusline", tags: [{ kind: "context", percent: 37, text: "ctx 37%", warn: false }] });
+  const percent = worker?.context ?? 37;
+  out({ type: "status", agent: "claude", source: "statusline", tags: [{ kind: "context", percent, text: `ctx ${percent}%`, warn: false }] });
   end(true);
 } else if (cmd === "commands") {
   const models = [{ value: "claude-opus-5-5", label: "Opus 5.5" }, { value: "claude-sonnet-5", label: "Sonnet 5" }];
