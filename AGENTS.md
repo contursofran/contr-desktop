@@ -21,10 +21,12 @@ owner, and shows each orchestrator with its workers.
     (workers, owner questions and to-dos, the MCP tools, hooks).
   - herdr-core (`hc`) owns the terminals. Agents run in hc terminals; this
     app is one more hc client, as the Herdr app is.
-  The binaries come from herdr-contr's GitHub releases (tag
+  The helper, the tool and the kit are now in contr-core
+  (`contursofran/contr-core`), contr's core.
+  The binaries come from contr-core's GitHub releases (tag
   `build-YYYY-MM-DD-<sha7>`, a zip with `bin/herdr-contr-feed` and
   `bin/herdr-contr-orch`). A change that the helper needs is an issue in
-  herdr-contr, not a copy of its code here.
+  contr-core, not a copy of its code here.
 
 ## Goal: one thing at a time
 
