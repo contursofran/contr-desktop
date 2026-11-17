@@ -7,7 +7,7 @@ interface Window {
   resets_at?: unknown;
 }
 
-const KIND: Record<string, string> = { five_hour: "5h", seven_day: "wk" };
+const KIND: Record<string, string> = { five_hour: "5h", seven_day: "wk", primary: "5h", secondary: "wk" };
 const NAME: Record<string, string> = { claude: "Claude", codex: "Codex" };
 
 /** Time to a reset: minutes under an hour, hours under a day, else days. */
@@ -18,25 +18,30 @@ export function untilReset(seconds: number): string {
 }
 
 /**
- * One row per plan from the helper's `usage` line, Claude then Codex: the most used window as
- * "41% wk · 4d" (whole percent used, window, time to its reset). A window past its reset is 0%.
+ * One row per plan from the helper's `usage` line, Claude then Codex: the most used current window as
+ * "41% wk · 4d" (whole percent used, window, time to its reset). A window past its reset, or without a
+ * number, has no known value: when no window is current, the row is stale ("—", no percent).
  */
 export function usageRows(lines: HelperLine[], now: number): UsageRow[] {
   const usage = lines.find((l) => l.type === "usage");
-  const plans = Array.isArray(usage?.plans) ? (usage.plans as { plan?: unknown; windows?: unknown }[]) : [];
+  const plans = Array.isArray(usage?.plans) ? (usage.plans as { plan?: unknown; windows?: unknown; read_at?: unknown }[]) : [];
   const rows: UsageRow[] = [];
   for (const p of plans) {
-    if (typeof p.plan !== "string" || !Array.isArray(p.windows)) continue;
-    const windows = (p.windows as Window[]).map((w) => {
+    if (typeof p.plan !== "string" || !Array.isArray(p.windows) || p.windows.length === 0) continue;
+    const plan = NAME[p.plan] ?? p.plan;
+    const readAt = typeof p.read_at === "number" ? p.read_at * 1000 : null;
+    const current = (p.windows as Window[]).flatMap((w) => {
       const at = typeof w.resets_at === "number" ? w.resets_at : null;
-      const past = at !== null && at <= now;
-      const used = past || typeof w.used_percent !== "number" ? 0 : Math.round(w.used_percent);
-      return { kind: typeof w.kind === "string" ? (KIND[w.kind] ?? w.kind) : "?", used, left: at === null || past ? null : at - now };
+      if ((at !== null && at <= now) || typeof w.used_percent !== "number") return [];
+      return [{ kind: typeof w.kind === "string" ? (KIND[w.kind] ?? w.kind) : "?", used: Math.round(w.used_percent), left: at === null ? null : at - now }];
     });
-    if (windows.length === 0) continue;
-    const top = windows.reduce((a, b) => (b.used > a.used ? b : a));
+    if (current.length === 0) {
+      rows.push({ plan, percent: null, value: "—", readAt });
+      continue;
+    }
+    const top = current.reduce((a, b) => (b.used > a.used ? b : a));
     const value = `${top.used}% ${top.kind}${top.left === null ? "" : ` · ${untilReset(top.left)}`}`;
-    rows.push({ plan: NAME[p.plan] ?? p.plan, percent: top.used, value });
+    rows.push({ plan, percent: top.used, value, readAt });
   }
   return rows;
 }

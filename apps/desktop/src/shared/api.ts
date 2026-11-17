@@ -148,11 +148,16 @@ export interface Sidebar {
   hcError?: string;
 }
 
-/** A foot row: the plan, the most used window's percent, and its text ("41% wk · 4d"). */
+/**
+ * A foot row: the plan, the most used current window's percent, and its text ("41% wk · 4d").
+ * A stale plan (no current window) has `percent` null and the value "—".
+ */
 export interface UsageRow {
   plan: string;
-  percent: number;
+  percent: number | null;
   value: string;
+  /** When the helper read the plan's data (ms since the epoch), from `read_at`; null when not known. */
+  readAt: number | null;
 }
 
 /** A machine hc reaches over ssh. `state` is hc's ("connected", "unreachable", "needs-login", ...). */

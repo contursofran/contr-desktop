@@ -28,7 +28,10 @@ The target is herdr-contr as the owner uses it on 2026-11-16:
      workers". Its workers sit under it, indented behind a thin line: icon,
      title, the worker name (`b-219`) in mono, and a menu.
    - Foot: one usage row per plan (Claude, Codex): a meter, the percent and
-     the window ("82% wk · 3h"). Then **Settings** and a +.
+     the window ("82% wk · 3h"; Codex's `primary` is "5h", `secondary` "wk").
+     A plan with no current window (each one past its reset) shows an empty
+     meter and "—". The tooltip says when the data was read ("Read 2h ago";
+     "No current data. Last read 2d ago."). Then **Settings** and a +.
 2. **Top bar**: Herdr's normal tab bar (its `tabs` mod). One tab per agent
    or terminal, from the left, 3 px apart, with a 1 px `border` line under
    the bar. A tab is 29 px tall, 7 px corners, 10 px side padding, 12.8 px
