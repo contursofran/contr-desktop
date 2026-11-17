@@ -10,6 +10,7 @@ import path from "node:path";
  * A spec that passes `dataDir` keeps its user data over two launches.
  * A spec that sets no CONTR_ORCH gets the fake orchestration tool with no workers and no owner items:
  * no run reads the owner's file or runs the real tool.
+ * A spec that sets no CONTR_TERMINAL gets "t1": the app has no default agent. `CONTR_TERMINAL: ""` launches with none.
  */
 export function launchApp(env: Record<string, string> = {}, dataDir = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-data-"))) {
   return electron.launch({
@@ -18,6 +19,7 @@ export function launchApp(env: Record<string, string> = {}, dataDir = mkdtempSyn
     env: {
       ...process.env,
       CONTR_E2E: "1",
+      CONTR_TERMINAL: "t1",
       ...(env.CONTR_ORCH ? {} : { CONTR_ORCH: path.resolve(import.meta.dirname, "fake-orch.mjs"), FAKE_ORCH_NONE: "1" }),
       ...env,
     },

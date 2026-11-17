@@ -6,8 +6,9 @@ import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
 const shots = path.resolve(e2e, "../../../tmp/shots");
-// No CONTR_TERMINAL: the app picks the agent itself, as the real app does.
+// An empty CONTR_TERMINAL (the launcher gives "t1"): the app picks the agent itself, as the real app does.
 const env = {
+  CONTR_TERMINAL: "",
   CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
   FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
   CONTR_HC: path.join(e2e, "fake-hc.mjs"),
