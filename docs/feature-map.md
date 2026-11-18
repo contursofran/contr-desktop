@@ -47,7 +47,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
 | Tool-call chips | Opens a chip | Click, or Enter on the chip | `button "Read 1 file"` | The chip opens to its calls (`aria-expanded`) | `keys`, `markdown` |
 | Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools" | `app`, `colors` |
-| PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged"` | A chip with gh's state (open, merged, closed); an unknown number stays text | `chips` |
+| PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged"` | A chip with gh's state: the GitHub icon and a faint outline in the `pr-*` or `issue-*` token, the number in ink (dim when closed without a result; a closed PR is grey); an unknown number stays text | `chips` |
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
 | Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A word for each kind; local images draw | `remarks` |
 | Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |

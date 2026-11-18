@@ -40,9 +40,14 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   await expect(row.locator("pre [data-ref-state]")).toHaveCount(0);
   await expect(row.locator('a[href="https://example.com/x"]')).toHaveText("#12");
   await expect(row.getByText("#99 is not known")).toBeVisible();
-  // Colors come from the theme tokens.
-  const color = (n: number) => chips.nth(n).evaluate((e) => getComputedStyle(e).color);
-  expect([await color(0), await color(1), await color(3)]).toEqual(["rgb(171, 125, 248)", "rgb(63, 185, 80)", "rgb(248, 81, 73)"]);
+  // The icon and the outline take the state token; the number stays in ink. A closed PR is grey, not red.
+  const color = (n: number) => chips.nth(n).locator("svg").evaluate((e) => getComputedStyle(e).color);
+  const ink = (n: number) => chips.nth(n).evaluate((e) => getComputedStyle(e).color);
+  const outline = (n: number) => chips.nth(n).evaluate((e) => getComputedStyle(e).boxShadow);
+  expect([await color(0), await color(1), await color(3), await color(6)]).toEqual(["rgb(171, 125, 248)", "rgb(63, 185, 80)", "rgb(145, 152, 161)", "rgb(145, 152, 161)"]);
+  expect([await ink(0), await ink(1), await ink(3), await ink(6)]).toEqual(["rgb(244, 244, 245)", "rgb(244, 244, 245)", "rgba(255, 255, 255, 0.5)", "rgba(255, 255, 255, 0.5)"]);
+  expect(await outline(0)).toContain("color(srgb 0.670588 0.490196 0.972549 / 0.38) 0px 0px 0px 1px inset");
+  expect(await outline(3)).toContain("color(srgb 0.568627 0.596078 0.631373 / 0.38) 0px 0px 0px 1px inset");
   // gh: one batched call, never twice for a number within a minute.
   const calls = readFileSync(ghLog, "utf8").trim().split("\n").map((l) => JSON.parse(l) as number[]);
   expect(calls.flat().sort((a, b) => a - b)).toEqual([...new Set(calls.flat())].sort((a, b) => a - b));
@@ -60,10 +65,12 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   // A click opens the PR in the browser (e2e logs the URL instead).
   await chips.nth(0).click();
   await expect.poll(() => { try { return readFileSync(openLog, "utf8"); } catch { return ""; } }).toBe("https://github.com/o/r/pull/12\n");
+  await page.mouse.move(0, 0);
   await row.scrollIntoViewIfNeeded();
   await row.screenshot({ path: path.join(shots, "chips-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
   await expect.poll(() => color(0)).toBe("rgb(130, 80, 223)");
+  expect([await ink(0), await ink(3)]).toEqual(["rgb(20, 20, 20)", "rgba(0, 0, 0, 0.584)"]);
   await row.screenshot({ path: path.join(shots, "chips-light.png") });
   // The owner's own text stays plain.
   await expect((await chatRow(page, "u1")).locator("[data-ref-state]")).toHaveCount(0);
