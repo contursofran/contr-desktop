@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { CheckIcon } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { Card as CardData, PromptResult, QuestionCard } from "../../../shared/api";
+import { StatusGlyph } from "../../ui/StatusGlyph";
 
 /** The note for a `done` result that is not `sent` (docs/reference/helper-protocol.md, `done`). */
 export function resultNote(r: PromptResult): string {
@@ -36,9 +38,56 @@ export function Card({ card }: { card: CardData }) {
   return card.kind === "approval" ? <Approval key={card.request} card={card} /> : <Question key={card.request} request={card.request} question={card.question} />;
 }
 
-const box = "mx-auto mb-2 w-full max-w-read rounded-lg border border-border bg-raised p-3 text-sm";
-const button = "flex items-center gap-2 rounded-md border border-border px-3 py-1 hover:bg-hover disabled:opacity-50";
-const key = "rounded bg-selected px-1.5 font-mono text-xs text-muted";
+/*
+ * The one question card (issue #182, docs/design/redesign/screens.html screens 1 and 2): permissions, agent
+ * questions, pick-any questions and owner questions use these parts. It has the reply box's fill and line, no shadow.
+ */
+export const cardBox = "mx-auto mb-2 flex w-full max-w-read flex-col gap-0.5 rounded-xl border border-input-line bg-chrome p-3 text-sm";
+/** One answer: the key or the check box, then the label and its detail. */
+export const optionRow = "flex w-full items-start gap-3 rounded-[9px] px-3 py-2 text-left hover:bg-hover disabled:opacity-50";
+export const keyMark = "mt-0.5 shrink-0 font-mono text-[11px] text-dim";
+export const primaryButton = "flex h-7 shrink-0 items-center rounded-lg bg-selected px-3 text-[12.5px] text-ink-100 shadow-[inset_0_0_0_1px_var(--input-line)] disabled:opacity-50";
+export const ownField = "h-[30px] min-w-0 flex-1 rounded-lg border border-input-line bg-transparent px-2.5 text-[12.5px] text-foreground outline-none placeholder:text-dim";
+
+/** The head: the red glyph (the card needs the owner), then what asks. */
+export function CardHead({ children }: { children: ReactNode }) {
+  return (
+    <p className="flex items-center gap-2 px-3 pb-1.5 text-[11.5px] text-dim">
+      <StatusGlyph state="blocked" />
+      <span className="min-w-0">{children}</span>
+    </p>
+  );
+}
+
+export function CardText({ children }: { children: ReactNode }) {
+  return <p className="px-3 py-0.5 text-sm leading-5 text-ink-100">{children}</p>;
+}
+
+/** The label of an answer. "recommended" shows only where the source marks it. */
+export function OptionLabel({ label, recommended }: { label: string; recommended?: boolean }) {
+  return <span className="text-[13px] text-ink-90">{label}{recommended ? " · recommended" : ""}</span>;
+}
+
+/** The pick-any check box. The button's `aria-pressed` gives the state; the box only shows it. */
+function Check({ on }: { on: boolean }) {
+  return (
+    <span aria-hidden className={`mt-0.5 grid size-3.5 shrink-0 place-items-center rounded ${on ? "bg-ink-85 text-canvas" : "shadow-[inset_0_0_0_1px_var(--ink-35)]"}`}>
+      {on && <CheckIcon className="size-2.5" strokeWidth={3} />}
+    </span>
+  );
+}
+
+/** The keys that answer the card now. */
+export function KeysLine({ text }: { text: string }) {
+  return <span className="whitespace-pre pr-1.5 font-mono text-[11px] text-dim">{text}</span>;
+}
+
+export function CardNote({ children }: { children: ReactNode }) {
+  return <p role="status" className="px-3 pt-1 text-xs text-muted">{children}</p>;
+}
+
+/** "1-n" for the keys line. */
+export const keyRange = (n: number) => (n > 1 ? `1-${n}` : "1");
 
 function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
   const [note, setNote] = useState<string | null>(card.answered ? "Answer sent. Waiting for the agent." : null);
@@ -53,14 +102,19 @@ function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
   }
   useKeys((k) => (k === "1" ? void press(true) : k === "2" ? void press(false) : undefined));
   return (
-    <section aria-label="Approval" className={box}>
-      <p className="font-semibold">{card.title || `${card.tool} wants to run`}</p>
-      {card.command && <pre className="mt-2 whitespace-pre-wrap rounded-md border border-border bg-canvas p-2 font-mono text-xs">{card.command}</pre>}
-      {note && <p role="status" className="mt-2 text-xs text-muted">{note}</p>}
-      <div className="mt-2 flex gap-2">
-        <button type="button" disabled={off} aria-keyshortcuts="1" onClick={() => void press(true)} className={button}><span className={key}>1</span>Allow once</button>
-        <button type="button" disabled={off} aria-keyshortcuts="2" onClick={() => void press(false)} className={button}><span className={key}>2</span>Deny</button>
-      </div>
+    <section aria-label="Approval" className={cardBox}>
+      <CardHead>{card.title || `${card.tool} wants to run`}</CardHead>
+      {card.command && <pre className="whitespace-pre-wrap px-3 pt-0.5 pb-2 font-mono text-[11.5px] leading-[17px] text-muted">{card.command}</pre>}
+      <button type="button" disabled={off} aria-keyshortcuts="1" onClick={() => void press(true)} className={optionRow}>
+        <span className={keyMark}>1</span>
+        <OptionLabel label="Allow once" />
+      </button>
+      <button type="button" disabled={off} aria-keyshortcuts="2" onClick={() => void press(false)} className={optionRow}>
+        <span className={keyMark}>2</span>
+        <OptionLabel label="Deny" />
+      </button>
+      {note && <CardNote>{note}</CardNote>}
+      <div className="flex justify-end pt-1.5"><KeysLine text="1-2 pick" /></div>
     </section>
   );
 }
@@ -105,37 +159,45 @@ function Question({ request, question }: { request: string; question: QuestionCa
   });
   const chosen = picks[at] ?? [];
   return (
-    <section aria-label="Question" className={box}>
-      <p className="text-xs text-muted">{q.header}{qs.length > 1 ? ` · ${at + 1} of ${qs.length}` : ""}{q.multi ? " · pick any" : ""}</p>
-      <p className="mt-1 font-semibold">{q.text}</p>
-      <div className="mt-2 flex flex-col gap-1">
+    <section aria-label="Question" className={cardBox}>
+      <CardHead>{q.header}{qs.length > 1 ? ` · ${at + 1} of ${qs.length}` : ""}{q.multi ? " · pick any" : ""}</CardHead>
+      <CardText>{q.text}</CardText>
+      <div className="mt-1.5 flex flex-col">
         {q.options.map((o, i) => (
-          <button key={o.label} type="button" disabled={off} aria-pressed={chosen.includes(i)} aria-keyshortcuts={String(i + 1)} onClick={() => pick(i)} className={`${button} text-left ${chosen.includes(i) ? "bg-selected" : ""}`}>
-            <span className={key}>{i + 1}</span>
-            <span>{o.label}{o.recommended ? <span className="text-muted"> (Recommended)</span> : null}</span>
-            {o.detail && <span className="text-xs text-muted">{o.detail}</span>}
+          <button
+            key={o.label}
+            type="button"
+            disabled={off}
+            aria-pressed={chosen.includes(i)}
+            aria-keyshortcuts={String(i + 1)}
+            onClick={() => pick(i)}
+            className={`${optionRow} ${chosen.includes(i) ? "bg-hover" : ""}`}
+          >
+            {q.multi ? <Check on={chosen.includes(i)} /> : <span className={keyMark}>{i + 1}</span>}
+            <span>
+              <OptionLabel label={o.label} recommended={o.recommended} />
+              {o.detail && <span className="ml-2 font-mono text-[11px] text-dim">{o.detail}</span>}
+            </span>
           </button>
         ))}
-        {!question.noOther && (
-          <label className="flex items-center gap-2 px-3 py-1">
-            <span className={key}>{q.options.length + 1}</span>
-            <input
-              ref={otherRef}
-              aria-label="Own answer"
-              aria-keyshortcuts={String(q.options.length + 1)}
-              placeholder="Type your own answer"
-              disabled={off}
-              value={other[at] ?? ""}
-              onChange={(e) => setOther(other.map((v, n) => (n === at ? e.target.value : v)))}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }}
-              className="flex-1 bg-transparent outline-none placeholder:text-dim"
-            />
-          </label>
-        )}
       </div>
-      {note && <p role="status" className="mt-2 text-xs text-muted">{note}</p>}
-      <div className="mt-2 flex justify-end">
-        <button type="button" disabled={off || !ready()} aria-keyshortcuts="Enter" onClick={() => next()} className={`${button} bg-foreground text-canvas hover:bg-foreground`}>{last ? "Send" : "Next"}</button>
+      {note && <CardNote>{note}</CardNote>}
+      <div className="flex items-center gap-3 pt-1.5">
+        {question.noOther ? <span className="flex-1" /> : (
+          <input
+            ref={otherRef}
+            aria-label="Own answer"
+            aria-keyshortcuts={String(q.options.length + 1)}
+            placeholder="Or type an answer"
+            disabled={off}
+            value={other[at] ?? ""}
+            onChange={(e) => setOther(other.map((v, n) => (n === at ? e.target.value : v)))}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }}
+            className={ownField}
+          />
+        )}
+        <KeysLine text={`${keyRange(q.options.length)} ${q.multi ? "toggle" : "pick"}  ⏎ ${last ? "send" : "next"}`} />
+        <button type="button" disabled={off || !ready()} aria-keyshortcuts="Enter" onClick={() => next()} className={primaryButton}>{last ? "Send" : "Next"}</button>
       </div>
     </section>
   );

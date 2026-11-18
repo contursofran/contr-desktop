@@ -1,7 +1,7 @@
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { OwnerItems, OwnerQuestion, OwnerResult, OwnerTodo } from "../../../shared/api";
-import { useKeys } from "../card/Card";
+import { CardHead, CardText, cardBox, keyMark, keyRange, KeysLine, OptionLabel, optionRow, ownField, primaryButton, useKeys } from "../card/Card";
 import { ChatMarkdown } from "../markdown/ChatMarkdown";
 import { splitTodo } from "./blocks";
 
@@ -13,7 +13,6 @@ const COPY_MS = 1_500;
 const box = "mx-auto mb-2 w-full max-w-read rounded-lg border border-border bg-raised p-3 text-sm";
 const button = "flex items-center gap-2 rounded-md border border-border px-3 py-1 hover:bg-hover disabled:opacity-50";
 const primary = `${button} bg-foreground text-canvas hover:bg-foreground`;
-const key = "rounded bg-selected px-1.5 font-mono text-xs text-muted";
 const more = (n: number) => (n > 0 ? ` · ${n} more after this` : "");
 
 /** All open owner items of every coordinator, from `owner open --json`. */
@@ -93,39 +92,42 @@ export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; 
     else if (n === q.options.length + 1) otherRef.current?.focus();
     else if (k === "Enter") send(other);
   }, keys);
+  const head = [q.title, q.from && `from ${q.from}`].filter(Boolean).join(" · ");
   return (
-    <section aria-label="Owner question" className={box}>
-      <p className="text-xs text-muted">{q.id} · The coordinator asks{more(rest)}</p>
-      {(q.title || q.from) && <p className="mt-1 text-xs text-muted">{[q.title, q.from && `from ${q.from}`].filter(Boolean).join(" · ")}</p>}
-      <p className="mt-1 font-semibold">{q.question}</p>
-      <div className="mt-2 flex flex-col gap-1">
+    <section aria-label="Owner question" className={cardBox}>
+      <CardHead><span className="font-mono text-[11px]">{q.id}</span> · The coordinator asks{head && ` · ${head}`}{more(rest)}</CardHead>
+      <CardText>{q.question}</CardText>
+      <div className="mt-1.5 flex flex-col">
         {q.options.map((o, i) => (
-          <button key={o.label} type="button" disabled={off} onClick={() => send(o.label)} className={`${button} items-start text-left`}>
-            {keys && <span className={key}>{i + 1}</span>}
+          <button key={o.label} type="button" disabled={off} onClick={() => send(o.label)} className={optionRow}>
+            {keys && <span className={keyMark}>{i + 1}</span>}
             <span className="flex flex-col">
-              <span>{o.label}{o.recommended ? <span className="text-muted"> (Recommended)</span> : null}</span>
-              {o.impact && <span className="text-xs text-muted">{o.impact}</span>}
+              <OptionLabel label={o.label} recommended={o.recommended} />
+              {o.impact && <span className="mt-0.5 text-xs leading-[17px] text-dim">{o.impact}</span>}
             </span>
           </button>
         ))}
-        <label className="flex items-center gap-2 px-3 py-1">
-          {keys && <span className={key}>{q.options.length + 1}</span>}
-          <input
-            ref={otherRef}
-            aria-label="Own answer"
-            placeholder="Type your own answer"
-            disabled={off}
-            value={other}
-            onChange={(e) => setOther(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(other); } }}
-            className="flex-1 bg-transparent outline-none placeholder:text-dim"
-          />
-        </label>
       </div>
-      {q.refs.length > 0 && <p className="mt-2 text-xs text-muted">Refs: {q.refs.join(", ")}</p>}
-      {error && <p role="alert" className="mt-2 text-xs text-blocked">{error}</p>}
-      <div className="mt-2 flex justify-end">
-        <button type="button" disabled={off || !other.trim()} onClick={() => send(other)} className={primary}>Send answer</button>
+      {q.refs.length > 0 && (
+        <p className="flex flex-wrap items-baseline gap-x-2 px-3 pt-1.5 pb-0.5 text-xs text-dim">
+          <span>Refs</span>
+          {q.refs.map((r) => <span key={r} className="font-mono text-[11px] text-muted">{r}</span>)}
+        </p>
+      )}
+      {error && <p role="alert" className="px-3 pt-1 text-xs text-blocked">{error}</p>}
+      <div className="flex items-center gap-3 pt-1.5">
+        <input
+          ref={otherRef}
+          aria-label="Own answer"
+          placeholder="Or type an answer"
+          disabled={off}
+          value={other}
+          onChange={(e) => setOther(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(other); } }}
+          className={ownField}
+        />
+        {keys && <KeysLine text={`${keyRange(q.options.length)} pick  ⏎ send`} />}
+        <button type="button" disabled={off || !other.trim()} onClick={() => send(other)} className={primaryButton}>Send answer</button>
       </div>
     </section>
   );

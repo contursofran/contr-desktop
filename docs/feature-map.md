@@ -69,6 +69,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 |---|---|---|---|---|---|
 | Permission card | Allows or denies a tool | Keys 1, 2, …; click | `region "Approval" > button /Allow once/` | The answer goes to the helper (`FAKE_HELPER_ANSWER_LOG`); a changed prompt says so | `cards` |
 | Question card | Picks an answer | Keys 1, 2, …; Enter | `region "Question"`, `button "Next"`, `button "Send"` | The pick goes; multi-select takes picks; Next and Send are off until there is a pick or own text | `cards` |
+| One question card | Looks at a permission, a question or a pick-any question | `FAKE_HELPER_CARD` | `region "Approval"`, `region "Question"`, `region "Owner question"` | The reply box's fill and line (`--side`, `--input-line`), no shadow; a red glyph in the head; check boxes for pick-any; "Or type an answer" and the keys line | `cards`, `owner` |
 | Own answer | Types an own answer | Type, Enter | `textbox "Own answer"` | A number typed there is text, not a pick | `cards`, `keys` |
 | Card keys | Presses a number | 1, 2, … | — | With focus in the reply box a 1 stays text; with focus on the page it answers | `keys`, `focus` |
 | Stacked cards | Has an agent card and owner items | `FAKE_HELPER_CARD`, `FAKE_ORCH_OWNER`, `size=640x480` | `region "Approval"`, `region "Owner question"`, `region "Owner to-do"` | The cards scroll inside; the reply box stays in the window; key 1 answers only the agent's card | `stacked-cards` |
