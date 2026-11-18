@@ -17,7 +17,7 @@ const env = {
 };
 
 const shown = (page: Page) => page.getByRole("navigation", { name: "Projects" }).locator('[aria-current="true"]');
-const terminalPick = (page: Page) => page.getByRole("group", { name: "Chat or Terminal" }).getByRole("button", { name: "Terminal" });
+const terminalPick = (page: Page) => page.getByRole("radiogroup", { name: "Chat or Terminal" }).getByRole("radio", { name: "Terminal" });
 
 test("the shown agent and the Chat / Terminal pick stay over a restart", async () => {
   test.setTimeout(60_000);
@@ -29,19 +29,19 @@ test("the shown agent and the Chat / Terminal pick stay over a restart", async (
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Install health check" }).click();
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await terminalPick(page).click();
-  await expect(terminalPick(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(terminalPick(page)).toBeChecked();
   // The pick is one for the window: it stays when another agent shows.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
   await expect(shown(page)).toHaveAccessibleName(/Release notes draft/);
-  await expect(terminalPick(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(terminalPick(page)).toBeChecked();
   await app.close();
 
   app = await launchApp(env, data);
   page = await app.firstWindow();
   await expect(shown(page)).toHaveAccessibleName(/Release notes draft/);
   await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab", { name: "Release notes draft" })).toHaveAttribute("aria-selected", "true");
-  await expect(terminalPick(page)).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("group", { name: "Chat or Terminal" }).getByRole("button", { name: "Chat" }).click();
+  await expect(terminalPick(page)).toBeChecked();
+  await page.getByRole("radiogroup", { name: "Chat or Terminal" }).getByRole("radio", { name: "Chat" }).click();
   await expect(page.getByRole("textbox", { name: "Reply to Release notes draft" })).toBeVisible();
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });

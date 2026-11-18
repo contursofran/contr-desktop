@@ -37,7 +37,7 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
   });
   const page = await app.firstWindow();
   await expect(chatList(page).locator('[data-row-id="a6"]')).toBeVisible();
-  await page.getByRole("button", { name: "Terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal" }).click();
   const term = page.getByTestId("terminal");
   await expect(term).toContainText("200");
 
@@ -45,8 +45,8 @@ test("the Terminal side shows an hc terminal and sends keys to it", async () => 
   await page.keyboard.press("Enter");
   await expect(term).toContainText("from-xterm-42");
   // Back and forth: the old view's listeners are gone, so each byte shows once.
-  await page.getByRole("button", { name: "Chat" }).click();
-  await page.getByRole("button", { name: "Terminal" }).click();
+  await page.getByRole("radio", { name: "Chat" }).click();
+  await page.getByRole("radio", { name: "Terminal" }).click();
   await page.keyboard.type("echo once-$((2*3))");
   await page.keyboard.press("Enter");
   await expect(term).toContainText("once-6");

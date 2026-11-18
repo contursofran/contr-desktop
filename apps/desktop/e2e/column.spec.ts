@@ -56,7 +56,7 @@ test("the reading column is at most 760 px and its parts line up", async () => {
   expect(await padding("[aria-label=Chat]")).toBe("56px");
   expect(await padding("div:has(> [aria-label=Status])")).toBe("56px");
   // The column ends left of the Chat or Terminal switch.
-  const seg = (await page.getByRole("group", { name: "Chat or Terminal" }).boundingBox())!;
+  const seg = (await page.getByRole("radiogroup", { name: "Chat or Terminal" }).boundingBox())!;
   expect(wide.row.right).toBeLessThan(seg.x);
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });

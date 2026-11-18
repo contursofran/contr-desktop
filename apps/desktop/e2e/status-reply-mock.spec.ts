@@ -50,7 +50,7 @@ test("the status line, the model button and the switch are as the mock", async (
   await expect(status.getByText("Orchestrating · 3 workers")).toHaveCSS("font-size", "12px");
 
   // `.seg`: 52 px under the top of the work area, 14 px from its right, 28 px high.
-  const seg = page.getByRole("group", { name: "Chat or Terminal" });
+  const seg = page.getByRole("radiogroup", { name: "Chat or Terminal" });
   const main = await page.locator("main").boundingBox();
   const box = await seg.boundingBox();
   expect(box!.y - main!.y).toBe(52);

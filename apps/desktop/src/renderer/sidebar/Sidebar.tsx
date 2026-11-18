@@ -1,3 +1,4 @@
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible";
 import { Folder, Inbox, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../../shared/api";
@@ -116,13 +117,13 @@ function loadClosed(): Set<string> {
 }
 
 /** A project row (docs/design/redesign, sidebar): chevron, favicon or folder, name, mono branch, and the commits ahead and behind. */
-function ProjectRow({ project, closed, onToggle }: { project: SidebarProject; closed: boolean; onToggle: () => void }) {
+function ProjectRow({ project, closed }: { project: SidebarProject; closed: boolean }) {
   return (
     <div className="mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px]">
-      <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-35 hover:text-muted">
+      <CollapsibleTrigger aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-35 hover:text-muted">
         {/* The mock's text chevron. U+FE0E keeps ▶ a text glyph, not an emoji. */}
         <span aria-hidden>{closed ? "▶\uFE0E" : "▼"}</span>
-      </button>
+      </CollapsibleTrigger>
       {project.favicon ? (
         <img data-icon="favicon" src={project.favicon} alt="" className="size-[15px] shrink-0 rounded opacity-70" />
       ) : (
@@ -224,14 +225,14 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
       {/* 12 px `muted`, as the design's "N more projects, no agents" row. With hc down the list is unknown, not empty. */}
       {data.projects.length === 0 && <p className="px-2.5 py-1 text-xs text-muted">{data.hcError ? "hc is not reachable" : "No agents"}</p>}
       {data.projects.map((p) => (
-        <section key={p.name} aria-label={p.name} className="mb-1.5 flex flex-col gap-px">
-          <ProjectRow project={p} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />
-          {!closed.has(p.name) && (
+        <Collapsible key={p.name} open={!closed.has(p.name)} onOpenChange={() => toggle(p.name)} render={<section aria-label={p.name} className="mb-1.5 flex flex-col gap-px" />}>
+          <ProjectRow project={p} closed={closed.has(p.name)} />
+          <CollapsiblePanel>
             <ul className="flex flex-col gap-px">
               {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
             </ul>
-          )}
-        </section>
+          </CollapsiblePanel>
+        </Collapsible>
       ))}
     </nav>
     <Foot onSettings={onSettings} settingsShown={settingsShown} />

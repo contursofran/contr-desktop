@@ -64,13 +64,13 @@ test("agent switches add no `destroyed` listener to the window", async () => {
   const app = await launch(log);
   const page = await app.firstWindow();
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
-  await page.getByRole("button", { name: "Terminal", exact: true }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
   await expect(page.getByText("fake terminal t7 attached")).toBeVisible();
   const start = await destroyedListeners(app);
   const titles = ["Release notes draft", "Install health check", "Chat panel usability audit"];
   // 12 switches on the Terminal side (an attach each), then 12 on the Chat side (a feed each).
   for (const side of ["Terminal", "Chat"]) {
-    await page.getByRole("button", { name: side, exact: true }).click();
+    await page.getByRole("radio", { name: side, exact: true }).click();
     for (let i = 0; i < 12; i++) await open(page, titles[i % 3]);
   }
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
