@@ -135,11 +135,18 @@ b-31 | 412k | ctx 72%
 b-60 | 318k | ended
 ```
 
-A line chart, as a `contr-chart line` block: one line `<x> | <y>` for each point, oldest first. The latest point is the brightest and shows its value; contr labels one outlier (modified z-score above 3.5). From 2 to 60 points.
+A line chart, as a `contr-chart line` block: one line `<x> | <y>` for each point, oldest first, or `<x> | <y> | <note>` for a point with a note. The latest point is the brightest and shows its value; contr labels one outlier (modified z-score above 3.5). A labelled point shows its note after the value: `9.4 · #31`. From 2 to 60 points.
 
 ```contr-chart line
 11:10 | 6.1
+14:10 | 9.4 | #31
 14:52 | 6.5
+```
+
+A chart can have a title: write it on the fence line after the kind. A `|` adds a quieter part, such as the period or the unit. A chart without a title needs no heading of its own.
+
+```contr-chart bar Tokens per worker | this run
+b-31 | 412k | ctx 72%
 ```
 
 ## What the chat does not show
