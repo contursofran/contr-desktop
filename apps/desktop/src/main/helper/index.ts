@@ -7,6 +7,7 @@ import { tabTitle } from "./title";
 import { helperPath, runHelper } from "./run";
 import { cachedCommands, replyInfo } from "./reply";
 import { pickImage } from "./pick";
+import { noteFeed } from "../digest/ipc";
 
 let selected: string | undefined;
 /** The running feed of each renderer. */
@@ -62,6 +63,7 @@ export function setupHelper(appRoot: string): void {
     const terminal = chatTerminal();
     if (terminal === "") return;
     feeds.set(sender, startFeed(helper(), terminal, (feed) => {
+      noteFeed(terminal, feed);
       if (!sender.isDestroyed()) sender.send(FEED_CHANNEL, feed);
     }));
   };

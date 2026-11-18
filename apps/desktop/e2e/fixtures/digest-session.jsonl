@@ -1,0 +1,4 @@
+{"id": "u1", "k": "user", "ts": 1793667720000, "text": "Build the board and the queue. I am away for an hour."}
+{"id": "a1", "k": "assistant", "ts": 1793667780000, "text": "Started b-30 and b-40."}
+{"id": "u2", "k": "user", "ts": 1793671200000, "text": "where are we? anything for me?"}
+{"id": "r1", "k": "assistant", "ts": 1793671260000, "text": "```contr-digest\n```\n\nTwo items wait for you in the Inbox.\n\n```contr-digest\nlast 3h\n```\n"}

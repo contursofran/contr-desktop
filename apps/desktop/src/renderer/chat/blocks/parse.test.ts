@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseQueue, parseStatus } from "./parse";
+import { parseDigest, parseQueue, parseStatus } from "./parse";
 
 describe("parseStatus", () => {
   it("reads one worker per line", () => {
@@ -22,5 +22,13 @@ describe("parseQueue", () => {
   });
   it.each(["", "656 Rows", "#656", "- #656 Rows"])("refuses %j", (code) => {
     expect(parseQueue(code)).toBeNull();
+  });
+});
+
+describe("parseDigest", () => {
+  it("takes only an empty block", () => {
+    expect(parseDigest("")).toBe(true);
+    expect(parseDigest("\n  \n")).toBe(true);
+    expect(parseDigest("last 3h")).toBe(false);
   });
 });

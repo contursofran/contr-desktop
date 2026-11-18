@@ -38,3 +38,6 @@ export function parseQueue(code: string): QueueStep[] | null {
   }
   return out.length > 0 ? out : null;
 }
+
+/** A `contr-digest` block has no lines: the app reads the counts. A block with text shows as code. */
+export const parseDigest = (code: string): boolean => lines(code).length === 0;
