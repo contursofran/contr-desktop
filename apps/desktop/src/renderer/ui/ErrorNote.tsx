@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * An error in the main column, in the card's look (chat/card/Card.tsx): what failed in plain words, the raw error in mono,
- * optional more lines, and Retry. The helper error, the terminal error and "hc is not reachable" use it.
+ * optional more lines, and Retry. The helper error and "hc is not reachable" use it.
  */
 export function ErrorNote({ label, problem, detail, onRetry, children }: { label: string; problem: string; detail: string; onRetry: () => void; children?: ReactNode }) {
   return (
