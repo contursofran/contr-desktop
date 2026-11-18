@@ -9,6 +9,14 @@ import type { ComponentProps } from "react";
 const CONTEXT_CHIP_CLASS =
   "whitespace-nowrap font-mono text-[12px] leading-4 py-0.5 ps-[5px] pe-[6px] rounded-md [&_svg]:inline-block [&_svg]:size-[13px] [&_svg]:me-[5px] [&_svg]:align-[-2px] [a&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current";
 
+/** The outline of a chip with no state color (rich-parts.html, `.chip`). */
+export const NEUTRAL_OUTLINE = "shadow-[inset_0_0_0_1px_var(--hairline)]";
+
+/** Ours: a chip that opens nothing, as a span. */
+export function ChipBox({ className, ...props }: ComponentProps<"span">) {
+  return <span className={`${CONTEXT_CHIP_CLASS} align-baseline ${className ?? ""}`} data-slot="context-chip" {...props} />;
+}
+
 export function ContextChip({ className, ...props }: ComponentProps<"a">) {
   return <a className={`${CONTEXT_CHIP_CLASS} ${className ?? ""}`} data-slot="context-chip" {...props} />;
 }

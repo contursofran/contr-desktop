@@ -27,14 +27,24 @@ test("PR and issue numbers show as chips with gh's state", async () => {
   const row = await chatRow(page, "a6");
   const chips = row.locator("[data-ref-state]");
   await expect(chips).toHaveCount(9);
-  const seen = await chips.evaluateAll((els) => els.map((e) => `${e.textContent} ${e.getAttribute("data-ref-kind")} ${e.getAttribute("data-ref-state")}`));
+  const seen = await chips.evaluateAll((els) => els.map((e) => `${e.querySelector("[data-slot=context-chip-label]")?.textContent} ${e.getAttribute("data-ref-kind")} ${e.getAttribute("data-ref-state")}`));
   expect(seen).toEqual([
     "#12 pr merged", "#14 pr open", "#15 pr draft", "#20 pr closed",
     "#9 issue closed", "#21 issue open", "#22 issue not-planned",
     "#21 issue open", "#14 pr open",
   ]);
-  await expect(row.locator("li [data-ref-state]")).toHaveText("#21");
-  await expect(row.locator("td [data-ref-state]")).toHaveText("#14");
+  // The checks from gh: passed, failed and running, in the chip's label for screen readers.
+  const mark = (n: number) => chips.nth(n).locator("[data-checks]");
+  expect([await mark(0).textContent(), await mark(1).textContent(), await mark(2).textContent()]).toEqual(["✓ 6/6", "✕ 1", " 4/6"]);
+  await expect(mark(2).locator('[data-state="working"]')).toHaveCount(1);
+  await expect(chips.nth(3).locator("[data-checks]")).toHaveCount(0);
+  expect(await chips.evaluateAll((els) => els.slice(0, 3).map((e) => e.getAttribute("aria-label")))).toEqual([
+    "PR #12, Merged, 6 of 6 checks passed", "PR #14, Open, 1 of 6 checks failed", "PR #15, Draft, checks running, 4 of 6 passed",
+  ]);
+  expect(await mark(0).evaluate((e) => getComputedStyle(e).color)).toBe("rgba(255, 255, 255, 0.45)");
+  expect(await mark(1).evaluate((e) => getComputedStyle(e).color)).toBe("rgb(244, 244, 245)");
+  await expect(row.locator("li [data-ref-state] [data-slot=context-chip-label]")).toHaveText("#21");
+  await expect(row.locator("td [data-ref-state] [data-slot=context-chip-label]")).toHaveText("#14");
   // Code, links and unknown numbers stay text.
   await expect(row.locator("code[data-inline-code]")).toHaveText("#12");
   await expect(row.locator("pre [data-ref-state]")).toHaveCount(0);

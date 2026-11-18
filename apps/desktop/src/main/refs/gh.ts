@@ -1,10 +1,13 @@
 import { execFile } from "node:child_process";
-import type { RefState } from "../../shared/api";
+import type { CheckCounts, RefState } from "../../shared/api";
+
+/** The head commit's check rollup, with the count of each check state. */
+const CHECKS = "commits(last: 1) { nodes { commit { statusCheckRollup { state contexts { totalCount checkRunCountsByState { state count } statusContextCountsByState { state count } } } } } }";
 
 /** One `gh api graphql` query for many numbers of the repository in gh's folder. */
 export function refsQuery(numbers: number[]): string {
   const fields = numbers.map(
-    (n) => `n${n}: issueOrPullRequest(number: ${n}) { __typename ... on PullRequest { state isDraft url } ... on Issue { state stateReason url } }`,
+    (n) => `n${n}: issueOrPullRequest(number: ${n}) { __typename ... on PullRequest { state isDraft url ${CHECKS} } ... on Issue { state stateReason url } }`,
   );
   return `query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { ${fields.join(" ")} } }`;
 }
@@ -15,6 +18,28 @@ interface GhItem {
   isDraft?: boolean;
   stateReason?: string | null;
   url?: string;
+  commits?: { nodes?: { commit?: { statusCheckRollup?: GhRollup | null } }[] };
+}
+
+interface GhRollup {
+  state?: string;
+  contexts?: {
+    totalCount?: number;
+    checkRunCountsByState?: { state: string; count: number }[];
+    statusContextCountsByState?: { state: string; count: number }[];
+  };
+}
+
+const PASSED = new Set(["SUCCESS", "NEUTRAL", "SKIPPED"]);
+const FAILED = new Set(["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"]);
+
+/** The checks from gh's rollup. No rollup: the PR has no checks. */
+export function toChecks(rollup: GhRollup | null | undefined): CheckCounts | undefined {
+  if (!rollup?.state) return undefined;
+  const counts = [...(rollup.contexts?.checkRunCountsByState ?? []), ...(rollup.contexts?.statusContextCountsByState ?? [])];
+  const sum = (set: Set<string>) => counts.reduce((n, c) => n + (set.has(c.state) ? c.count : 0), 0);
+  const state = rollup.state === "SUCCESS" ? "pass" : rollup.state === "FAILURE" || rollup.state === "ERROR" ? "fail" : "pending";
+  return { state, passed: sum(PASSED), failed: sum(FAILED), total: rollup.contexts?.totalCount ?? 0 };
 }
 
 /** The state of each number from gh's answer. A number gh does not know is null. */
@@ -34,7 +59,8 @@ function toState(item: GhItem | null | undefined): RefState | null {
   if (!item?.url) return null;
   if (item.__typename === "PullRequest") {
     const state = item.state === "MERGED" ? "merged" : item.state === "CLOSED" ? "closed" : item.isDraft ? "draft" : "open";
-    return { kind: "pr", state, url: item.url };
+    const checks = toChecks(item.commits?.nodes?.at(-1)?.commit?.statusCheckRollup);
+    return checks ? { kind: "pr", state, url: item.url, checks } : { kind: "pr", state, url: item.url };
   }
   if (item.__typename === "Issue") {
     const state = item.state === "OPEN" ? "open" : item.stateReason === "NOT_PLANNED" ? "not-planned" : "closed";
