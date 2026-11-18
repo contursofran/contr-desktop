@@ -254,11 +254,11 @@ test("Check now and the app menu's Check for Updates… show a new release with 
   await expect(check).toBeEnabled();
   await expect(view.getByLabel("Last check")).toHaveCount(0);
   await expect(view.getByLabel("Newest version")).toHaveText("9.1.42");
-  await expect(view.getByRole("alert")).toHaveCSS("color", "rgb(255, 159, 10)");
+  await expect(view.getByRole("alert")).toHaveCSS("color", "rgb(244, 244, 245)");
   await expect(view.getByRole("button", { name: "Update" })).toBeVisible();
   await page.screenshot({ path: path.join(shots, "check-failed-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
-  await expect(view.getByRole("alert")).toHaveCSS("color", "rgb(168, 80, 0)");
+  await expect(view.getByRole("alert")).toHaveCSS("color", "rgb(20, 20, 20)");
   await page.screenshot({ path: path.join(shots, "check-failed-light.png") });
 
   // A new check after the failure: while it runs, the old failure does not show; a passed check clears it.

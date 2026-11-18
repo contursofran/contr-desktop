@@ -7,18 +7,18 @@ import { launchApp } from "./launch";
 const e2e = import.meta.dirname;
 const shots = path.resolve(e2e, "../../../tmp/shots");
 
-// The values of herdr-contr-mac.json (dark) and herdr-contr-mac-light.json (light).
+// The contr design-system tokens (src/renderer/tokens.css, #178): opaque fills, ink for text and state, red for "needs you".
 const THEME = {
-  dark: { chrome: "rgb(28, 28, 28)", canvas: "rgb(32, 32, 32)", foreground: "rgb(222, 222, 222)", working: "rgb(10, 132, 255)", done: "rgb(48, 209, 88)", blocked: "rgb(255, 159, 10)" },
-  light: { chrome: "rgb(245, 245, 245)", canvas: "rgb(236, 236, 236)", foreground: "rgb(29, 29, 31)", working: "rgb(0, 122, 255)", done: "rgb(52, 199, 89)", blocked: "rgb(255, 149, 0)" },
+  dark: { chrome: "rgb(17, 18, 20)", canvas: "rgb(20, 21, 24)", foreground: "rgb(233, 233, 234)", working: "rgb(244, 244, 245)", done: "rgba(255, 255, 255, 0.62)", blocked: "rgb(240, 113, 120)" },
+  light: { chrome: "rgb(247, 248, 249)", canvas: "rgb(239, 240, 242)", foreground: "rgb(30, 30, 30)", working: "rgb(20, 20, 20)", done: "rgba(0, 0, 0, 0.68)", blocked: "rgb(199, 57, 71)" },
 };
-// Text in `muted` and `dim`, inert controls in `faint`: in light, `muted` and `dim` are darker than the theme file for 4.5:1 (#102).
+// Chromium keeps alpha in 8 bits, so 0.586 reads 0.584. Text in `muted` (ink-62) and `dim` (ink-50), marks and inert controls in `faint` (ink-30). In light both texts reach 4.5:1.
 const QUIET = {
-  dark: { muted: "rgb(154, 154, 154)", dim: "rgb(106, 106, 106)", faint: "rgb(106, 106, 106)" },
-  light: { muted: "rgb(95, 95, 100)", dim: "rgb(106, 106, 111)", faint: "rgb(161, 161, 166)" },
+  dark: { muted: "rgba(255, 255, 255, 0.62)", dim: "rgba(255, 255, 255, 0.5)", faint: "rgba(255, 255, 255, 0.3)" },
+  light: { muted: "rgba(0, 0, 0, 0.68)", dim: "rgba(0, 0, 0, 0.584)", faint: "rgba(0, 0, 0, 0.39)" },
 };
 
-test("the palette, the agent icons and the loader are herdr-contr's", async () => {
+test("the palette is the design-system tokens; the agent icons and the loader are herdr-contr's", async () => {
   test.setTimeout(60_000);
   // t9 waits for the owner: a blocked agent next to the done t11.
   const status = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "status.json");

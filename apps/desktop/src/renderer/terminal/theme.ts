@@ -1,6 +1,10 @@
 import type { ITheme } from "@xterm/xterm";
 
-/** One theme file's terminal keys: herdr-contr's herdr-app/themes, as index.css. */
+/**
+ * One theme's terminal keys. Background, foreground and cursor are the design-system tokens
+ * (tokens.css): `--win`, `--terminal-text` mixed over `--win`, and `--ink-95`. Selection and the ANSI
+ * colors stay herdr-contr's (herdr-app/themes): a program's output keeps its colors.
+ */
 interface ThemeFile {
   background: string;
   foreground: string;
@@ -10,10 +14,10 @@ interface ThemeFile {
 }
 
 const DARK: ThemeFile = {
-  background: "#202020",
-  foreground: "#dedede",
+  background: "#141518",
+  foreground: "#d5d5d5",
   selection: "#3a4a63",
-  cursor: "#dedede",
+  cursor: "#e9e9ea",
   ansi: [
     "#2a2a2a", "#ff6961", "#30d158", "#ffd60a", "#0a84ff", "#bf5af2", "#64d2ff", "#dedede",
     "#6a6a6a", "#ff8a80", "#5ee07f", "#ffe066", "#409cff", "#d18cf5", "#8adfff", "#ffffff",
@@ -21,10 +25,10 @@ const DARK: ThemeFile = {
 };
 
 const LIGHT: ThemeFile = {
-  background: "#ececec",
-  foreground: "#1d1d1f",
+  background: "#eff0f2",
+  foreground: "#2c2c2d",
   selection: "#b3d4ff",
-  cursor: "#1d1d1f",
+  cursor: "#1e1e1e",
   ansi: [
     "#1d1d1f", "#d70015", "#248a3d", "#a05a00", "#0040dd", "#8944ab", "#0071a4", "#c7c7cc",
     "#6e6e73", "#ff3b30", "#34c759", "#c98500", "#007aff", "#af52de", "#32ade6", "#f5f5f7",

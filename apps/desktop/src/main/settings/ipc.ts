@@ -2,9 +2,10 @@ import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
 import path from "node:path";
 import { SETTINGS_CHANNEL, THEME_CHANNEL, type ThemeChoice } from "../../shared/api";
 import { helperPath } from "../helper/run";
+import { CANVAS_DARK, CANVAS_LIGHT } from "../window-options";
 import { readTheme, writeTheme } from "./theme";
 
-const CANVAS = { dark: "#202020", light: "#ffffff" };
+const CANVAS = { dark: CANVAS_DARK, light: CANVAS_LIGHT };
 
 /** Paints each window's background in the shown theme, so no other color shows on resize. */
 function paint(): void {

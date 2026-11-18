@@ -38,12 +38,12 @@ test("Settings opens from the foot, sets the theme from the tokens, and keeps it
 
   await theme.getByRole("radio", { name: "Dark" }).click();
   await expect(theme.getByRole("radio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");
-  await expect.poll(() => canvas(page)).toBe("rgb(32, 32, 32)");
+  await expect.poll(() => canvas(page)).toBe("rgb(20, 21, 24)");
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("dark");
   await page.screenshot({ path: path.join(shots, "settings-dark.png") });
 
   await theme.getByRole("radio", { name: "Light" }).click();
-  await expect.poll(() => canvas(page)).toBe("rgb(236, 236, 236)");
+  await expect.poll(() => canvas(page)).toBe("rgb(239, 240, 242)");
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
   await page.screenshot({ path: path.join(shots, "settings-light.png") });
   await app.close();
@@ -54,12 +54,12 @@ test("Settings opens from the foot, sets the theme from the tokens, and keeps it
   await page.emulateMedia({ colorScheme: null });
   await expect(page.getByRole("region", { name: "contr-desktop" })).toBeVisible();
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
-  await expect.poll(() => canvas(page)).toBe("rgb(236, 236, 236)");
+  await expect.poll(() => canvas(page)).toBe("rgb(239, 240, 242)");
   await expect(page.getByText("Run it with:")).toBeVisible();
   await page.screenshot({ path: path.join(shots, "settings-chat-light.png") });
   await page.locator("aside > footer").getByRole("button", { name: "Settings" }).click();
   await page.getByRole("radio", { name: "Dark" }).click();
-  await expect.poll(() => canvas(page)).toBe("rgb(32, 32, 32)");
+  await expect.poll(() => canvas(page)).toBe("rgb(20, 21, 24)");
   await page.getByRole("region", { name: "contr-desktop" }).getByRole("button", { name: /Chat panel usability audit/ }).click();
   await expect(page.getByRole("region", { name: "Settings" })).toHaveCount(0);
   await expect(page.getByText("Run it with:")).toBeVisible();

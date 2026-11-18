@@ -18,8 +18,8 @@ test("task-list boxes take their colors from theme tokens", async () => {
   const row = await chatRow(page, "a5");
   const checked = row.locator('li.task-list-item input:checked').first();
   const empty = row.locator('li.task-list-item input:not(:checked)').first();
-  // herdr-contr-mac.json and herdr-contr-mac-light.json `working`.
-  const working = { dark: ["#0a84ff", "rgb(10, 132, 255)"], light: ["#007aff", "rgb(0, 122, 255)"] };
+  // `working` is `--ink-100` of the design-system tokens (tokens.css).
+  const working = { dark: ["#f4f4f5", "rgb(244, 244, 245)"], light: ["#141414", "rgb(20, 20, 20)"] };
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const token = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--color-working").trim());

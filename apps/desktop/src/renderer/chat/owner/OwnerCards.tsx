@@ -144,7 +144,7 @@ export function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved
     });
   };
   const row = (id: string, code: string, block: boolean) => (
-    <div key={id} className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-canvas px-2 py-1 font-[Menlo,monospace] text-[12.5px]">
+    <div key={id} className="mt-1 flex items-center gap-2 rounded-lg border border-border bg-canvas px-2 py-1 font-mono text-[12.5px]">
       <span className={`min-w-0 flex-1 ${block ? "whitespace-pre-wrap" : "truncate"}`}>{code}</span>
       <button type="button" aria-label={copied === id ? "Copied" : `Copy ${code}`} onClick={() => copy(id, code)} className="flex size-6 shrink-0 items-center justify-center rounded hover:bg-hover">
         {copied === id ? <CheckIcon className="size-3.5 text-foreground" /> : <CopyIcon className="size-3.5 text-muted" />}
