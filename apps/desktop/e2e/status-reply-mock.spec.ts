@@ -64,7 +64,10 @@ test("the status line, the model button and the switch are as the mock", async (
     await expect(detail).toHaveCSS("color", INK[scheme].dim);
     await expect(status.getByText("Orchestrating · 3 workers")).toHaveCSS("color", INK[scheme].dim);
     await page.screenshot({ path: path.join(shots, `status-reply-${scheme}.png`) });
-    await page.locator("main").screenshot({ path: path.join(shots, `status-reply-main-${scheme}.png`) });
+    const top = (await status.boundingBox())!;
+    const form = (await page.getByRole("form", { name: "Reply" }).boundingBox())!;
+    await page.screenshot({ path: path.join(shots, `status-reply-foot-${scheme}.png`), clip: { x: form.x - 8, y: top.y - 8, width: form.width + 16, height: form.y + form.height - top.y + 16 } });
+    await page.screenshot({ path: path.join(shots, `switch-${scheme}.png`), clip: { x: box!.x - 300, y: main!.y, width: box!.width + 314, height: 120 } });
   }
   await app.close();
 });
