@@ -2,7 +2,7 @@ import { StatusGlyph } from "../../ui/StatusGlyph";
 import type { Working } from "../../../shared/api";
 
 /** The status line above the reply box (docs/design/redesign/screens.html, screen 1): the working glyph, the verb, then
- * time and tokens in mono; `right` is the orchestrator text. The glyph keeps the label "running" for screen readers.
+ * time and tokens in 11 px mono; 12 px `dim` text (the mock's `--ink-38` mono is `dim` too, decision 198); `right` is the orchestrator text. The glyph keeps the label "running" for screen readers.
  * In a narrow line the verb stays whole and the detail truncates with an ellipsis.
  * `onOrchestrate`: with no `right` text, a quiet "Orchestrate" at the right that calls it. */
 export function StatusLine({
@@ -16,14 +16,14 @@ export function StatusLine({
 }) {
   if (!working?.text && !right && !onOrchestrate) return null;
   return (
-    <div aria-label="Status" className="mx-auto flex w-full max-w-read items-center gap-2 pt-1 pb-2 text-[13px] leading-[18px] text-foreground">
+    <div aria-label="Status" className="mx-auto flex w-full max-w-read items-center gap-2.5 px-1 pt-1 pb-2 text-xs leading-[18px] text-dim">
       {working?.text && (
         <>
           <span role="status" aria-label="running" className="flex shrink-0 text-ink-100">
             <StatusGlyph state="working" className="text-[13px]!" />
           </span>
           <span className="shrink-0 whitespace-nowrap">{working.text}</span>
-          {working.detail && <span className="min-w-0 shrink truncate font-mono">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
+          {working.detail && <span className="min-w-0 shrink truncate font-mono text-[11px]">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
         </>
       )}
       {right ? (

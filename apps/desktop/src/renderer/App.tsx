@@ -115,7 +115,7 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
       type="button"
       aria-pressed={side === s}
       onClick={() => onSide(s)}
-      className={`rounded-md px-2.5 py-[3px] text-[11.5px] leading-4 ${side === s ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-dim hover:text-muted"}`}
+      className={`rounded-md px-2.5 py-[3px] text-[11.5px] leading-[18px] ${side === s ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-dim hover:text-muted"}`}
     >
       {label}
     </button>
