@@ -8,8 +8,8 @@
   row or with Arrow Down and Arrow Up. When the open item closes, the oldest opens.
 - The open card takes the digit and Enter keys, as the coordinator's chat does. Before, the
   Inbox showed every card at once and took no keys.
-- The card is the owner card of the chat (`chat/owner/OwnerCards.tsx`). #182 gives it the
-  question card's look; this change does not restyle it.
+- The card was the owner card of the chat (`chat/owner/OwnerCards.tsx`). #232 replaces it: the open
+  row is the card (`inbox/OpenItem.tsx`).
 - The ends: a question shows its number of answers; a to-do has a Done button that marks it
   done with no need to open it; a blocked agent shows "Open chat", and a press opens its chat.
 - Glyphs: a question and a blocked agent are "needs you" (red); a to-do is idle. The ids, the
