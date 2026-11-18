@@ -52,7 +52,7 @@ Left to right:
        label (13 px, at most 170 px, cut with an ellipsis). The shown tab is `selected`, semibold,
        with a × to close it. The capsule scrolls sideways when the tabs do not fit.
      - The tools capsule has **+** (new tab) and a terminal button (the agent's terminal).
-   - **Chat**: a reading column at most 1000 px wide, 24 px gutters, centered.
+   - **Chat**: a reading column at most 1000 px wide, 24 px gutters, centered. The redesign changed it to 760 px (decision 229).
      - User message: a right-aligned bubble, at most 78% of the column, 16 px corners, `raised`.
        Its pictures under the text, 4 px below it: each 120 px high (the width from its shape, at most
        the text width), 8 px corners, a 1 px `border` frame, 8 px apart, side by side and wrapping.

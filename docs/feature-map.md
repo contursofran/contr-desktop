@@ -58,7 +58,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |
 | Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
-| Reading column | Looks at a wide window | `size=1600x900` | — | At most 1000 px, centered; its parts line up | `column` |
+| Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `column` |
 | Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `scroll` |
 | Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `jump` |
 | Loading | Opens a chat before the first feed answer | `FAKE_HELPER_SLOW_FEED=3000` | `status "Reading the chat"` | The loader and "Reading the chat…" | `reply-send` |
@@ -76,7 +76,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Own answer | Types an own answer | Type, Enter | `textbox "Own answer"` | A number typed there is text, not a pick | `cards`, `keys` |
 | Card keys | Presses a number | 1, 2, … | — | With focus in the reply box a 1 stays text; with focus on the page it answers | `keys`, `focus` |
 | Stacked cards | Has an agent card and owner items | `FAKE_HELPER_CARD`, `FAKE_ORCH_OWNER`, `size=640x480` | `region "Approval"`, `region "Owner question"`, `region "Owner to-do"` | The cards scroll inside; the reply box stays in the window; key 1 answers only the agent's card | `stacked-cards` |
-| Card width | Looks at a card in a small window | `size=900x600` | `region "Approval"` | 16 px side space, as the chat rows | `cards` |
+| Card width | Looks at a card in a small window | `size=900x600` | `region "Approval"` | The chat rows' side space: 56 px, 16 px under 768 px | `cards` |
 
 ## Reply box
 

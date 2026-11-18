@@ -17,8 +17,8 @@ export function Row({ row }: { row: FeedRow }) {
       return <ToolsRow row={row} />;
     case "sep":
       return (
-        <div className="flex items-center gap-3 text-xs text-dim">
-          <span className="h-px flex-1 bg-border" />{row.text}<span className="h-px flex-1 bg-border" />
+        <div className="flex items-center gap-2.5 text-xs text-dim">
+          <span className="h-px flex-1 bg-hairline" />{row.text}<span className="h-px flex-1 bg-hairline" />
         </div>
       );
     case "assistant":
@@ -29,7 +29,7 @@ export function Row({ row }: { row: FeedRow }) {
     case "status":
       // A thin centered line, as "Context compacted".
       return (
-        <div className="flex items-center gap-3 text-[11.5px] text-dim">
+        <div className="flex items-center gap-2.5 text-xs text-dim">
           <span className="h-px flex-1 bg-hairline" />{row.text}<span className="h-px flex-1 bg-hairline" />
         </div>
       );

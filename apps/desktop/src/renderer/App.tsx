@@ -148,11 +148,11 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
   if (side === "terminal") return <TerminalView />;
   return (
     <>
-      {/* The cards, the status line and the reply box keep the chat rows' 16 px side space in a narrow window.
+      {/* The cards, the status line and the reply box keep the chat rows' side space: the mock's 56 px (`.bottom`), 16 px in a window under 768 px.
           They come before the chat rows in the DOM, so Tab reaches the reply box first; `order-last` shows them under the rows. */}
       {/* The same scrollbar gutters as the chat list, so the cards, status line and reply box line up with the rows. */}
       {/* Stacked cards scroll in a block of at most 45% of the window; the status line and the reply box stay under it (issue #139). */}
-      <div className="order-last flex flex-col overflow-hidden px-4 [scrollbar-gutter:stable_both-edges]">
+      <div className="order-last flex flex-col overflow-hidden px-4 md:px-14 [scrollbar-gutter:stable_both-edges]">
         {/* `flex-col-reverse` starts the block scrolled to its end: the agent's card, next to the reply box, stays in view. */}
         <div role="group" aria-label="Cards" className="flex max-h-[45vh] min-h-0 flex-col-reverse overflow-y-auto">
           {feed.card && <Card card={feed.card} />}
