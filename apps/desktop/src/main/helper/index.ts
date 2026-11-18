@@ -1,11 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain, type WebContents } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, TAB_TITLE_CHANNEL } from "../../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, SET_TIER_CHANNEL, TAB_TITLE_CHANNEL, type SpeedTier } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
 import { answer, approve, type Answer } from "./card";
 import { tabTitle } from "./title";
 import { helperPath, runHelper } from "./run";
-import { cachedCommands, replyInfo } from "./reply";
+import { cachedCommands, replyInfo, setReplyTier } from "./reply";
 import { pickImage } from "./pick";
 import { noteFeed } from "../digest/ipc";
 
@@ -74,12 +74,22 @@ export function setupHelper(appRoot: string): void {
   // `commands` changes seldom: one good answer per agent and app run.
   const fresh = () => cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
   let commands = fresh();
+  let tierFailures = new Set<string>();
   clearCommands = () => {
     commands = fresh();
+    tierFailures = new Set();
   };
-  ipcMain.handle(REPLY_INFO_CHANNEL, () => {
+  ipcMain.handle(REPLY_INFO_CHANNEL, async () => {
     const terminal = chatTerminal();
-    return replyInfo(helper(), terminal, commands(terminal));
+    const info = await replyInfo(helper(), terminal, commands(terminal));
+    return tierFailures.has(terminal) ? { ...info, tiers: [] } : info;
+  });
+  ipcMain.handle(SET_TIER_CHANNEL, async (_event, terminal: string, tier: SpeedTier) => {
+    if (!terminal || terminal !== chatTerminal()) return { ok: false, message: "The active chat changed" };
+    const failures = tierFailures;
+    const result = await setReplyTier(helper(), terminal, tier);
+    if (!result.ok) failures.add(terminal);
+    return result;
   });
   ipcMain.handle(PICK_IMAGE_CHANNEL, (event) =>
     pickImage(process.env, (options) => {
