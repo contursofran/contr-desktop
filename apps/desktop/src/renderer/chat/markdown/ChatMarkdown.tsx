@@ -37,7 +37,8 @@ function Pre({ node, children }: WithNode<"pre">) {
   const className = codeNode?.properties.className;
   const language = extractFenceLanguage(Array.isArray(className) ? className.join(" ") : undefined);
   const code = textOf(codeNode);
-  const block = contrBlock(language, code);
+  const meta = codeNode?.properties.dataCodeMeta;
+  const block = contrBlock(language, code, typeof meta === "string" ? meta : undefined);
   if (block) return block;
   const plain = <pre>{children}</pre>;
   const diagram = diagramFor(language, code);

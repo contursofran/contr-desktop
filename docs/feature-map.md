@@ -52,6 +52,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A word for each kind; local images draw | `remarks` |
 | Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |
 | Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | Drawn diagrams; a block past a limit shows as code | `diagrams` |
+| Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | Grey bars, largest first, with the value and note as text; a line with the latest point brightest and one outlier labelled; an unknown kind stays code | `charts` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |
 | Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
