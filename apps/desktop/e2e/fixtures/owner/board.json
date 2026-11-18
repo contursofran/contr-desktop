@@ -1,0 +1,4 @@
+[
+  { "kind": "question", "id": "D7", "coordinator": "hc:t7", "title": "Queue block or row", "from": "b-40", "question": "Is the merge queue a block or a row?", "options": ["Block", "Row"], "recommended": 0, "refs": [] },
+  { "kind": "question", "id": "D9", "coordinator": "hc:t12", "title": "Other", "from": "b-40", "question": "Not for this chat.", "options": ["Ok"] }
+]

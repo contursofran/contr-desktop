@@ -14,6 +14,7 @@ interface OrchWorker {
   parent?: unknown;
   live?: unknown;
   status?: unknown;
+  role?: unknown;
 }
 
 function toState(w: OrchWorker): WorkerState {
@@ -33,27 +34,38 @@ function parseList(json: string): OrchWorker[] {
 }
 
 /**
- * Each worker's state from `agents ls --all --json`. A name listed twice keeps its live entry.
+ * Each worker's entry in `agents ls --all --json`. A name listed twice keeps its live entry.
  * With `parent`, a name that has an entry under that parent uses only those entries
  * (names such as `b-10` repeat across projects); other names fall back to all entries.
  */
-export function readWorkers(json: string, parent?: string): Record<string, WorkerState> {
+function entries(json: string, parent?: string): [string, OrchWorker][] {
   const list = parseList(json);
   const mine = new Set(list.filter((w) => parent !== undefined && w?.parent === parent).map((w) => w.name));
-  const out: Record<string, WorkerState> = {};
+  const out = new Map<string, OrchWorker>();
   for (const w of list) {
     if (mine.has(w?.name) && w.parent !== parent) continue;
     if (typeof w?.name !== "string") continue;
-    if (out[w.name] && out[w.name] !== "done" && w.live !== true) continue;
-    out[w.name] = toState(w);
+    const had = out.get(w.name);
+    if (had && toState(had) !== "done" && w.live !== true) continue;
+    out.set(w.name, w);
   }
-  return out;
+  return [...out];
 }
 
-/** One read-only run of the tool and of hc: the board's worker states and the agent's live worker count (the sidebar's rule). */
-export async function orchBoard(orch: string, hc: string, parent: string): Promise<{ workers: Record<string, WorkerState>; orchestrating: number }> {
+/** Each worker's state (see entries). */
+export function readWorkers(json: string, parent?: string): Record<string, WorkerState> {
+  return Object.fromEntries(entries(json, parent).map(([name, w]) => [name, toState(w)]));
+}
+
+/** Each worker's role (see entries); a worker with no role is absent. */
+export function readRoles(json: string, parent?: string): Record<string, string> {
+  return Object.fromEntries(entries(json, parent).flatMap(([name, w]) => (typeof w.role === "string" ? [[name, w.role]] : [])));
+}
+
+/** One read-only run of the tool and of hc: the board's worker states and roles, and the agent's live worker count (the sidebar's rule). */
+export async function orchBoard(orch: string, hc: string, parent: string): Promise<{ workers: Record<string, WorkerState>; roles: Record<string, string>; orchestrating: number }> {
   const [json, hcJson] = await Promise.all([run(orch, ["agents", "ls", "--all", "--json"]), run(hc, ["ls", "--json"])]);
-  return { workers: readWorkers(json, parent), orchestrating: countLiveWorkers(hcJson, json, parent) };
+  return { workers: readWorkers(json, parent), roles: readRoles(json, parent), orchestrating: countLiveWorkers(hcJson, json, parent) };
 }
 
 /** Runs the tool read-only: `agents ls --all --json`. A missing or failed tool gives no workers. */

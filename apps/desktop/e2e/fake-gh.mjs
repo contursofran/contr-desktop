@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A fake gh for tests. `api graphql` answers each `nN: issueOrPullRequest(number: N)` of the
 // query from the table below; other numbers are null, as gh gives for unknown numbers.
-// PRs #12, #14 and #15 have checks (passed, failed, running). FAKE_GH_LOG gets one JSON line per call: the numbers it asked for.
+// PRs #12, #14 and #15 have checks (passed, failed, running), and #31, #41 and #51 (the board's PRs) the same checks as the checks query gives. FAKE_GH_LOG gets one JSON line per call: the numbers it asked for.
 // `pr list --state merged` gives two PRs (#12, #70); `pr list --state open` gives #14 (checks pass) and #51 (a check failed).
 // FAKE_GH_PR_LOG gets the arguments of each `pr list` as one JSON line.
 import { appendFileSync } from "node:fs";
@@ -25,11 +25,11 @@ const table = {
   21: issue(21, "OPEN"),
   22: issue(22, "CLOSED", "NOT_PLANNED"),
   30: issue(30, "OPEN"),
-  31: pr(31, "OPEN"),
+  31: pr(31, "OPEN", false, rollup("SUCCESS", { SUCCESS: 6 })),
   40: issue(40, "OPEN"),
-  41: pr(41, "OPEN", true),
+  41: pr(41, "OPEN", true, rollup("PENDING", { SUCCESS: 4, IN_PROGRESS: 2 })),
   50: issue(50, "OPEN"),
-  51: pr(51, "OPEN"),
+  51: pr(51, "OPEN", false, rollup("FAILURE", { SUCCESS: 5, FAILURE: 1 })),
   60: issue(60, "OPEN"),
   70: pr(70, "MERGED"),
 };
@@ -67,7 +67,7 @@ const query = args.find((a) => a.startsWith("query=")) ?? "";
 const numbers = [...query.matchAll(/number: (\d+)/g)].map((m) => Number(m[1]));
 if (process.env.FAKE_GH_LOG) appendFileSync(process.env.FAKE_GH_LOG, `${JSON.stringify(numbers)}\n`);
 // A checks query (contr-status board): each issue's closing PR and the state of its checks.
-const closing = { 30: [31, "SUCCESS"], 40: [41, "PENDING"], 50: [51, "FAILURE"] };
+const closing = { 30: [31, "SUCCESS"], 40: [41, "PENDING"], 50: [51, "FAILURE"], 60: [12, "SUCCESS"] };
 const prOf = ([number, state]) => ({ closedByPullRequestsReferences: { nodes: [{ number, commits: { nodes: [{ commit: { statusCheckRollup: { state } } }] } }] } });
 const checks = query.includes("closedByPullRequestsReferences");
 const answer = (n) => (checks ? (closing[n] ? prOf(closing[n]) : null) : (table[n] ?? null));
