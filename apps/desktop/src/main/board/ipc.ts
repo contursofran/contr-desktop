@@ -30,6 +30,6 @@ export function registerBoardIpc(appRoot: string, terminal: () => string): void 
       workers = { at: Date.now(), terminal: t, value: orchBoard(orchPath(appRoot), hc, t) };
     const wanted = Array.isArray(issues) ? issues.filter((n): n is number => Number.isInteger(n) && n > 0) : [];
     const [w, c] = await Promise.all([workers.value, checksOf(t).get(wanted)]);
-    return { ...w, checks: c };
+    return { ...w, checks: c, agent: t };
   });
 }

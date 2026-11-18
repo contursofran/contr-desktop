@@ -192,6 +192,10 @@ export interface PrChecks {
 
 export interface Board {
   workers: Record<string, WorkerState>;
+  /** Each worker's role from the orchestration tool (`builder-medium`, `planner`, `reviewer`); absent when it gives none. */
+  roles: Record<string, string>;
+  /** The chat's agent (its hc address): the coordinator of the board's owner items. */
+  agent: string;
   checks: Record<number, PrChecks | null>;
   /** Live workers whose parent is the chat's agent (its hc address in CONTR_TERMINAL). */
   orchestrating: number;

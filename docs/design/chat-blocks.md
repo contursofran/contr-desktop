@@ -85,6 +85,12 @@ b-649 | #649 | Rows and badge
 b-665 | #665 | Fewer lines
 ```
 
+When nothing changed since your last board, write `contr-status same` on the fence line, with the same lines: contr shows one line, "Running, no change:", and a chip for each worker.
+
+```contr-status same
+b-649 | #649 | Rows and badge
+```
+
 For a merge order, a `contr-queue` block, one line `#<n> <label>` for each step in order, with ` -- <note>` for a dependency:
 
 ```contr-queue

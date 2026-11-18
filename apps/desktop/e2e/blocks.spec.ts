@@ -17,6 +17,7 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
     CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
     CONTR_REPO_DIR: e2e,
     CONTR_TERMINAL: "t7",
+    FAKE_ORCH_OWNER: path.join(e2e, "fixtures/owner/board.json"),
   });
   const page = await app.firstWindow();
   const row = await chatRow(page, "r1");
@@ -33,17 +34,35 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
   for (const [i, state] of ["working", "blocked", "idle", "done"].entries()) {
     await expect(workers.nth(i).locator("[data-state]").first()).toHaveAttribute("data-state", state);
   }
-  // PR checks from the fake gh: #31 pass, #41 running, #51 fail, #60 no PR.
+  // Steps from the tool's role and state, and gh: #31 checks pass, b-40 is blocked (its step is red),
+  // #51 checks fail, b-60's PR #12 is merged.
+  const steps = [
+    ["CI passed", "Step: CI passed, 4 of 6 done"],
+    ["asks you", "Step: asks you, 3 of 6 done"],
+    ["CI fails", "Step: CI fails, 3 of 6 done"],
+    ["merged", "Step: merged, 6 of 6 done"],
+  ];
+  for (const [i, [word, label]] of steps.entries()) {
+    const step = workers.nth(i).locator("[data-step]");
+    await expect(step).toHaveAttribute("data-step", word!);
+    await expect(step).toHaveAttribute("aria-label", label!);
+  }
+  await expect(workers.nth(1).locator('[data-mark="now"]')).toHaveClass(/bg-blocked/);
+  // b-40 waits for the owner: its item D7 (from b-40, this chat) in place of its PR. The PR chips carry gh's checks.
+  await expect(workers.nth(1).getByLabel("Question D7, Queue block or row, open")).toBeVisible();
   const checks = board.getByTestId("pr-checks");
   await expect(checks).toHaveCount(3);
-  await expect(checks.nth(0)).toContainText("#31");
-  for (const [i, state] of ["done", "working", "blocked"].entries()) {
-    await expect(checks.nth(i).locator("[data-state]")).toHaveAttribute("data-state", state);
-  }
-  await expect(workers.nth(3).getByTestId("pr-checks")).toHaveCount(0);
+  await expect(checks.nth(0).getByRole("link")).toHaveAccessibleName("PR #31, Open, 6 of 6 checks passed");
+  await expect(checks.nth(1).getByRole("link")).toHaveAccessibleName("PR #51, Open, 1 of 6 checks failed");
+  await expect(checks.nth(2).getByRole("link")).toHaveAccessibleName("PR #12, Merged, 6 of 6 checks passed");
+
+  // A `contr-status same` block: one line of worker chips.
+  const same = (await chatRow(page, "r2")).getByTestId("board-same");
+  await expect(same).toHaveText(/^Running, no change:\s*b-30\s*b-40$/);
+  await expect(same.getByLabel("Worker b-40, blocked")).toBeVisible();
 
   const queue = row.getByRole("list", { name: "Merge order" });
-  await expect(queue.locator("> li")).toHaveText([/1#70Parse the blocks$/, /2#31Status board\s*waits for #70/, /3#41Queue block\s*waits for #31/]);
+  await expect(queue.locator("> li")).toHaveText([/1#70Parse the blocks$/, /2#31✓ 6\/6Status board\s*waits for #70/, /3#41.*4\/6Queue block\s*waits for #31/]);
   await expect(queue.locator('[data-ref-state="merged"]')).toHaveCount(1);
 
   // The block that does not parse shows as code.
@@ -54,6 +73,11 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
     await page.emulateMedia({ colorScheme: scheme });
     await row.scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(shots, `blocks-${scheme}.png`), fullPage: true });
+    // In the middle of the chat: away from the top fade and the Chat or Terminal switch.
+    await board.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await board.screenshot({ path: path.join(shots, `board-${scheme}.png`) });
+    await same.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await same.screenshot({ path: path.join(shots, `board-same-${scheme}.png`) });
   }
   await app.close();
 });
