@@ -1,4 +1,4 @@
-import { ChevronDown, Sparkle } from "lucide-react";
+import { Sparkle } from "lucide-react";
 import { Menu, MenuContent, MenuGroup, MenuGroupLabel, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@ui-sdk/react/menu";
 import { AgentIcon } from "../../ui/AgentIcon";
 import { Tip } from "../../ui/Tip";
@@ -35,7 +35,7 @@ export function useReplyInfo(): { info: ReplyInfo; branch: string | null } {
 const ICON_KINDS: Record<string, string> = { claude: "claude-code" };
 
 /**
- * The model button (agent icon, model, effort, chevron) and its menu with a "Model" and an "Effort" group. A choice sends `/model` or `/effort`.
+ * The model button (agent icon, model, effort; no chevron, as the mock) and its menu with a "Model" and an "Effort" group. A choice sends `/model` or `/effort`.
  * The button stays on one line (it does not shrink); its tooltip names model, effort and program.
  */
 export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: string) => Promise<boolean> }) {
@@ -64,7 +64,6 @@ export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: s
       {info.agent ? <AgentIcon kind={ICON_KINDS[info.agent] ?? info.agent} size={15} color="var(--color-dim)" /> : <Sparkle aria-hidden className="size-3.5" />}
       <span className="text-ink-85">{label}</span>
       {effort && <span>{effort}</span>}
-      {hasMenu && <ChevronDown aria-hidden className="size-3 opacity-70" />}
     </>
   );
   const buttonClass = "-mx-1.5 flex shrink-0 items-center whitespace-nowrap gap-2 rounded-md px-1.5 py-0.5 text-xs text-dim hover:bg-hover";
@@ -95,7 +94,7 @@ export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: s
   );
 }
 
-/** The context ring with its percent in mono. The helper's `warn` (80% or more) colors it. The tooltip says it in plain words. */
+/** The context ring with its percent in mono. The helper's `warn` (80% or more) shows it in bright ink (`ink-100`): red is only "needs you" (D134). The tooltip says it in plain words. */
 export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   if (!context) return null;
   const r = 6;
@@ -103,7 +102,7 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   const filled = (Math.min(100, Math.max(0, context.percent)) / 100) * length;
   return (
     <Tip label={contextTip(context.percent)} side="top">
-      <span tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 font-mono text-[11px] outline-none ${context.warn ? "text-blocked" : "text-dim"}`}>
+      <span tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 font-mono text-[11px] outline-none ${context.warn ? "text-ink-100" : "text-dim"}`}>
       <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 -rotate-90">
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" className="stroke-meter-track" />
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" stroke="currentColor" strokeDasharray={`${filled} ${length}`} />

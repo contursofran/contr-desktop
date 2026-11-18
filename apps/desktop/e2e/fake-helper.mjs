@@ -9,7 +9,8 @@
 // `card` prints the `card` line in FAKE_HELPER_CARD (a JSON file), else `{"type":"card"}` (no card).
 // `approve` and `answer` append {cmd, terminal, request, allow|answers} to FAKE_HELPER_ANSWER_LOG and answer
 // `done` with FAKE_HELPER_ANSWER_RESULT (default `sent`).
-// `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model.
+// `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model;
+// FAKE_HELPER_CONTEXT=<percent> sets the context (default 37), with `warn` at 80 or more.
 // `usage` gives Claude and Codex plans that reset some hours and days from now.
 // FAKE_HELPER_CALL_LOG=<file>: each call appends its arguments as one JSON list.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
@@ -141,8 +142,8 @@ if (failing) {
   out({ type: "model", agent: "claude", model: none ? null : (worker?.model ?? "claude-opus-5-5"), effort: none ? null : (worker?.effort ?? "medium") });
   end(true);
 } else if (cmd === "status") {
-  const percent = worker?.context ?? 37;
-  out({ type: "status", agent: "claude", source: "statusline", tags: [{ kind: "context", percent, text: `ctx ${percent}%`, warn: false }] });
+  const percent = worker?.context ?? Number(process.env.FAKE_HELPER_CONTEXT ?? 37);
+  out({ type: "status", agent: "claude", source: "statusline", tags: [{ kind: "context", percent, text: `ctx ${percent}%`, warn: percent >= 80 }] });
   end(true);
 } else if (cmd === "commands") {
   const models = [{ value: "claude-opus-5-5", label: "Opus 5.5" }, { value: "claude-sonnet-5", label: "Sonnet 5" }];
