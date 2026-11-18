@@ -23,16 +23,25 @@ test("contr-flow and contr-seq draw; a block past a limit shows as code", async 
 
   const flow = row.locator('[data-diagram="contr-flow"]');
   await expect(flow.locator("[data-node]")).toHaveCount(4);
-  expect(await flow.locator("[data-node]").allTextContents()).toEqual(["issue", "build", "review", "merge"]);
+  expect(await flow.locator("[data-node]").allTextContents()).toEqual(["✓issue", "build", "review", "merge"]);
   await expect(flow.locator('[data-node="review"]')).toHaveAttribute("data-state", "waiting");
   await expect(flow.locator("[data-edge] text")).toHaveText(["plan", "PR", "blockers", "green"]);
-  // F18: a back arrow's label sits right of its curve, not on it.
+  // #190: steps go left to right, and a back arrow loops below the boxes, dashed, with its label under the curve.
+  const x = async (name: string) => (await flow.locator(`[data-node="${name}"] rect`).boundingBox())!.x;
+  expect(await x("issue")).toBeLessThan(await x("build"));
+  expect(await x("build")).toBeLessThan(await x("review"));
   const backEdge = await flow.locator('[data-edge="review->build"]').evaluate((g) => {
-    const curve = g.querySelector("path")!.getBBox();
-    const label = g.querySelector("text")!.getBBox();
-    return { curveRight: curve.x + curve.width, labelLeft: label.x };
+    const curve = g.querySelector("path")!;
+    const [c, label] = [curve.getBBox(), g.querySelector("text")!.getBBox()];
+    return { curveBottom: c.y + c.height, labelTop: label.y, dashed: curve.getAttribute("stroke-dasharray") };
   });
-  expect(backEdge.labelLeft).toBeGreaterThan(backEdge.curveRight);
+  expect(backEdge.labelTop).toBeGreaterThan(backEdge.curveBottom);
+  expect(backEdge.dashed).toBe("3 3");
+  // #190: the running box is the brightest, with the status glyph; a done box has ✓ (the first name above).
+  const stroke = (name: string) => flow.locator(`[data-node="${name}"] rect`).evaluate((r) => getComputedStyle(r).stroke);
+  expect(await stroke("build")).not.toBe(await stroke("merge"));
+  await expect(flow.locator('[data-node="build"] .status-glyph')).toHaveAttribute("data-state", "working");
+  await expect(flow.locator('[data-node="review"] .status-glyph')).toHaveAttribute("data-state", "waiting");
   // F18: each diagram sits in the middle of its box.
   for (const d of [flow, row.locator('[data-diagram="contr-seq"]')]) {
     const [box, svg] = [(await d.boundingBox())!, (await d.locator("svg").boundingBox())!];
@@ -41,8 +50,14 @@ test("contr-flow and contr-seq draw; a block past a limit shows as code", async 
 
   const seq = row.locator('[data-diagram="contr-seq"]');
   expect(await seq.locator("[data-actor]").allTextContents()).toEqual(["owner", "lead", "b-696"]);
-  await expect(seq.locator("[data-message] text")).toHaveText(["fix #696", "build it", "run the tests", "PR open"]);
+  await expect(seq.locator("[data-message] text")).toHaveText(["fix #696", "build it", "run the tests", "PR open", "D7 in the Inbox"]);
   await expect(seq.locator("[data-reply]")).toHaveCount(1);
+  // #190: only the message to the owner is red (--blocked: #f07178 dark, #c73947 light).
+  await expect(seq.locator("[data-owner]")).toHaveCount(1);
+  for (const [scheme, red] of [["dark", "rgb(240, 113, 120)"], ["light", "rgb(199, 57, 71)"]] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await expect(seq.locator("[data-owner] text")).toHaveCSS("fill", red);
+  }
 
   const code = row.locator('.chat-markdown-codeblock[data-language="contr-flow"]');
   await expect(code).toContainText("a -> b -> c");

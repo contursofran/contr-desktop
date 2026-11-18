@@ -43,8 +43,12 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
   await expect(workers.nth(3).getByTestId("pr-checks")).toHaveCount(0);
 
   const queue = row.getByRole("list", { name: "Merge order" });
-  await expect(queue.locator("> li")).toHaveText([/1#70Parse the blocks$/, /2#31Status board\s*waits for #70/, /3#41Queue block\s*waits for #31/]);
-  await expect(queue.locator('[data-ref-state="merged"]')).toHaveCount(1);
+  // #190: a rail; the step number is at the right, and the note is under the label.
+  await expect(queue.locator("> li")).toHaveText([/^#70 Parse the blocks1$/, /^#31 Status boardwaits for #702$/, /^#41 Queue blockwaits for #313$/]);
+  await expect(queue.locator('> li > div > div:first-child [data-ref-state="merged"]')).toHaveCount(1);
+  // Done, now, next from gh: #70 merged, #31 open, #41 draft. The #70 in the note is a chip too.
+  await expect.poll(() => queue.locator("> li").evaluateAll((li) => li.map((l) => l.getAttribute("data-step")))).toEqual(["done", "now", "next"]);
+  await expect(queue.locator("> li").nth(1).locator(".text-dim [data-ref-kind]")).toHaveText("#70");
 
   // The block that does not parse shows as code.
   await expect(row.locator("pre")).toHaveCount(1);

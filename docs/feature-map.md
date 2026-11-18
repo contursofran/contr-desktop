@@ -51,8 +51,8 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Worker, owner item, decision and file chips | — (no chat part uses them yet) | — | `[data-chip-parts]` in the spec | `chat/refs`: a worker with its status glyph, an owner item with a red outline while open, a decision in mono, a path with a file icon | `chip-parts` |
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
 | Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A label column and the text, no bar; only "Decision needed" is red; local images draw in a hairline frame | `remarks` |
-| Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |
-| Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | Drawn diagrams; a block past a limit shows as code | `diagrams` |
+| Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board, and the queue as a rail: done, now, next from gh, each note with its chips; a bad block stays code | `blocks` |
+| Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | A flow left to right (the running box brightest, done boxes dim with ✓, back arrows dashed below); a sequence with a message to the owner in red; a block past a limit shows as code | `diagrams` |
 | Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | Grey bars, largest first, with the value and note as text; a line with the latest point brightest and one outlier labelled; an unknown kind stays code | `charts` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |
