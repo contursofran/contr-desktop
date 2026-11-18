@@ -51,6 +51,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
 | Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A word for each kind; local images draw | `remarks` |
 | Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |
+| Digest | Reads `contr-digest` | `fixture=digest-session` | `region "Since you left"`, `[data-cell]` | PRs merged and CI failures from gh, workers busy and items for you from the orchestration tool; red only for items for you; a block with text stays code | `digest` |
 | Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | Drawn diagrams; a block past a limit shows as code | `diagrams` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { DigestBlock } from "./DigestBlock";
 import { parseQueue, parseStatus } from "./parse";
+import { parseDigest } from "./parse";
 import { QueueBlock } from "./QueueBlock";
 import { StatusBlock } from "./StatusBlock";
 
@@ -13,5 +15,6 @@ export function contrBlock(language: string | undefined, code: string): ReactNod
     const steps = parseQueue(code);
     return steps && <QueueBlock steps={steps} />;
   }
+  if (language === "contr-digest") return parseDigest(code) ? <DigestBlock /> : null;
   return null;
 }
