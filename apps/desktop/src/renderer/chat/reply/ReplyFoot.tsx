@@ -1,5 +1,6 @@
-import { ChevronDown, GitBranch, Sparkle } from "lucide-react";
+import { ChevronDown, Sparkle } from "lucide-react";
 import { Menu, MenuContent, MenuGroup, MenuGroupLabel, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@ui-sdk/react/menu";
+import { AgentIcon } from "../../ui/AgentIcon";
 import { Tip } from "../../ui/Tip";
 import { useEffect, useState } from "react";
 import type { ReplyInfo } from "../../../shared/api";
@@ -30,6 +31,9 @@ export function useReplyInfo(): { info: ReplyInfo; branch: string | null } {
   return { info, branch };
 }
 
+/** The helper's agent kinds by the icon kind of `ui/AgentIcon` (hc's names). */
+const ICON_KINDS: Record<string, string> = { claude: "claude-code" };
+
 /**
  * The model button (agent icon, model, effort, chevron) and its menu with a "Model" and an "Effort" group. A choice sends `/model` or `/effort`.
  * The button stays on one line (it does not shrink); its tooltip names model, effort and program.
@@ -57,13 +61,13 @@ export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: s
   const tip = modelTip(label, effort, info.agent);
   const button = (
     <>
-      <Sparkle aria-hidden className="size-3.5" />
-      <span className="text-foreground">{label}</span>
+      {info.agent ? <AgentIcon kind={ICON_KINDS[info.agent] ?? info.agent} size={15} color="var(--color-dim)" /> : <Sparkle aria-hidden className="size-3.5" />}
+      <span className="text-ink-85">{label}</span>
       {effort && <span>{effort}</span>}
-      {hasMenu && <ChevronDown aria-hidden className="size-3.5" />}
+      {hasMenu && <ChevronDown aria-hidden className="size-3 opacity-70" />}
     </>
   );
-  const buttonClass = "flex shrink-0 items-center whitespace-nowrap gap-1 rounded-full px-2 py-0.5 text-sm text-muted hover:bg-hover";
+  const buttonClass = "-mx-1.5 flex shrink-0 items-center whitespace-nowrap gap-2 rounded-md px-1.5 py-0.5 text-xs text-dim hover:bg-hover";
   if (!hasMenu) {
     return <Tip label={tip} side="top"><button type="button" aria-label="Model" className={buttonClass}>{button}</button></Tip>;
   }
@@ -91,7 +95,7 @@ export function ModelButton({ info, send }: { info: ReplyInfo; send: (command: s
   );
 }
 
-/** The context ring with its percent. The helper's `warn` (80% or more) colors it. The tooltip says it in plain words. */
+/** The context ring with its percent in mono. The helper's `warn` (80% or more) colors it. The tooltip says it in plain words. */
 export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   if (!context) return null;
   const r = 6;
@@ -99,9 +103,9 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   const filled = (Math.min(100, Math.max(0, context.percent)) / 100) * length;
   return (
     <Tip label={contextTip(context.percent)} side="top">
-      <span tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 text-xs outline-none ${context.warn ? "text-blocked" : "text-muted"}`}>
-      <svg aria-hidden viewBox="0 0 16 16" className="size-4 -rotate-90">
-        <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" className="stroke-border" />
+      <span tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 font-mono text-[11px] outline-none ${context.warn ? "text-blocked" : "text-dim"}`}>
+      <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 -rotate-90">
+        <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" className="stroke-meter-track" />
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" stroke="currentColor" strokeDasharray={`${filled} ${length}`} />
       </svg>
       {context.percent}%
@@ -110,13 +114,12 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   );
 }
 
-/** The agent's branch. */
+/** The agent's branch, in mono. */
 export function Branch({ branch }: { branch: string | null }) {
   if (!branch) return null;
   return (
-    <span aria-label="Branch" className="flex max-w-48 items-center gap-1 truncate text-xs text-muted">
-      <GitBranch aria-hidden className="size-3.5 shrink-0" />
-      <span className="truncate">{branch}</span>
+    <span aria-label="Branch" className="max-w-48 truncate font-mono text-[11px] text-dim">
+      {branch}
     </span>
   );
 }

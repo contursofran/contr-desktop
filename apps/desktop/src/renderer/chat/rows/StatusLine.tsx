@@ -1,7 +1,8 @@
-import { Spinner } from "./Spinner";
+import { StatusGlyph } from "../../ui/StatusGlyph";
 import type { Working } from "../../../shared/api";
 
-/** The status line above the reply box: spinner, verb, then time and tokens. `right` is the orchestrator text.
+/** The status line above the reply box (docs/design/redesign/screens.html, screen 1): the working glyph, the verb, then
+ * time and tokens in mono; `right` is the orchestrator text. The glyph keeps the label "running" for screen readers.
  * In a narrow line the verb stays whole and the detail truncates with an ellipsis.
  * `onOrchestrate`: with no `right` text, a quiet "Orchestrate" at the right that calls it. */
 export function StatusLine({
@@ -15,16 +16,18 @@ export function StatusLine({
 }) {
   if (!working?.text && !right && !onOrchestrate) return null;
   return (
-    <div aria-label="Status" className="mx-auto flex w-full max-w-read items-center gap-2 px-4 py-1 text-xs text-muted">
+    <div aria-label="Status" className="mx-auto flex w-full max-w-read items-center gap-2 pt-1 pb-2 text-[13px] leading-[18px] text-foreground">
       {working?.text && (
         <>
-          <Spinner size={14} className="shrink-0 text-foreground" />
-          <span className="shrink-0 whitespace-nowrap text-[13px] text-foreground">{working.text}</span>
-          {working.detail && <span className="min-w-0 shrink truncate font-mono text-[11px]">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
+          <span role="status" aria-label="running" className="flex shrink-0 text-ink-100">
+            <StatusGlyph state="working" className="text-[13px]!" />
+          </span>
+          <span className="shrink-0 whitespace-nowrap">{working.text}</span>
+          {working.detail && <span className="min-w-0 shrink truncate font-mono">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}
         </>
       )}
       {right ? (
-        <span className="ml-auto min-w-0 shrink-0 truncate font-mono text-[11px]">{right}</span>
+        <span className="ml-auto min-w-0 shrink-0 truncate">{right}</span>
       ) : (
         onOrchestrate && (
           <button type="button" onClick={onOrchestrate} className="ml-auto shrink-0 text-[11px] text-dim hover:text-muted">

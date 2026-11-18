@@ -83,10 +83,10 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Failed send | Sends when the helper fails | `FAKE_HELPER_SEND_ERROR=<code>` | `form "Reply"` | An error shows; the text stays | `app`, `reply-send` |
 | Attach an image | Clicks + and picks a file, or pastes | Click; Cmd+V | `button "Attach image"`, `list "Attachments"` | A picture 56 px high or a chip; its path goes with the text | `attach`, `app` |
 | Remove an attachment | Clicks × on it | Click, Enter or Space | `button "Remove shot.png"` | Only that one leaves | `attach` |
-| Status line | Looks above the reply box | — | label "Status" | "Hashing… 35s · ↓ 1.2k tokens"; on the right "Orchestrating · 3 workers"; a narrow window cuts the detail | `reply`, `orchestrate` |
+| Status line | Looks above the reply box | — | label "Status" | The working glyph ⠋, "Hashing…" and "35s · ↓ 1.2k tokens" in mono; on the right "Orchestrating · 3 workers"; a narrow window cuts the detail | `reply`, `orchestrate` |
 | Orchestrate | Clicks Orchestrate on an agent with no workers | Click | `button "Orchestrate"` | `/contr:orchestrate` is in the reply box, not sent | `orchestrate` |
-| Model and effort | Opens the model menu | Click; arrows, Enter, Escape | `button "Model"`, `menu "Model" > menuitemradio "Sonnet 5"` | The menu sends `/model` and `/effort`; focus comes back to the button | `reply` |
-| Context and branch | Looks at the right of the foot | — | label "Context 37%", label "Branch" | The ring with 37% and its tooltip; the branch `main` | `reply`, `uisdk-settings` |
+| Model and effort | Opens the model menu | Click; arrows, Enter, Escape | `button "Model"`, `menu "Model" > menuitemradio "Sonnet 5"` | The button has the agent icon (the Claude pet), model and effort; the menu sends `/model` and `/effort`; focus comes back to the button | `reply` |
+| Context and branch | Looks at the right of the foot | — | label "Context 37%", label "Branch" | The ring with 37% in mono and its tooltip; the branch `main` in mono | `reply`, `uisdk-settings` |
 | Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `reply` |
 | Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `reply` |
 | Focus | Opens a chat or comes back to the window | — | `textbox /^Reply to/` | The box takes the keyboard, but not from a chat selection, an open menu or a card that owns the keys | `focus` |

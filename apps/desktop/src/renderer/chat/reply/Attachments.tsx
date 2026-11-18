@@ -10,7 +10,7 @@ import { LOCAL_IMAGE, localImageUrl } from "../markdown/markdownLocalImages";
 export function Attachments({ images, onRemove }: { images: string[]; onRemove: (index: number) => void }) {
   if (images.length === 0) return null;
   return (
-    <ul aria-label="Attachments" className="mb-2 flex flex-wrap items-start gap-2 pt-1.5 pr-1.5">
+    <ul aria-label="Attachments" className="-mb-1.5 flex flex-wrap items-start gap-2 pt-0.5 pr-1.5">
       {images.map((image, index) => (
         <Attachment key={`${index}:${image}`} path={image} onRemove={() => onRemove(index)} />
       ))}

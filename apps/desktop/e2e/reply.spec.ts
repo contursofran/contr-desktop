@@ -211,6 +211,8 @@ test("in a 900x600 window the status line and the reply box keep 16 px of side s
   await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(900);
   const status = page.getByLabel("Status");
   await expect(status).toContainText("Orchestrating · 3 workers");
+  // The screenshots show the whole status line: the glyph, the verb, time and tokens (#181).
+  await expect(status).toContainText("Hashing…35s · ↓ 1.2k tokens");
   const main = (await page.locator("main").boundingBox())!;
   for (const part of [status, page.getByRole("form", { name: "Reply" })]) {
     const b = (await part.boundingBox())!;
