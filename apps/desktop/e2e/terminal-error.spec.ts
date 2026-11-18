@@ -41,12 +41,33 @@ test("a terminal that cannot attach shows what failed and hc's words, and Retry 
   const note = page.getByRole("alert", { name: "Terminal error" });
   await expect(note.locator("p")).toHaveText("The connection to hc ended.");
   await expect(note.locator("pre")).toHaveText("hc closed the connection: fake hc: the core is not running");
+  // The redesign's note: no box; the text in ink, the reason in mono and dim, Retry with a thin line.
+  await expect(note).toHaveCSS("border-top-width", "0px");
+  await expect(note).toHaveCSS("max-width", "520px");
+  await expect(note.locator("pre")).toHaveCSS("font-family", /JetBrains Mono/);
+  await expect(note.locator("pre")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const looks = [
+    { scheme: "dark", text: "rgb(244, 244, 245)", reason: "rgba(255, 255, 255, 0.5)" },
+    { scheme: "light", text: "rgb(20, 20, 20)", reason: "rgba(0, 0, 0, 0.584)" },
+  ] as const;
+  for (const l of looks) {
+    await page.emulateMedia({ colorScheme: l.scheme });
+    await expect(note.locator("p")).toHaveCSS("color", l.text);
+    await expect(note.locator("pre")).toHaveCSS("color", l.reason);
+  }
   await shoot(page, "terminal-error");
 
   rmSync(down);
   await note.getByRole("button", { name: "Retry" }).click();
   await expect(note).toBeHidden();
-  await expect(page.getByTestId("terminal")).toContainText("fake terminal t7 attached");
+  const term = page.getByTestId("terminal");
+  await expect(term).toContainText("fake terminal t7 attached");
+  // No frame: the terminal fills the area under the tab bar, in JetBrains Mono 13/20.
+  await expect(term.locator("..")).toHaveCSS("padding", "16px 24px 18px");
+  await expect(term.locator(".xterm-rows")).toHaveCSS("font-family", /JetBrains Mono/);
+  await expect(term.locator(".xterm-rows")).toHaveCSS("font-size", "13px");
+  await expect(term.locator(".xterm-rows > div").first()).toHaveCSS("height", "20px");
+  await shoot(page, "terminal-attached");
   await app.close();
 });
 

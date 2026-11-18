@@ -4,9 +4,14 @@ import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef, useState } from "react";
 import { useColorScheme } from "../chat/markdown/useColorScheme";
 import type { Sidebar } from "../../shared/api";
-import { ErrorNote } from "../ui/ErrorNote";
 import { terminalProblem } from "./problem";
+import { TerminalNotice } from "./TerminalNotice";
 import { terminalTheme } from "./theme";
+
+// The design's terminal type: JetBrains Mono (`--font-mono`, bundled) 13/20.
+const MONO = '"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace';
+const SIZE = 13;
+const LINE = 20;
 
 // The agent's hc terminal in xterm.js. Keys and paste go to hc; the size follows the view.
 export function TerminalView() {
@@ -19,9 +24,26 @@ export function TerminalView() {
 
   useEffect(() => {
     const el = host.current!;
+    let stop = () => undefined as void;
+    let gone = false;
+    // xterm measures the cell when it opens: open it when the bundled font is in, so that cols, rows and the
+    // 20 px row are right before the attach. A font that does not load leaves the fallback, and the terminal opens.
+    const ready = document.fonts.load(`${SIZE}px ${MONO}`).catch(() => undefined);
+    void ready.then(() => {
+      if (gone) return;
+      stop = start(el);
+    });
+    return () => {
+      gone = true;
+      stop();
+    };
+  }, []);
+
+  function start(el: HTMLDivElement) {
     const term = new Terminal({
-      fontFamily: '"SF Mono", Menlo, monospace',
-      fontSize: 13,
+      fontFamily: MONO,
+      fontSize: SIZE,
+      lineHeight: lineHeight(),
       scrollback: 10000,
       macOptionIsMeta: true,
       theme: terminalTheme(first.current),
@@ -55,7 +77,7 @@ export function TerminalView() {
       term.dispose();
       shown.current = null;
     };
-  }, []);
+  }
 
   // hc comes back after an outage (the sidebar's hcError clears): a shown note attaches again, as Retry does, but focus stays where it is.
   // Only the change from failing to working attaches, once: while hc fails there is no attach, so no loop.
@@ -82,14 +104,23 @@ export function TerminalView() {
   }, [scheme]);
 
   return (
-    <div className="relative min-h-0 flex-1 px-3 pb-3">
+    // No frame: the terminal fills the area under the tab bar, with the design's inset.
+    <div className="relative min-h-0 flex-1 px-6 pt-4 pb-[18px]">
       <div ref={host} data-testid="terminal" className="h-full" />
-      {/* The note covers the terminal: no cursor shows under it. */}
-      {note && (
-        <div className="absolute inset-0 flex items-center bg-canvas px-4">
-          <ErrorNote label="Terminal error" problem={terminalProblem(note)} detail={note} onRetry={() => again.current()} />
-        </div>
-      )}
+      {note && <TerminalNotice problem={terminalProblem(note)} detail={note} onRetry={() => again.current()} />}
     </div>
   );
+}
+
+// The line height that makes a row 20 px. xterm's row is floor(ceil(font height × dpr) × lineHeight) device px, where
+// the font height is the font's ascent and descent (its TextMetrics measure). The small addition keeps the floor
+// from going one px under.
+function lineHeight(): number {
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!ctx) return 1;
+  ctx.font = `${SIZE}px ${MONO}`;
+  const m = ctx.measureText("W");
+  const dpr = window.devicePixelRatio || 1;
+  const char = Math.ceil((m.fontBoundingBoxAscent + m.fontBoundingBoxDescent) * dpr);
+  return char > 0 ? (LINE * dpr) / char + 1e-6 : 1;
 }
