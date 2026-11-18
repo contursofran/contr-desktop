@@ -49,7 +49,9 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
   // The status glyph in `working` on a tab (#180) and on a sidebar row (#179).
   const tabLoader = tab("Chat panel usability audit").getByRole("img", { name: "Working" });
   await expect(tabLoader).toHaveAttribute("data-state", "working");
-  await expect(tabLoader).toHaveCSS("width", "14px");
+  // The tab's glyph is the mock's `.tab .g` (screens.html, #228): 12 px in a 10 px box; the sidebar's stays 15 px in 14.
+  await expect(tabLoader).toHaveCSS("width", "10px");
+  await expect(tabLoader).toHaveCSS("font-size", "12px");
   const sideLoader = audit.getByRole("img", { name: "Working" });
   await expect(sideLoader).toHaveAttribute("data-state", "working");
   await expect(sideLoader).toHaveCSS("width", "14px");

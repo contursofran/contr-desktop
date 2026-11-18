@@ -12,7 +12,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Projects and agents | Looks at the sidebar | — | `navigation "Projects"`, `region "contr-desktop"` | One row per project (folder icon, name, branch `main`); its agents under it; "Chat panel usability audit" has "Orchestrating · 3 workers" and its workers b-30, b-40, b-50 under it. Glyphs: working ⠋, idle ⠶ in ink-30, blocked ⠿ in red, none for done; with `FAKE_HC_STATUS` `{"t10":"idle"}` b-50 shows ⠶ | `sidebar`, `sidebar-projects` |
+| Projects and agents | Looks at the sidebar | — | `navigation "Projects"`, `region "contr-desktop"` | One row per project (folder icon, name, branch `main`); its agents under it; "Chat panel usability audit" has "Orchestrating · 3 workers" and its workers b-30, b-40, b-50 under it. Glyphs: working ⠋, idle ⠶ in ink-30, blocked ⠿ in red. A done agent or worker outside the shown chat has an ink-100 dot with the label "unread". Open its chat to clear the dot; with `FAKE_HC_STATUS` `{"t10":"idle"}` b-50 shows ⠶ | `sidebar`, `sidebar-projects`, `sidebar-mock` |
 | Open an agent's chat | Clicks an agent or worker row | Click | `navigation "Projects" > button "Install health check"` | The chat, the tab and the reply box ("Reply to Install health check") switch to that agent | `sidebar`, `topbar` |
 | A worker's own chat | Clicks a worker row | Click | `button /Cards for prompts and questions/` | The reply box, model, context and status line are the worker's | `sidebar` |
 | Fold a project | Clicks the chevron of a project | Click | `button "Shut contr-desktop"`, then `button "Open contr-desktop"` | The chevron "▼" turns to "▶"; its agents hide, then show again | `sidebar` |
@@ -30,7 +30,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, with its title whole | `topbar` |
+| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `topbar` |
 | Switch by tab | Clicks a tab | Click | `tab "Install health check"` | The chat switches | `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
