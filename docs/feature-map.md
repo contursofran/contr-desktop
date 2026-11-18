@@ -12,7 +12,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Projects and agents | Looks at the sidebar | — | `navigation "Projects"`, `region "contr-desktop"` | One row per project (folder icon, name, branch `main`); its agents under it; "Chat panel usability audit" has "Orchestrating · 3 workers" and its workers b-30, b-40, b-50 under it. Glyphs: working ⠋, idle ⠶ in ink-30, blocked ⠿ in red, none for done; with `FAKE_HC_STATUS` `{"t10":"idle"}` b-50 shows ⠶ | `sidebar`, `sidebar-projects` |
+| Projects and agents | Looks at the sidebar | — | `navigation "Projects"`, `region "contr-desktop"` | One row per project (folder icon, name, branch `main`); its agents under it; "Chat panel usability audit" has "Orchestrating · 3 workers" and its workers b-30, b-40, b-50 under it. Glyphs: working ⠋, idle ⠶ in ink-30, blocked ⠿ in red. A done agent or worker outside the shown chat has an ink-100 dot with the label "unread". Open its chat to clear the dot; with `FAKE_HC_STATUS` `{"t10":"idle"}` b-50 shows ⠶ | `sidebar`, `sidebar-projects`, `sidebar-mock` |
 | Open an agent's chat | Clicks an agent or worker row | Click | `navigation "Projects" > button "Install health check"` | The chat, the tab and the reply box ("Reply to Install health check") switch to that agent | `sidebar`, `topbar` |
 | A worker's own chat | Clicks a worker row | Click | `button /Cards for prompts and questions/` | The reply box, model, context and status line are the worker's | `sidebar` |
 | Fold a project | Clicks the chevron of a project | Click | `button "Shut contr-desktop"`, then `button "Open contr-desktop"` | The chevron "▼" turns to "▶"; its agents hide, then show again | `sidebar` |
@@ -30,7 +30,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, with its title whole | `topbar` |
+| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `topbar` |
 | Switch by tab | Clicks a tab | Click | `tab "Install health check"` | The chat switches | `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
@@ -55,7 +55,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Digest | Reads `contr-digest` | `fixture=digest-session` | `region "Since you left"`, `[data-cell]` | PRs merged and CI failures from gh, workers busy and items for you from the orchestration tool; red only for items for you; a block with text stays code | `digest` |
 | PR card | Reads `contr-pr` | `fixture=pr-card-session` | `region "PR #31"`, `[data-check]`, `pr-meta`, `pr-review`, `pr-merge` | One PR from `gh pr view`: state icon, title, size, branch, files, worker (orchestration tool), head, each check with its time, review and merge state; a block with text stays code | `pr-card` |
 | Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | A flow left to right (the running box brightest, done boxes dim with ✓, back arrows dashed below); a sequence with a message to the owner in red; a block past a limit shows as code | `diagrams` |
-| Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | Grey bars, largest first, with the value and note as text; a line with the latest point brightest and one outlier labelled; an unknown kind stays code | `charts` |
+| Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | A title with its quieter part above each chart; grey bars, largest first, rows 20 px apart, with the value and note as text in a 120 px column; a line not wider than 666 px, with the latest point brightest and one outlier labelled with its note (`9.4 · #31`); an unknown kind stays code | `charts` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |
 | Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
@@ -72,12 +72,13 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Permission card | Allows or denies a tool | Keys 1, 2, …; click | `region "Approval" > button /Allow once/` | The answer goes to the helper (`FAKE_HELPER_ANSWER_LOG`); a changed prompt says so | `cards` |
-| Question card | Picks an answer | Keys 1, 2, …; Enter | `region "Question"`, `button "Next"`, `button "Send"` | The pick goes; multi-select takes picks; Next and Send are off until there is a pick or own text | `cards` |
-| One question card | Looks at a permission, a question or a pick-any question | `FAKE_HELPER_CARD` | `region "Approval"`, `region "Question"`, `region "Owner question"` | The reply box's fill and line (`--side`, `--input-line`), no shadow; a red glyph in the head; check boxes for pick-any; "Or type an answer" and the keys line | `cards`, `owner` |
+| Permission card | Allows or denies a tool | Keys 1, 2, …; Enter (Allow once is picked); click | `region "Approval" > button /Allow once/` | The answer goes to the helper (`FAKE_HELPER_ANSWER_LOG`); a changed prompt says so | `cards` |
+| Question card | Picks an answer | Keys 1, 2, …; Enter | `region "Question"`, `button "Next"`, `button "Send"` | The pick goes; a one-choice question starts with its first answer picked (hover fill), so Enter sends it; multi-select takes picks, and Next is off until there is a pick or own text | `cards` |
+| One question card | Looks at a permission, a question or a pick-any question | `FAKE_HELPER_CARD` | `region "Approval"`, `region "Question"`, `region "Owner question"` | The reply box's fill and line (`--side`, `--input-line`), no shadow; a red glyph, then the shown agent's name and title and the card's age in the head; a one-choice answer's detail on a line under its label; check boxes for pick-any; "Or type an answer" and the keys line | `cards`, `owner` |
 | Own answer | Types an own answer | Type, Enter | `textbox "Own answer"` | A number typed there is text, not a pick | `cards`, `keys` |
 | Card keys | Presses a number | 1, 2, … | — | With focus in the reply box a 1 stays text; with focus on the page it answers | `keys`, `focus` |
 | Stacked cards | Has an agent card and owner items | `FAKE_HELPER_CARD`, `FAKE_ORCH_OWNER`, `size=640x480` | `region "Approval"`, `region "Owner question"`, `region "Owner to-do"` | The cards scroll inside; the reply box stays in the window; key 1 answers only the agent's card | `stacked-cards` |
+| Owner to-do in the chat | Looks at a coordinator's to-do | `FAKE_ORCH_OWNER` | `region "Owner to-do"`, `button "Show"`, `button "Done"` | One row: id, first paragraph on one line, "To do · from b-15 · 3 commands", Show and Done. Show opens the text with its copy rows in place; Done closes the item | `owner` |
 | Card width | Looks at a card in a small window | `size=900x600` | `region "Approval"` | The chat rows' side space: 56 px, 16 px under 768 px | `cards` |
 
 ## Reply box

@@ -35,10 +35,17 @@ describe("parseLine", () => {
       { x: "14:52", text: "6.5", value: 6.5 },
     ]);
   });
+  it("reads an optional note on a point", () => {
+    expect(parseLine("14:10 | 9.4 | #31\n14:52 | 6.5")).toEqual([
+      { x: "14:10", text: "9.4", value: 9.4, note: "#31" },
+      { x: "14:52", text: "6.5", value: 6.5 },
+    ]);
+  });
   it.each([
     ["one point", "11:10 | 6.1"],
     ["no y", "11:10 | 6.1\n11:20"],
-    ["three fields", "11:10 | 6.1 | x\n11:20 | 2"],
+    ["an empty note", "11:10 | 6.1 | \n11:20 | 2"],
+    ["four fields", "11:10 | 6.1 | x | y\n11:20 | 2"],
     ["no number", "11:10 | 6.1\n11:20 | slow"],
     ["two units", "a | 4m\nb | 30%"],
   ])("refuses %s", (_, code) => expect(parseLine(code)).toBeNull());
@@ -54,7 +61,12 @@ describe("parseChart", () => {
     expect(parseChart("bar", "a | 1 | x")?.kind).toBe("bar");
     expect(parseChart("line", "a | 1\nb | 2")?.kind).toBe("line");
   });
-  it.each([undefined, "", "pie", "bar line"])("refuses the meta %j", (meta) => {
+  it("reads a title after the kind, with an optional quieter part", () => {
+    expect(parseChart("bar", "a | 1 | x")?.title).toBeUndefined();
+    expect(parseChart("bar Tokens per worker | this run", "a | 1 | x")?.title).toEqual({ text: "Tokens per worker", sub: "this run" });
+    expect(parseChart("line  CI time on main", "a | 1\nb | 2")?.title).toEqual({ text: "CI time on main" });
+  });
+  it.each([undefined, "", "pie", "pie Tokens", "bar | this run"])("refuses the meta %j", (meta) => {
     expect(parseChart(meta, "a | 1 | x")).toBeNull();
   });
 });

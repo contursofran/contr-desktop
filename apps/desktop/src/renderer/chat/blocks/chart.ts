@@ -7,14 +7,22 @@ export interface Bar {
   note: string;
 }
 
-/** One point of a `contr-chart line` block: `<x> | <y>`. */
+/** One point of a `contr-chart line` block: `<x> | <y>`, or `<x> | <y> | <note>`. */
 export interface Point {
   x: string;
   text: string;
   value: number;
+  /** Shown after the value when the point has a label, such as `#31` in "9.4 · #31". */
+  note?: string;
 }
 
-export type Chart = { kind: "bar"; bars: Bar[] } | { kind: "line"; points: Point[] };
+/** The title on the fence line, after the kind: `<text>`, or `<text> | <sub>` with a quieter mono part. */
+export interface ChartTitle {
+  text: string;
+  sub?: string;
+}
+
+export type Chart = ({ kind: "bar"; bars: Bar[] } | { kind: "line"; points: Point[] }) & { title?: ChartTitle };
 
 /** The limits: a chart with more bars or points shows as code. */
 export const MAX_BARS = 12;
@@ -54,27 +62,42 @@ export function parseBars(code: string): Bar[] | null {
 export function parseLine(code: string): Point[] | null {
   const points: Point[] = [];
   let unit: string | null = null;
-  for (const [x, text, ...rest] of fields(code)) {
-    if (rest.length > 0 || !x || !text) return null;
+  for (const [x, text, note, ...rest] of fields(code)) {
+    if (rest.length > 0 || !x || !text || note === "") return null;
     const v = readValue(text);
     if (!v || (unit !== null && v.unit !== unit)) return null;
     unit = v.unit;
-    points.push({ x, text, value: v.value });
+    points.push(note === undefined ? { x, text, value: v.value } : { x, text, value: v.value, note });
   }
   return points.length >= 2 && points.length <= MAX_POINTS ? points : null;
 }
 
-/** A `contr-chart` block; the fence's meta (`bar` or `line`) names the kind. Null when it does not parse. */
+/** The title after the kind on the fence line, undefined when there is none, or null when it has no text. */
+function parseTitle(rest: string | undefined): ChartTitle | undefined | null {
+  if (!rest) return undefined;
+  const separator = rest.indexOf("|");
+  const text = (separator === -1 ? rest : rest.slice(0, separator)).trim();
+  if (!text) return null;
+  const sub = separator === -1 ? "" : rest.slice(separator + 1).trim();
+  return sub ? { text, sub } : { text };
+}
+
+/**
+ * A `contr-chart` block. The fence's meta is the kind (`bar` or `line`) and an optional title:
+ * `bar Tokens per worker | this run`. Null when it does not parse.
+ */
 export function parseChart(meta: string | undefined, code: string): Chart | null {
-  if (meta === "bar") {
+  const match = /^(bar|line)(?:\s+(.*))?$/.exec(meta?.trim() ?? "");
+  if (!match) return null;
+  const title = parseTitle(match[2]);
+  if (title === null) return null;
+  const heading = title ? { title } : {};
+  if (match[1] === "bar") {
     const bars = parseBars(code);
-    return bars && { kind: "bar", bars };
+    return bars && { kind: "bar", bars, ...heading };
   }
-  if (meta === "line") {
-    const points = parseLine(code);
-    return points && { kind: "line", points };
-  }
-  return null;
+  const points = parseLine(code);
+  return points && { kind: "line", points, ...heading };
 }
 
 function median(values: number[]): number {

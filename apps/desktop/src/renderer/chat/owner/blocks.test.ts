@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitTodo } from "./blocks";
+import { splitTodo, todoCommands } from "./blocks";
 
 describe("splitTodo", () => {
   it("gives each paragraph its new code spans, and code blocks as written", () => {
@@ -9,5 +9,10 @@ describe("splitTodo", () => {
       { kind: "code", code: "echo  a" },
       { kind: "text", text: "Last", spans: [] },
     ]);
+  });
+
+  it("counts one command for each copy row", () => {
+    expect(todoCommands(splitTodo("Run `a` in `b`.\n\nAgain `a`.\n\n```sh\nc\n```"))).toBe(3);
+    expect(todoCommands(splitTodo("No commands."))).toBe(0);
   });
 });

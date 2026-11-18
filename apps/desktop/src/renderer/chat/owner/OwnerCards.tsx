@@ -1,9 +1,9 @@
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { OwnerItems, OwnerQuestion, OwnerResult, OwnerTodo } from "../../../shared/api";
-import { CardHead, CardText, cardBox, keyMark, keyRange, KeysLine, OptionLabel, optionRow, ownField, primaryButton, useKeys } from "../card/Card";
+import { CardHead, CardText, cardBox, keyMark, OptionDetail, keyRange, KeysLine, OptionLabel, optionRow, ownField, primaryButton, useKeys } from "../card/Card";
 import { ChatMarkdown } from "../markdown/ChatMarkdown";
-import { splitTodo } from "./blocks";
+import { splitTodo, todoCommands } from "./blocks";
 
 /** "saved, coordinator not reached" shows alone this long after the item leaves. */
 const SAVED_NOTE_MS = 15_000;
@@ -55,7 +55,7 @@ export function OwnerCards({ items, keys = true }: { items: OwnerItems; keys?: b
   return (
     <>
       {q ? <Question key={q.id} q={q} rest={items.questions.length - 1} onSaved={setQNote} keys={keys} /> : qNote && <Note text={qNote} />}
-      {t ? <Todo key={t.id} t={t} rest={items.todos.length - 1} onSaved={setTNote} /> : tNote && <Note text={tNote} />}
+      {t ? <TodoRow key={t.id} t={t} onSaved={setTNote} /> : tNote && <Note text={tNote} />}
     </>
   );
 }
@@ -103,7 +103,7 @@ export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; 
             {keys && <span className={keyMark}>{i + 1}</span>}
             <span className="flex flex-col">
               <OptionLabel label={o.label} recommended={o.recommended} />
-              {o.impact && <span className="mt-0.5 text-xs leading-[17px] text-dim">{o.impact}</span>}
+              {o.impact && <OptionDetail text={o.impact} />}
             </span>
           </button>
         ))}
@@ -133,8 +133,8 @@ export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; 
   );
 }
 
-export function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved: (n: string) => void }) {
-  const { off, error, go } = useRun(onSaved);
+/** The to-do's text with a copy row for each command (the Inbox card, and the chat row after "Show"). */
+function TodoBody({ t }: { t: OwnerTodo }) {
   const [copied, setCopied] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -154,23 +154,62 @@ export function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved
     </div>
   );
   return (
+    <div className="text-[13.5px]">
+      {splitTodo(t.text).map((b, i) =>
+        b.kind === "code" ? row(`c${i}`, b.code, true) : (
+          <div key={`p${i}`}>
+            <ChatMarkdown text={b.text} />
+            {b.spans.map((s, j) => row(`s${i}.${j}`, s, false))}
+          </div>
+        ),
+      )}
+    </div>
+  );
+}
+
+/** The Inbox's to-do card: the whole text and its commands. */
+export function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved: (n: string) => void }) {
+  const { off, error, go } = useRun(onSaved);
+  return (
     <section aria-label="Owner to-do" className={box}>
       <p className="text-xs text-muted">{t.id} · {t.know ? "To know" : "To do"}{more(rest)}</p>
       {t.from && <p className="mt-1 text-[11.5px] text-muted">from {t.from}</p>}
-      <div className="mt-1 text-[13.5px]">
-        {splitTodo(t.text).map((b, i) =>
-          b.kind === "code" ? row(`c${i}`, b.code, true) : (
-            <div key={`p${i}`}>
-              <ChatMarkdown text={b.text} />
-              {b.spans.map((s, j) => row(`s${i}.${j}`, s, false))}
-            </div>
-          ),
-        )}
-      </div>
+      <div className="mt-1"><TodoBody t={t} /></div>
       {error && <p role="alert" className="mt-2 text-xs text-blocked">{error}</p>}
       <div className="mt-2 flex justify-end">
         <button type="button" disabled={off} onClick={() => void go(() => window.contr.ownerDone(t.id))} className={primary}>Done</button>
       </div>
+    </section>
+  );
+}
+
+/** A mock button (screens.html `.btn`). */
+const rowButton = "flex h-7 shrink-0 items-center rounded-lg px-3 text-[12.5px] whitespace-nowrap text-ink-90 shadow-[inset_0_0_0_1px_var(--input-line)] hover:bg-hover disabled:opacity-50";
+
+/**
+ * The chat's to-do: one row (screens.html screen 1, `.todo`): the id, the first paragraph cut to one line, the kind,
+ * who sent it and the number of commands, then Show and Done. Show opens the whole text with its copy rows in place.
+ */
+export function TodoRow({ t, onSaved }: { t: OwnerTodo; onSaved: (n: string) => void }) {
+  const { off, error, go } = useRun(onSaved);
+  const [open, setOpen] = useState(false);
+  const blocks = splitTodo(t.text);
+  const first = blocks.find((b) => b.kind === "text");
+  const commands = todoCommands(blocks);
+  const meta = [t.know ? "To know" : "To do", t.from && `from ${t.from}`, commands > 0 && `${commands} ${commands === 1 ? "command" : "commands"}`].filter(Boolean).join(" · ");
+  return (
+    <section aria-label="Owner to-do" className="mx-auto mb-2 flex w-full max-w-read flex-col gap-2 rounded-xl border border-border bg-chrome py-2 pr-2 pl-3.5">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="shrink-0 font-mono text-[11px] text-dim">{t.id}</span>
+        <div className="min-w-0 flex-1 [&_.chat-markdown]:truncate [&_.chat-markdown]:text-[13.5px] [&_.chat-markdown]:leading-[21px] [&_.chat-markdown]:text-ink-90 [&_.chat-markdown_p]:m-0 [&_.chat-markdown_p]:inline">
+          {first && first.kind === "text" && <ChatMarkdown text={first.text} />}
+        </div>
+        <span className="shrink-0 text-[11.5px] whitespace-nowrap text-dim">{meta}</span>
+        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={rowButton}>{open ? "Hide" : "Show"}</button>
+        <button type="button" disabled={off} onClick={() => void go(() => window.contr.ownerDone(t.id))} className={rowButton}>Done</button>
+      </div>
+      {open && <TodoBody t={t} />}
+      {error && <p role="alert" className="text-xs text-blocked">{error}</p>}
     </section>
   );
 }

@@ -37,7 +37,7 @@ test("a 1 typed in the reply box with a permission card shown stays text; a 1 wi
   test.setTimeout(60_000);
   const { app, page, answers } = await open("bash-permission");
   const card = page.getByRole("region", { name: "Approval" });
-  await expect(card.getByRole("button", { name: /Allow once/ })).toHaveAttribute("aria-keyshortcuts", "1");
+  await expect(card.getByRole("button", { name: /Allow once/ })).toHaveAttribute("aria-keyshortcuts", "1 Enter");
   await expect(card.getByRole("button", { name: /Deny/ })).toHaveAttribute("aria-keyshortcuts", "2");
   const reply = page.getByRole("textbox", { name: /Reply to/ });
   await reply.focus();
@@ -122,8 +122,11 @@ test("a code block is a Tab stop only when it scrolls sideways", async () => {
   await expect.poll(async () => (await state()).every((p) => p.stop === p.scrolls)).toBe(true);
   expect((await state()).some((p) => p.stop)).toBe(false);
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(640, 600));
-  await expect.poll(async () => (await state()).some((p) => p.stop)).toBe(true);
-  expect((await state()).every((p) => p.stop === p.scrolls)).toBe(true);
+  await expect.poll(async () => {
+    const blocks = await state();
+    // Each block updates its Tab stop in its own resize callback (#174).
+    return blocks.some((p) => p.stop) && blocks.every((p) => p.stop === p.scrolls);
+  }).toBe(true);
   // The block that scrolls can take the focus.
   await pres.and(page.locator("[tabindex='0']")).first().focus();
   await shoot(page, "keys-code-scroll");
