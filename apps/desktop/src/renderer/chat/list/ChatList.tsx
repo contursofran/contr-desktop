@@ -15,6 +15,11 @@ export function ChatLoading() {
   );
 }
 
+// The list measures this space with the row and omits it after the last row.
+function ChatRowGap() {
+  return <div aria-hidden className="h-(--space-12)" />;
+}
+
 // The chat rows in a virtual list (Legend List, as t3code's MessagesTimeline).
 // Only the rows near the viewport are in the DOM. The list follows new rows
 // and height changes while it is at the end, and stays put when the owner
@@ -82,6 +87,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
         ListHeaderComponent={<div className="h-12" />}
         data={rows}
         keyExtractor={(row) => row.id}
+        ItemSeparatorComponent={ChatRowGap}
         ListFooterComponent={<div className="h-4" />}
         estimatedItemSize={80}
         recycleItems={false}
@@ -102,7 +108,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
             role="listitem"
             data-kind={item.k}
             data-row-id={item.id}
-            className="mx-auto w-full max-w-read py-1"
+            className="mx-auto flow-root w-full max-w-read"
           >
             <Row row={item} />
           </div>

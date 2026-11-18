@@ -93,12 +93,10 @@
   font-size: 0.85em;
   color: var(--ink-62);
 }
-.chat-markdown pre,
-.chat-markdown .chat-markdown-shiki pre {
+.chat-markdown pre {
   margin: 0;
   max-width: 100%;
   overflow-x: auto;
-  background: transparent !important;
   padding: 10px 12px;
   font: 12px/18px var(--font-mono);
   color: var(--ink-85);
@@ -123,18 +121,6 @@
   vertical-align: top;
 }
 .chat-markdown thead th { font-size: 12px; font-weight: 500; color: var(--color-dim); }
-/* Diffs: a soft fill on added and removed lines; file headers and `@@` stay neutral. */
-.chat-markdown .chat-markdown-shiki pre.chat-diff { padding-inline: 0; }
-.chat-markdown .chat-diff .line {
-  display: block;
-  box-sizing: border-box;
-  width: max-content;
-  min-width: 100%;
-  padding-inline: 0.75rem;
-}
-.chat-markdown .chat-diff .line[data-diff="add"] { background: color-mix(in srgb, var(--color-done) 15%, transparent); }
-.chat-markdown .chat-diff .line[data-diff="del"] { background: color-mix(in srgb, var(--color-pr-closed) 15%, transparent); }
-.chat-markdown .chat-diff .line[data-diff="meta"] { color: var(--color-muted); }
 .chat-markdown hr { border-color: var(--color-border); margin: 1rem 0; }
 /* Remarks: a label column and the text, no bar. Only "Decision needed" is red: it waits for the owner. */
 .chat-markdown blockquote.chat-remark {

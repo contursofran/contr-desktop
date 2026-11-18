@@ -41,7 +41,7 @@ const brokenWords = (table: Locator) =>
     return out;
   });
 
-test("long words wrap in the bubble and the text; tables have a frame; diffs color their lines", async () => {
+test("long words wrap in the bubble and the text; tables have a frame; diffs use plain ink", async () => {
   test.setTimeout(90_000);
   const app = await launchApp({
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
@@ -105,23 +105,15 @@ test("long words wrap in the bubble and the text; tables have a frame; diffs col
       await frame.evaluate((e) => { e.style.width = ""; });
     }
 
-    // F16: added and removed lines get a soft fill; file headers and @@ are neutral.
-    const lines = md.locator(".chat-diff .line");
-    await expect(lines).toHaveCount(8);
-    const look = (i: number) => lines.nth(i).evaluate((e) => [e.dataset.diff, getComputedStyle(e).backgroundColor, getComputedStyle(e).color]);
-    const clear = "rgba(0, 0, 0, 0)";
-    const muted = await token(page, "muted", "color");
-    for (const i of [0, 1, 2, 3]) expect(await look(i)).toEqual(["meta", clear, muted]);
-    const [, ctxBg] = await look(4);
-    expect(ctxBg).toBe(clear);
-    const [delKind, delBg] = await look(5);
-    const [addKind, addBg] = await look(6);
-    expect([delKind, addKind]).toEqual(["del", "add"]);
-    expect(delBg).not.toBe(clear);
-    expect(addBg).not.toBe(clear);
-    expect(addBg).not.toBe(delBg);
+    // A diff shows its prefixes and indentation as code.
+    const diff = md.locator(".chat-markdown-codeblock[data-language=diff] pre");
+    const diffCode = diff.locator("code");
+    await expect(diffCode).toContainText("--- a/src/a.ts");
+    await expect(diffCode).toContainText("+++ b/src/a.ts");
+    expect(await diffCode.textContent()).toContain("\n-const b = 2;\n+const b = 3;\n");
+    await expect(diffCode.locator("*")).toHaveCount(0);
 
-    for (const [name, part] of [["table", frame], ["diff", md.locator(".chat-diff")]] as const) {
+    for (const [name, part] of [["table", frame], ["diff", diff]] as const) {
       await part.evaluate((e) => e.scrollIntoView({ block: "end" }));
       for (const scheme of ["dark", "light"] as const) {
         await page.emulateMedia({ colorScheme: scheme });
