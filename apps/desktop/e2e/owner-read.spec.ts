@@ -48,7 +48,7 @@ test("a failed read of the owner items keeps the last good list and the typed te
   await page.waitForTimeout(6_500);
   await expect(cards).toHaveCount(2);
   await expect(cards.getByLabel("Own answer")).toHaveValue("typed in the chat");
-  await expect(row).toHaveText("Inbox · 5");
+  await expect(row).toHaveText("Inbox5");
   rmSync(bad);
 
   await row.click();
@@ -62,7 +62,7 @@ test("a failed read of the owner items keeps the last good list and the typed te
   await expect(note).toHaveText("Cannot read the owner items: herdr-contr-orch gave no JSON list", { timeout: 10_000 });
   await expect(list.locator("[data-item]")).toHaveCount(5);
   await expect(list).not.toContainText("Nothing needs you.");
-  await expect(row).toHaveText("Inbox · 5");
+  await expect(row).toHaveText("Inbox5");
   expect(await count(app)).toEqual(["contr · Inbox 5", 5]);
   await expect(list.locator('[data-item="D7"]').getByLabel("Own answer")).toHaveValue("typed in the Inbox");
   await shoot(page, "owner-read-failed");

@@ -1,36 +1,42 @@
-import { ChevronDown, ChevronRight, Folder, Inbox } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder, Inbox, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../../shared/api";
 import { StateMark } from "../chat/blocks/Marks";
-import { Spinner } from "../chat/rows/Spinner";
 import { Foot } from "./Foot";
 import { Head } from "./Head";
 import { Tip } from "../ui/Tip";
 import { type Changes, duration, load, save, tip, track } from "./ages";
 import { AgentIcon as ProgramIcon } from "../ui/AgentIcon";
+import { StatusGlyph } from "../ui/StatusGlyph";
 
 const TINT: Record<string, string> = { working: "var(--color-working)", done: "var(--color-done)", blocked: "var(--color-blocked)" };
 
-/** The agent's icon (herdr-contr-spaces `agentIcon(a.program, size, t[a.status] ?? t.muted)`): a one-color glyph takes its state's color. */
+/** The agent's icon: the program's picture (Claude's pet in `--claude`), dimmed when the agent rests; a one-color glyph takes its state's ink. */
 function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
-  return <ProgramIcon kind={agent.kind} size={size} color={TINT[agent.state] ?? "var(--color-muted)"} />;
+  const rests = agent.state === "idle" || agent.state === "done";
+  return (
+    <span className={`flex shrink-0 ${rests ? "opacity-45" : ""}`}>
+      <ProgramIcon kind={agent.kind} size={size} color={TINT[agent.state] ?? "var(--color-muted)"} />
+    </span>
+  );
 }
 
-/**
- * The mark shows only while the agent works or waits (docs/design/recipe-herdr.md, Projects list).
- * Working: herdr-contr-spaces `mark()` draws the loader in `foreground`, at the icon's size.
- */
-function Mark({ agent, size }: { agent: SidebarAgent; size: number }) {
-  if (agent.state === "working") return <Spinner size={size} className="text-foreground" />;
-  return agent.state === "blocked" ? <StateMark state="blocked" label="blocked" /> : null;
+/** The status glyph shows only while the agent works or needs the owner (docs/design/redesign, sidebar). */
+function Mark({ agent }: { agent: SidebarAgent }) {
+  if (agent.state === "working") return <StatusGlyph state="working" />;
+  return agent.state === "blocked" ? <StatusGlyph state="blocked" /> : null;
 }
 
 function count(a: SidebarAgent): number {
   return a.workers.reduce((n, w) => n + 1 + count(w), 0);
 }
 
+/** The selected row: Herdr's grey fill with a faint inset line, and full ink (owner, 2026-11-18, #179). */
+const SELECTED = "bg-selected shadow-[var(--shadow-selected)] text-ink-100";
+
 function Worker({ agent, selected, depth, onSelect }: { agent: SidebarAgent; selected: string; depth: number; onSelect: (t: string) => void }) {
   const shown = agent.terminal === selected;
+  const asks = agent.state === "blocked";
   const showName = agent.name && agent.name !== agent.title;
   return (
     <li>
@@ -39,13 +45,13 @@ function Worker({ agent, selected, depth, onSelect }: { agent: SidebarAgent; sel
           type="button"
           aria-current={shown || undefined}
           onClick={() => onSelect(agent.terminal)}
-          style={{ paddingLeft: 8 + depth * 14 }}
-          className={`flex h-[26px] w-full items-center gap-2 rounded-md pr-2 text-left text-xs hover:bg-hover ${shown ? "bg-raised text-foreground" : agent.state === "done" ? "text-dim" : "text-muted"}`}
+          style={{ paddingLeft: 6 + depth * 14 }}
+          className={`flex h-7 w-full items-center gap-2 rounded-[7px] pr-2.5 text-left text-[12.5px] ${shown ? SELECTED : `hover:bg-hover ${asks ? "text-ink-100" : "text-dim"}`}`}
         >
           <AgentIcon agent={agent} size={13} />
           <span className="min-w-0 flex-1 truncate">{agent.title}</span>
-          {showName && <span className="max-w-[72px] shrink truncate font-mono text-[10px] text-dim">{agent.name}</span>}
-          <Mark agent={agent} size={12} />
+          {showName && <span className={`max-w-[72px] shrink truncate font-mono text-[11px] ${asks || shown ? "text-muted" : "text-dim"}`}>{agent.name}</span>}
+          <Mark agent={agent} />
         </button>
       </Tip>
       {agent.workers.length > 0 && <Workers agents={agent.workers} selected={selected} depth={depth + 1} onSelect={onSelect} />}
@@ -55,7 +61,7 @@ function Worker({ agent, selected, depth, onSelect }: { agent: SidebarAgent; sel
 
 function Workers({ agents, selected, depth, onSelect }: { agents: SidebarAgent[]; selected: string; depth: number; onSelect: (t: string) => void }) {
   return (
-    <ul className={depth === 0 ? "ml-8 flex flex-col gap-0.5 border-l border-border py-1 pl-[9px]" : "flex flex-col gap-0.5"}>
+    <ul className={depth === 0 ? "ml-[34px] flex flex-col border-l border-rail pl-[9px]" : "flex flex-col"}>
       {agents.map((w) => <Worker key={w.terminal} agent={w} selected={selected} depth={depth} onSelect={onSelect} />)}
     </ul>
   );
@@ -72,17 +78,17 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
           type="button"
           aria-current={shown || undefined}
           onClick={() => onSelect(agent.terminal)}
-          className={`flex w-full items-center gap-2 rounded-lg py-1.5 pr-2.5 pl-[26px] text-left text-[13px] ${shown ? "bg-raised font-medium text-foreground ring-1 ring-border" : unread ? "font-semibold text-foreground hover:bg-hover" : "text-muted hover:bg-hover"}`}
+          className={`flex w-full items-start gap-2.5 rounded-lg py-1.5 pr-2.5 pl-[26px] text-left text-[13px] leading-[18px] ${shown ? SELECTED : unread ? "font-semibold text-ink-100 hover:bg-hover" : "text-muted hover:bg-hover"}`}
         >
-          <span className="flex h-[18px] items-center self-start"><AgentIcon agent={agent} size={15} /></span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate">{agent.title}</span>
-            {n > 0 && <span className="block text-xs font-normal text-muted">Orchestrating · {n} {n === 1 ? "worker" : "workers"}</span>}
+          <span className="flex h-[18px] items-center"><AgentIcon agent={agent} size={15} /></span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate">{agent.title}</span>
+            {n > 0 && <span className={`text-[11.5px] leading-4 font-normal ${shown ? "text-muted" : "text-dim"}`}>Orchestrating · {n} {n === 1 ? "worker" : "workers"}</span>}
           </span>
-          {since !== null && agent.state !== "working" && (
-            <span data-age className="shrink-0 self-start font-mono text-[11px] leading-[18px] font-normal text-muted">{duration(since)}</span>
+          {since !== null && agent.state !== "working" && agent.state !== "blocked" && (
+            <span data-age className="shrink-0 font-mono text-[11px] font-normal text-dim">{duration(since)}</span>
           )}
-          <Mark agent={agent} size={15} />
+          <span className="flex h-[18px] items-center"><Mark agent={agent} /></span>
         </button>
       </Tip>
       {n > 0 && <Workers agents={agent.workers} selected={selected} depth={0} onSelect={onSelect} />}
@@ -105,35 +111,35 @@ function contains(agents: SidebarAgent[], terminal: string): boolean {
   return agents.some((a) => a.terminal === terminal || contains(a.workers, terminal));
 }
 
-/** A project row (docs/design/recipe-herdr.md, Projects list): chevron, favicon or folder, name, branch, and the commits ahead and behind. */
+/** A project row (docs/design/redesign, sidebar): chevron, favicon or folder, name, mono branch, and the commits ahead and behind. */
 function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProject; shown: boolean; closed: boolean; onToggle: () => void }) {
   const Chevron = closed ? ChevronRight : ChevronDown;
   return (
-    <div className="flex h-[30px] items-center gap-1.5 overflow-hidden rounded-lg pr-2.5 pl-1.5 text-[13px]">
-      <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex shrink-0 text-dim hover:text-muted">
-        <Chevron aria-hidden className="size-[14px]" />
+    <div className="mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px]">
+      <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex w-2.5 shrink-0 justify-center text-dim hover:text-muted">
+        <Chevron aria-hidden strokeWidth={2.5} className="size-[11px]" />
       </button>
       {project.favicon ? (
-        <img data-icon="favicon" src={project.favicon} alt="" className="size-4 shrink-0 rounded opacity-70" />
+        <img data-icon="favicon" src={project.favicon} alt="" className="size-[15px] shrink-0 rounded opacity-70" />
       ) : (
-        <Folder data-icon="folder" aria-hidden className="size-4 shrink-0 text-dim" />
+        <Folder data-icon="folder" aria-hidden strokeWidth={1.6} className="size-[15px] shrink-0 text-dim" />
       )}
       {/* The name reads in full: the branch shrinks first (to nothing), then the marks, then the counts; the name truncates last. */}
       {/* Its tooltip has the whole name. */}
       <Tip label={project.name} side="right">
-        <span data-name className={`max-w-full shrink-[0.001] truncate font-medium ${shown ? "text-foreground" : "text-muted"}`}>{project.name}</span>
+        <span data-name className={`max-w-full shrink-[0.001] truncate font-medium ${shown ? "text-ink-100" : "text-ink-85"}`}>{project.name}</span>
       </Tip>
       {/* A branch with no room wraps to a second line that the 16 px box hides. */}
       {project.branch && (
         <span className="flex h-4 min-w-0 shrink-[1000] flex-wrap overflow-hidden">
           <span className="h-4 w-0" />
-          <span data-branch className="font-mono text-[11px] leading-4 whitespace-nowrap text-muted">{project.branch}</span>
+          <span data-branch className="font-mono text-[11px] leading-4 whitespace-nowrap text-dim">{project.branch}</span>
         </span>
       )}
       <span className="min-w-0 flex-1" />
       {closed && <span className="flex min-w-0 shrink-[100] overflow-hidden">{project.agents.map((a) => <span key={a.terminal} className="flex shrink-0 scale-[0.93]"><StateMark state={a.state} label={`${a.title}: ${a.state}`} /></span>)}</span>}
       {(project.ahead > 0 || project.behind > 0) && (
-        <span className="flex min-w-0 shrink-[10] gap-1.5 overflow-hidden font-mono text-[11px] whitespace-nowrap text-muted">
+        <span className="flex min-w-0 shrink-[10] gap-1.5 overflow-hidden font-mono text-[11px] whitespace-nowrap text-dim">
           {project.ahead > 0 && <span data-ahead>↑{project.ahead}</span>}
           {project.behind > 0 && <span data-behind>↓{project.behind}</span>}
         </span>
@@ -142,17 +148,19 @@ function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProj
   );
 }
 
-/** The Inbox row above Projects (D95): "Inbox · N", quiet with no count when nothing is open. Selected as an agent row is. */
+/** The Inbox row above Projects (D95): "Inbox" and the open count in mono, no count when nothing is open. Selected as an agent row is. */
 function InboxRow({ count, shown, onOpen }: { count: number; shown: boolean; onOpen: () => void }) {
   return (
     <button
       type="button"
       aria-current={shown || undefined}
+      aria-label={count > 0 ? `Inbox, ${count} open` : "Inbox"}
       onClick={onOpen}
-      className={`mt-1 flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[13px] ${shown ? "bg-raised font-medium text-foreground ring-1 ring-border" : count > 0 ? "font-semibold text-foreground hover:bg-hover" : "text-muted hover:bg-hover"}`}
+      className={`mt-1.5 flex h-[30px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] ${shown ? SELECTED : "text-ink-85 hover:bg-hover"}`}
     >
-      <Inbox aria-hidden className="size-[15px] shrink-0" />
-      <span>{count > 0 ? `Inbox · ${count}` : "Inbox"}</span>
+      <Inbox aria-hidden strokeWidth={1.6} className="size-[15px] shrink-0 text-muted" />
+      <span className="flex-1">Inbox</span>
+      {count > 0 && <span data-count className="font-mono text-[11px] font-medium text-ink-100">{count}</span>}
     </button>
   );
 }
@@ -196,18 +204,26 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
     });
   const age = useMemo(() => (terminal: string) => (changes[terminal] ? Math.max(0, now - changes[terminal].at) : null), [changes, now]);
   return (
-    <aside className="flex w-[250px] shrink-0 flex-col border-r border-border bg-chrome">
+    <aside className="flex w-[268px] shrink-0 flex-col border-r border-hairline bg-chrome">
     <Head onHide={onHide} />
-    <nav aria-label="Projects" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2.5">
+    <nav aria-label="Projects" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-2">
       <InboxRow count={inbox} shown={inboxShown} onOpen={onInbox} />
-      <h2 className="px-2.5 pt-1.5 pb-1 text-xs font-medium text-muted">Projects</h2>
+      <div className="mt-1.5 flex h-[34px] items-center pr-0 pl-2.5">
+        <h2 className="flex-1 text-xs font-medium text-dim">Projects</h2>
+        {/* Add project does nothing yet: inert as the top bar's +. */}
+        <Tip label="Add project (not yet)" side="right">
+          <button type="button" aria-label="Add project" aria-disabled="true" className="flex size-[26px] items-center justify-center rounded-lg text-faint">
+            <Plus aria-hidden strokeWidth={1.6} className="size-3.5" />
+          </button>
+        </Tip>
+      </div>
       {/* 12 px `muted`, as the design's "N more projects, no agents" row. With hc down the list is unknown, not empty. */}
       {data.projects.length === 0 && <p className="px-2.5 py-1 text-xs text-muted">{data.hcError ? "hc is not reachable" : "No agents"}</p>}
       {data.projects.map((p) => (
-        <section key={p.name} aria-label={p.name} className="mb-2.5">
+        <section key={p.name} aria-label={p.name} className="mb-1.5 flex flex-col gap-px">
           <ProjectRow project={p} shown={contains(p.agents, data.selected)} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />
           {!closed.has(p.name) && (
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex flex-col gap-px">
               {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
             </ul>
           )}

@@ -6,8 +6,8 @@ import { Tip } from "../ui/Tip";
 
 const STATE: Record<string, string> = { unreachable: "unreachable", "needs-login": "needs login", needs_login: "needs login", rebuilt: "rebuilt" };
 
-const icon = "flex size-7 items-center justify-center rounded-lg text-muted hover:bg-hover [-webkit-app-region:no-drag]";
-const inert = "flex size-7 items-center justify-center rounded-lg text-faint [-webkit-app-region:no-drag]";
+const icon = "flex size-[26px] items-center justify-center rounded-lg text-dim hover:bg-hover hover:text-muted [-webkit-app-region:no-drag]";
+const inert = "flex size-[26px] items-center justify-center rounded-lg text-faint [-webkit-app-region:no-drag]";
 
 /**
 * The sidebar head (docs/design/recipe-herdr.md, the head): the app name, the machine switch, search and the
@@ -30,19 +30,19 @@ export function Head({ onHide }: { onHide: () => void }) {
   );
   return (
     <header className="relative shrink-0">
-      <div className={`flex h-[46px] items-center gap-1 pr-2.5 [-webkit-app-region:drag] ${window.contr.platform === "darwin" ? "pl-[76px]" : "pl-5"}`}>
-        <span className="text-sm font-semibold">contr</span>
+      <div className={`flex h-10 items-center gap-0.5 pr-2 [-webkit-app-region:drag] ${window.contr.platform === "darwin" ? "pl-[76px]" : "pl-5"}`}>
+        <span className="text-[13px] font-semibold text-ink-100">contr</span>
         <span className="flex-1" />
-        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" className={inert}><Search aria-hidden className="size-4" /></button></Tip>
-        <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" onClick={onHide} className={icon}><PanelLeft aria-hidden className="size-4" /></button></Tip>
+        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" className={inert}><Search aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
+        <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" onClick={onHide} className={icon}><PanelLeft aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
       </div>
-      <div className="flex px-3 pb-1">
+      <div className="flex px-2.5">
         <Menu onOpenChange={(open) => open && void window.contr.machines().then(setMachines)}>
-          <MenuTrigger aria-label="Machine" className="flex h-[26px] min-w-0 max-w-full items-center gap-1 rounded-md px-1.5 text-xs text-muted hover:bg-hover">
+          <MenuTrigger aria-label="Machine" className="flex h-6 min-w-0 max-w-full items-center gap-1 rounded-md px-1.5 text-xs text-dim hover:bg-hover hover:text-muted">
             <span data-testid="machine-label" className="truncate">This computer</span>
             <ChevronDown aria-hidden className="size-3 shrink-0" />
           </MenuTrigger>
-          <MenuContent side="bottom" align="start" sideOffset={4} className="m-0 w-[240px] rounded-xl border border-border bg-raised p-1 text-foreground shadow-lg [-webkit-app-region:no-drag]">
+          <MenuContent side="bottom" align="start" sideOffset={4} className="m-0 w-[240px] rounded-xl border border-float-line bg-raised p-1 text-foreground shadow-[var(--shadow-float)] [-webkit-app-region:no-drag]">
             <MenuRadioGroup value="">
               {row(null, "This computer")}
               {machines.map((m) => <Tip key={m.name} label={`${m.name} (not yet)`} side="right">{row(m.name, m.name, m.state)}</Tip>)}
