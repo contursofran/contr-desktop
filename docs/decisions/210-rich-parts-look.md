@@ -5,8 +5,7 @@
   `--ink-45` as on the mock: in light, `--ink-45` does not reach 4.5:1 (decision 198). Only
   "Decision needed" is `--blocked`, because it waits for the owner.
 - Code blocks and tables have hairlines and no fill. The code language label is `dim` for the same reason.
-  The syntax colors stay: the mock draws the code in ink, but a change of the highlighter theme is not
-  part of #183.
+  Decision D137 (#222) uses plain ink (`--ink-85`) for code, including diffs.
 - Links are `--ink-100` with a 1 px `--ink-30` underline (`text-decoration`, so a link that wraps keeps
   its line on each part).
 - The answer type (13.5/21 px, `--ink-85`) is only on the agent's answer row: `ChatMarkdown` takes

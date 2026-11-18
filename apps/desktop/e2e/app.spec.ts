@@ -115,8 +115,21 @@ test("assistant rows show as Markdown with code blocks and tables", async () => 
   await expect(answer.locator("input[type=checkbox]")).toHaveCount(3);
   await expect(answer.locator("[data-language=tsx]")).toContainText("tsx");
   await expect(answer.locator("[data-language=sh]")).toContainText("pnpm test auth --watch=false");
-  // The WASM highlighter colors the tokens.
-  await expect(answer.locator("[data-language=tsx] .chat-markdown-shiki span[style]").first()).toBeVisible();
+  const tsx = answer.locator("[data-language=tsx] pre > code");
+  await expect(tsx).toBeVisible();
+  await expect(tsx.locator("*")).toHaveCount(0);
+  for (const colorScheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme });
+    expect(await tsx.evaluate((el) => {
+      const probe = document.createElement("span");
+      probe.style.color = "var(--ink-85)";
+      el.append(probe);
+      const colors = [getComputedStyle(el).color, getComputedStyle(probe).color];
+      probe.remove();
+      return colors[0] === colors[1];
+    })).toBe(true);
+  }
+  await page.emulateMedia({ colorScheme: "dark" });
 
   await app.evaluate(({ clipboard }) => clipboard.clear());
   await answer.locator("[data-language=sh]").getByRole("button", { name: "Copy code" }).click();
