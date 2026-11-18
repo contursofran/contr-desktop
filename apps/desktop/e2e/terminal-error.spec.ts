@@ -37,7 +37,7 @@ test("a terminal that cannot attach shows what failed and hc's words, and Retry 
   const app = await launchApp(env(down));
   const page = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
-  await page.getByRole("button", { name: "Terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal" }).click();
   const note = page.getByRole("alert", { name: "Terminal error" });
   await expect(note.locator("p")).toHaveText("The connection to hc ended.");
   await expect(note.locator("pre")).toHaveText("hc closed the connection: fake hc: the core is not running");
@@ -77,7 +77,7 @@ test("a hello line from hc that is not JSON shows a plain note, not an error in 
   app.process().stderr?.on("data", (d: Buffer) => errors.push(d.toString()));
   const page = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
-  await page.getByRole("button", { name: "Terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal" }).click();
   const note = page.getByRole("alert", { name: "Terminal error" });
   await expect(note.locator("p")).toHaveText("hc sent data that contr cannot read.");
   await expect(note.locator("pre")).toHaveText("hc sent data that is not JSON");

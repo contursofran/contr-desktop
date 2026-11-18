@@ -1,3 +1,4 @@
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible";
 import { useState } from "react";
 import type { FeedRow } from "../../../shared/api";
 import { oneLine } from "./oneLine";
@@ -23,18 +24,15 @@ export function ToolsRow({ row }: { row: FeedRow }) {
   const running = calls.some((c) => !c.done);
   const text = foldText(chips);
   return (
-    <div>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger
         className="flex max-w-full items-center gap-2 text-[12.5px] text-dim hover:text-muted"
       >
         <span aria-hidden className={`inline-block w-[9px] shrink-0 text-[9px] text-faint transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
         {running && <Spinner size={11} className="text-working" />}
         <span className="truncate">{text}</span>
-      </button>
-      {open && (
+      </CollapsibleTrigger>
+      <CollapsiblePanel>
         <ul aria-label={`${text} calls`} className="flex flex-col gap-0.5 pl-[17px] font-mono text-[11.5px] leading-5 text-dim">
           {calls.map((call, i) => (
             <li key={i} className="flex min-w-0 items-center gap-2" title={call.name}>
@@ -48,7 +46,7 @@ export function ToolsRow({ row }: { row: FeedRow }) {
             </li>
           ))}
         </ul>
-      )}
-    </div>
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }

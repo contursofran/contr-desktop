@@ -1,3 +1,4 @@
+import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
@@ -110,21 +111,25 @@ export function App() {
 
 /** The Chat / Terminal switch at the top right of the work area, under the tab bar (docs/design/redesign/chat-screen.html). */
 function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): ReactNode {
-  const tab = (s: Side, label: string) => (
-    <button
-      type="button"
-      aria-pressed={side === s}
-      onClick={() => onSide(s)}
-      className={`rounded-md px-2.5 py-[3px] text-[11.5px] leading-[18px] ${side === s ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-dim hover:text-muted"}`}
+  const item = (s: Side, label: string) => (
+    <SegmentedControlItem
+      value={s}
+      className="relative rounded-md px-2.5 py-[3px] text-[11.5px] leading-[18px] text-dim outline-none hover:text-muted focus-visible:ring-1 focus-visible:ring-foreground data-checked:text-ink-100 data-checked:hover:text-ink-100"
     >
       {label}
-    </button>
+    </SegmentedControlItem>
   );
   return (
-    <div role="group" aria-label="Chat or Terminal" className="absolute top-[52px] right-3.5 z-10 flex gap-0.5 rounded-lg bg-canvas p-0.5 shadow-[inset_0_0_0_1px_var(--panel-line)]">
-      {tab("chat", "Chat")}
-      {tab("terminal", "Terminal")}
-    </div>
+    <SegmentedControl<Side>
+      aria-label="Chat or Terminal"
+      value={side}
+      onValueChange={(v) => v && onSide(v)}
+      className="absolute top-[52px] right-3.5 isolate z-10 flex gap-0.5 rounded-lg bg-canvas p-0.5 shadow-[inset_0_0_0_1px_var(--panel-line)]"
+    >
+      <SegmentedControlIndicator className="absolute -z-10 top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-md bg-selected shadow-[var(--shadow-selected)]" />
+      {item("chat", "Chat")}
+      {item("terminal", "Terminal")}
+    </SegmentedControl>
   );
 }
 

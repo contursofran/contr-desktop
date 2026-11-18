@@ -1,3 +1,4 @@
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { OwnerItems, OwnerQuestion, OwnerResult, OwnerTodo } from "../../../shared/api";
@@ -198,18 +199,18 @@ export function TodoRow({ t, onSaved }: { t: OwnerTodo; onSaved: (n: string) => 
   const commands = todoCommands(blocks);
   const meta = [t.know ? "To know" : "To do", t.from && `from ${t.from}`, commands > 0 && `${commands} ${commands === 1 ? "command" : "commands"}`].filter(Boolean).join(" · ");
   return (
-    <section aria-label="Owner to-do" className="mx-auto mb-2 flex w-full max-w-read flex-col gap-2 rounded-xl border border-border bg-chrome py-2 pr-2 pl-3.5">
+    <Collapsible open={open} onOpenChange={setOpen} render={<section aria-label="Owner to-do" className="mx-auto mb-2 flex w-full max-w-read flex-col gap-2 rounded-xl border border-border bg-chrome py-2 pr-2 pl-3.5" />}>
       <div className="flex min-w-0 items-center gap-3">
         <span className="shrink-0 font-mono text-[11px] text-dim">{t.id}</span>
         <div className="min-w-0 flex-1 [&_.chat-markdown]:truncate [&_.chat-markdown]:text-[13.5px] [&_.chat-markdown]:leading-[21px] [&_.chat-markdown]:text-ink-90 [&_.chat-markdown_p]:m-0 [&_.chat-markdown_p]:inline">
           {first && first.kind === "text" && <ChatMarkdown text={first.text} />}
         </div>
         <span className="shrink-0 text-[11.5px] whitespace-nowrap text-dim">{meta}</span>
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={rowButton}>{open ? "Hide" : "Show"}</button>
+        <CollapsibleTrigger className={rowButton}>{open ? "Hide" : "Show"}</CollapsibleTrigger>
         <button type="button" disabled={off} onClick={() => void go(() => window.contr.ownerDone(t.id))} className={rowButton}>Done</button>
       </div>
-      {open && <TodoBody t={t} />}
+      <CollapsiblePanel><TodoBody t={t} /></CollapsiblePanel>
       {error && <p role="alert" className="text-xs text-blocked">{error}</p>}
-    </section>
+    </Collapsible>
   );
 }

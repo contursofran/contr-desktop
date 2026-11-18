@@ -36,9 +36,9 @@ test("the reply box takes the keyboard at start, on another agent's chat, back f
   await expect(replyBox(page)).toHaveAccessibleName("Reply to Release notes draft");
   await expect(replyBox(page)).toBeFocused();
 
-  await page.getByRole("button", { name: "Terminal", exact: true }).click();
+  await page.getByRole("radio", { name: "Terminal", exact: true }).click();
   await expect(replyBox(page)).toHaveCount(0);
-  await page.getByRole("button", { name: "Chat", exact: true }).click();
+  await page.getByRole("radio", { name: "Chat", exact: true }).click();
   await expect(replyBox(page)).toBeFocused();
 
   await row(page, /Release notes draft/).focus();
