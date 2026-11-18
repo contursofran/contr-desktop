@@ -120,6 +120,8 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
     probe.remove();
     return c;
   }, token);
+  const notes = desktop.getByRole("button", { name: /Release notes draft/ });
+  const dot = notes.getByRole("img", { name: "unread", exact: true });
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     // An idle worker and an idle agent have ⠶ in ink-30; a working one ⠋; a done agent no glyph (#217).
@@ -129,8 +131,13 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
     expect(await idle.evaluate((e) => getComputedStyle(e, "::before").content)).toBe('"⠶"');
     await expect(herdr.getByRole("button", { name: /Install health check/ }).locator('[data-state="idle"]')).toHaveCount(1);
     await expect(desktop.getByRole("button", { name: /Flow and sequence diagrams/ }).locator('[data-state="working"]')).toHaveCount(1);
-    const notes = desktop.getByRole("button", { name: /Release notes draft/ });
     await expect(notes.locator("[data-state]")).toHaveCount(0);
+    // The unread dot uses the 14 px glyph slot (#246).
+    await expect(dot).toBeVisible();
+    await expect(dot).toHaveCSS("width", "14px");
+    await expect(dot.locator("span")).toHaveCSS("background-color", await ink("ink-100"));
+    await expect(dot.locator("span")).toHaveCSS("width", "4px");
+    await expect(dot.locator("span")).toHaveCSS("height", "4px");
     // An agent row is ink-60, weight 400.
     await expect(notes).toHaveCSS("color", await ink("ink-60"));
     await expect(notes).toHaveCSS("font-weight", "400");
@@ -151,6 +158,9 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
     expect([inbox.y - (head.y + head.height), label.y - (inbox.y + inbox.height)]).toEqual([2, 6]);
     await page.screenshot({ path: path.join(shots, `sidebar-mock-${scheme}.png`) });
   }
+  await notes.click();
+  await expect(notes).toHaveAttribute("aria-current", "true");
+  await expect(dot).toHaveCount(0);
   await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
   await expect(desktop.getByRole("button", { name: "Open contr-desktop" })).toHaveText("▶\uFE0E");
   await app.close();

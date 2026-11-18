@@ -23,10 +23,17 @@ function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
 
 /**
  * The status glyph (docs/design/redesign, sidebar): working ⠋, idle ⠶ in ink-30, blocked ⠿ in red.
- * A done agent has none (#217). hc and the tool give no "waiting" that is not for the owner: their `waiting` is blocked.
+ * A done agent outside the shown chat has an ink-100 unread dot (#246, D144 and D145).
+ * hc and the orchestration tool map their `waiting` state to blocked.
  */
-function Mark({ agent }: { agent: SidebarAgent }) {
-  return agent.state === "done" ? null : <StatusGlyph state={agent.state} />;
+function Mark({ agent, shown }: { agent: SidebarAgent; shown: boolean }) {
+  if (agent.state !== "done") return <StatusGlyph state={agent.state} />;
+  if (shown) return null;
+  return (
+    <span role="img" aria-label="unread" className="flex w-3.5 shrink-0 justify-center">
+      <span className="size-1 rounded-full bg-ink-100" />
+    </span>
+  );
 }
 
 function count(a: SidebarAgent): number {
@@ -53,7 +60,7 @@ function Worker({ agent, selected, depth, onSelect }: { agent: SidebarAgent; sel
           <AgentIcon agent={agent} size={13} />
           <span className="min-w-0 flex-1 truncate">{agent.title}</span>
           {showName && <span className={`max-w-[72px] shrink truncate font-mono text-[11px] ${asks || shown ? "text-muted" : "text-dim"}`}>{agent.name}</span>}
-          <Mark agent={agent} />
+          <Mark agent={agent} shown={shown} />
         </button>
       </Tip>
       {agent.workers.length > 0 && <Workers agents={agent.workers} selected={selected} depth={depth + 1} onSelect={onSelect} />}
@@ -89,7 +96,7 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
           {since !== null && agent.state !== "working" && agent.state !== "blocked" && (
             <span data-age className="shrink-0 font-mono text-[11px] font-normal text-dim">{duration(since)}</span>
           )}
-          <span className="flex h-[18px] items-center"><Mark agent={agent} /></span>
+          <span className="flex h-[18px] items-center"><Mark agent={agent} shown={shown} /></span>
         </button>
       </Tip>
       {n > 0 && <Workers agents={agent.workers} selected={selected} depth={0} onSelect={onSelect} />}
