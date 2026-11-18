@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { checksLabel, ChecksMark } from "./ChecksMark";
 import { ContextChip, ContextChipLabel } from "./ContextChip";
 import { refPresentation } from "./pullRequestIcons";
 import { useRefState } from "./useRef";
@@ -13,11 +14,12 @@ export function RefChip({ number, children }: { number: number; children: ReactN
   if (!ref) return <>{children}</>;
   const { Icon, label, toneClassName, dim } = refPresentation(ref);
   const kind = ref.kind === "pr" ? "PR" : "Issue";
+  const checks = ref.kind === "pr" ? ref.checks : undefined;
   return (
     <ContextChip
       href={ref.url}
       className={`${toneClassName} ${STATE_CLASS} ${dim ? "text-dim" : "text-ink-100"} align-baseline`}
-      aria-label={`${kind} #${number}, ${label}`}
+      aria-label={`${kind} #${number}, ${label}${checks ? `, ${checksLabel(checks)}` : ""}`}
       data-ref-kind={ref.kind}
       data-ref-state={ref.state}
       onClick={(event) => {
@@ -27,6 +29,7 @@ export function RefChip({ number, children }: { number: number; children: ReactN
     >
       <Icon aria-hidden />
       <ContextChipLabel>{children}</ContextChipLabel>
+      {checks && <ChecksMark checks={checks} />}
     </ContextChip>
   );
 }

@@ -205,9 +205,17 @@ export interface ReplyInfo {
   efforts: { value: string; label: string }[];
 }
 
-/** A PR or an issue of the agent's repository, as gh says now. */
+/** The checks of a PR's head from gh: the rollup's state and the counts of all its checks. */
+export interface CheckCounts {
+  state: "pass" | "pending" | "fail";
+  passed: number;
+  failed: number;
+  total: number;
+}
+
+/** A PR or an issue of the agent's repository, as gh says now. A PR with no checks has no `checks`. */
 export type RefState =
-  | { kind: "pr"; state: "open" | "draft" | "merged" | "closed"; url: string }
+  | { kind: "pr"; state: "open" | "draft" | "merged" | "closed"; url: string; checks?: CheckCounts }
   | { kind: "issue"; state: "open" | "closed" | "not-planned"; url: string };
 
 /** The Terminal side: the agent's hc terminal. */
