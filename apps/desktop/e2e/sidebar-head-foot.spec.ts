@@ -70,7 +70,7 @@ test("Hide sidebar hides it, the top bar shows it again clear of the window butt
   let page = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
   await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(900);
-  let show = page.getByRole("tablist", { name: "Tabs" }).locator("..").getByRole("button", { name: "Show sidebar" });
+  let show = page.getByRole("button", { name: "Show sidebar" });
   await expect(show).toHaveCount(0);
   await page.locator("aside > header").getByRole("button", { name: "Hide sidebar" }).click();
   await expect(page.locator("aside")).toHaveCount(0);

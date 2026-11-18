@@ -60,7 +60,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     await page.emulateMedia({ colorScheme: scheme });
     const t = THEME[scheme];
     expect(await nav.evaluate((e) => getComputedStyle(e.closest("aside")!).backgroundColor)).toBe(t.chrome);
-    expect(await tabs.evaluate((e) => getComputedStyle(e.parentElement!).backgroundColor)).toBe(t.canvas);
+    expect(await tabs.evaluate((e) => getComputedStyle(e.closest('[data-slot="tabs"]')!).backgroundColor)).toBe(t.canvas);
     expect(await page.locator("main").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(t.canvas);
     expect(await tabLoader.evaluate((e) => getComputedStyle(e).color)).toBe(t.working);
     expect(await sideLoader.evaluate((e) => getComputedStyle(e).color)).toBe(t.working);

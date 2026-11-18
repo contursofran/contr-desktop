@@ -117,8 +117,7 @@ test("with more tabs than fit, the tab row's scrollbar is below the tabs, not on
     await nav.getByRole("button", { name }).first().click();
     await expect(tabs.getByRole("tab", { name })).toHaveAttribute("aria-selected", "true");
   }
-  const row = tabs.locator("[data-tab-row]");
-  const m = await row.evaluate((r: HTMLElement) => {
+  const m = await tabs.evaluate((r: HTMLElement) => {
     const box = r.getBoundingClientRect();
     const tab = r.querySelector('[role="tab"][aria-selected="true"]')!.parentElement!.getBoundingClientRect();
     const bar = r.closest(".h-10")!.getBoundingClientRect();

@@ -27,7 +27,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit", "Install health check"]);
   await expect(tabs.getByRole("tab", { name: "Install health check" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
-  await expect(tabs.getByRole("button", { name: "New tab" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "New tab" })).toBeDisabled();
   // A third tab, then the second one shown again: three tabs, one shown.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
   await tabs.getByRole("tab", { name: "Install health check" }).click();
@@ -48,7 +48,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   const box = async (name: string) => (await tabs.getByRole("tab", { name }).locator("..").boundingBox())!;
   const [first, second] = [await box(names[0]), await box(names[1])];
   expect(first.height).toBe(28);
-  expect(first.x - (await tabs.locator("..").boundingBox())!.x).toBe(10);
+  expect(first.x - (await tabs.locator("..").locator("..").boundingBox())!.x).toBe(10);
   expect(Math.round(second.x - (first.x + first.width))).toBe(2);
   const style = (name: string) => tabs.getByRole("tab", { name }).locator("..").evaluate((e) => {
     const s = getComputedStyle(e);
@@ -57,7 +57,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   expect(await style(names[1])).toMatchObject({ radius: "8px", font: "12.5px", weight: "400" });
   expect((await style(names[0])).bg).toBe("rgba(0, 0, 0, 0)");
   expect((await style(names[1])).bg).not.toBe("rgba(0, 0, 0, 0)");
-  const plus = (await tabs.getByRole("button", { name: "New tab" }).boundingBox())!;
+  const plus = (await page.getByRole("button", { name: "New tab" }).boundingBox())!;
   expect([plus.width, plus.height]).toEqual([26, 26]);
   await page.emulateMedia({ colorScheme: "dark" });
   await page.screenshot({ path: path.join(shots, "topbar-dark.png") });
@@ -150,8 +150,14 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   await expect(tabs.getByRole("tab", { name: b })).toBeFocused();
   await page.keyboard.press("Alt+Home");
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
-  // A plain arrow does not move it.
+  // A plain arrow moves focus in the new order. Only Alt changes the order.
   await page.keyboard.press("ArrowRight");
+  await expect(tabs.getByRole("tab", { name: a })).toBeFocused();
+  await expect(tabs.getByRole("tab")).toHaveText([b, a]);
+  await page.keyboard.press("Alt+ArrowLeft");
+  await expect(tabs.getByRole("tab")).toHaveText([a, b]);
+  await expect(tabs.getByRole("tab", { name: a })).toBeFocused();
+  await page.keyboard.press("Alt+End");
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
   // The shown agent is stored too (`tabs.shown`), and a start shows it again while hc lists it, with its tab. With b
   // shown here, the last start below opens b's tab again some time after it starts (issue #159): a shows instead.
@@ -187,6 +193,55 @@ const many = {
   CONTR_GIT: path.join(e2e, "fake-git.mjs"),
 };
 
+test("the scroll row is the named tab list and the new-tab button is outside it", async () => {
+  const app = await launchApp(many);
+  try {
+    const page = await app.firstWindow();
+    const tabs = page.getByRole("tablist", { name: "Tabs", exact: true });
+    await expect(tabs.and(page.locator("[data-tab-row]"))).toHaveCount(1);
+    await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit"]);
+    await expect(tabs.getByRole("button", { name: "New tab" })).toHaveCount(0);
+  } finally {
+    await app.close();
+  }
+});
+
+test("arrows, Home and End move tab focus, and Enter and Space select the focused tab", async () => {
+  const app = await launchApp(many);
+  try {
+    const page = await app.firstWindow();
+    const nav = page.getByRole("navigation", { name: "Projects" });
+    const tabs = page.getByRole("tablist", { name: "Tabs", exact: true });
+    const names = ["Chat panel usability audit", "Install health check", "Release notes draft"];
+    for (const name of names.slice(1)) await nav.getByRole("button", { name }).click();
+    const first = tabs.getByRole("tab", { name: names[0] });
+    const second = tabs.getByRole("tab", { name: names[1] });
+    const last = tabs.getByRole("tab", { name: names[2] });
+    await expect(tabs.getByRole("tab", { selected: true })).toHaveText(names[2]);
+    await expect(tabs.locator('[role="tab"][tabindex="0"]')).toHaveText(names[2]);
+    await last.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(first).toBeFocused();
+    await page.keyboard.press("ArrowLeft");
+    await expect(last).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(first).toBeFocused();
+    await page.keyboard.press("End");
+    await expect(last).toBeFocused();
+    await page.keyboard.press("ArrowLeft");
+    await expect(second).toBeFocused();
+    await expect(tabs.getByRole("tab", { selected: true })).toHaveText(names[2]);
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("textbox", { name: `Reply to ${names[1]}` })).toBeVisible();
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("textbox", { name: `Reply to ${names[0]}` })).toBeVisible();
+    await expect(tabs.getByRole("tab")).toHaveText(names);
+  } finally {
+    await app.close();
+  }
+});
+
 test("in a narrow window the shown tab scrolls into view, and the tab row shows a thin scrollbar", async () => {
   test.setTimeout(60_000);
   const app = await launchApp(many);
@@ -195,7 +250,7 @@ test("in a narrow window the shown tab scrolls into view, and the tab row shows 
   await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(900);
   const nav = page.getByRole("navigation", { name: "Projects" });
   const tabs = page.getByRole("tablist", { name: "Tabs" });
-  const row = tabs.locator("[data-tab-row]");
+  const row = tabs;
   // The shown tab is all inside the row's visible part.
   const inView = () => row.evaluate((r) => {
     const shown = r.querySelector('[role="tab"][aria-selected="true"]')?.parentElement;
