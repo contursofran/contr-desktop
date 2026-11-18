@@ -139,6 +139,8 @@ A line chart, as a `contr-chart line` block: one line `<x> | <y>` for each point
 
 ```contr-chart line
 11:10 | 6.1
+11:24 | 5.8
+11:41 | 6.4
 14:10 | 9.4 | #31
 14:52 | 6.5
 ```

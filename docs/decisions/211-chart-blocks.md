@@ -11,7 +11,7 @@
   `ink-60` fill.
 - The line has its latest point in `ink-100` with its value. One outlier gets its value as a label:
   the point farthest from the median, other than the latest, when its modified z-score
-  (0.6745 × distance / median absolute distance) is above 3.5. With fewer than 5 points, no label.
+  (0.6745 × distance / median absolute distance) is above 3.5. Fewer than 5 points gives no outlier.
   Both labels include a point note when supplied, as in `9.4 · #31`. The SVG stops growing at 666 px.
 - Limits: 12 bars, 2 to 60 points. A block past a limit, with a negative bar, mixed units or an
   unknown kind shows as code.
