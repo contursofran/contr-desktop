@@ -35,6 +35,18 @@ describe("Row", () => {
     expect(out).toContain('data-kind="later-kind"');
   });
 
+  it("draws the footer as the helper's text, in mono", () => {
+    const out = html({ k: "footer", text: "19:24 · Worked 1m 18s · 8 tools" });
+    expect(out).toContain(">19:24 · Worked 1m 18s · 8 tools<");
+    expect(out).toContain("font-mono");
+  });
+
+  it("draws a status row as a thin centered line", () => {
+    const out = html({ k: "status", text: "Context compacted" });
+    expect(out).toContain("Context compacted");
+    expect(out.match(/bg-hairline/g)).toHaveLength(2);
+  });
+
   it("oneLine keeps the first line with text and marks more", () => {
     expect(oneLine("\n  pnpm test\n\nmore")).toBe("pnpm test …");
     expect(oneLine("one\t line")).toBe("one  line");

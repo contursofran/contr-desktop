@@ -3,6 +3,9 @@ import type { FeedRow } from "../../../shared/api";
 import { ChatMarkdown } from "../markdown/ChatMarkdown";
 import { Spinner } from "./Spinner";
 import { ToolsRow } from "./ToolsRow";
+import { oneLine } from "./oneLine";
+
+export { oneLine };
 import { UserRow } from "./UserRow";
 
 /** One chat row by its kind (docs/reference/helper-protocol.md, `row`). */
@@ -21,9 +24,15 @@ export function Row({ row }: { row: FeedRow }) {
     case "assistant":
       return <ChatMarkdown text={row.text ?? ""} answer />;
     case "footer":
-      return <p className="text-xs text-dim">{row.text}</p>;
+      // The helper's text: the answer's time, how long it worked, the tool count ("19:24 · Worked 1m 18s · 8 tools").
+      return <p className="font-mono text-[11px] text-dim">{row.text}</p>;
     case "status":
-      return <p className="text-center text-xs text-dim">{row.text}</p>;
+      // A thin centered line, as "Context compacted".
+      return (
+        <div className="flex items-center gap-3 text-[11.5px] text-dim">
+          <span className="h-px flex-1 bg-hairline" />{row.text}<span className="h-px flex-1 bg-hairline" />
+        </div>
+      );
     case "perm":
       return <PermRow row={row} />;
     case "question": {
@@ -40,14 +49,6 @@ export function Row({ row }: { row: FeedRow }) {
       // A kind this app does not know: an empty line, as herdr-contr draws it.
       return <div className="h-[30px]" data-kind={row.k} />;
   }
-}
-
-/** The first line with text; " …" when more lines with text follow (herdr-contr `oneLine`). */
-export function oneLine(text: unknown): string {
-  const lines = String(text ?? "").split(/\r\n|\r|\n/).map((l) => l.replace(/\t/g, " ").trim());
-  const i = lines.findIndex(Boolean);
-  if (i < 0) return "";
-  return lines.slice(i + 1).some(Boolean) ? `${lines[i]} …` : lines[i];
 }
 
 /** A tool call with no result yet, as a chip. Whether it waits for an approval is the card's job. */

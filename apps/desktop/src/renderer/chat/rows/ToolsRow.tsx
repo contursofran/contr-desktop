@@ -1,56 +1,54 @@
 import { useState } from "react";
-import { CheckIcon, ChevronDownIcon, FileTextIcon, PencilIcon, SearchIcon, SquareTerminalIcon, WrenchIcon, type LucideIcon } from "lucide-react";
 import type { FeedRow } from "../../../shared/api";
+import { oneLine } from "./oneLine";
 import { Spinner } from "./Spinner";
 
 type Chip = NonNullable<FeedRow["chips"]>[number];
 
-/** SF Symbol names from the helper, mapped to lucide icons. Other names show a wrench. */
-const ICONS: Record<string, LucideIcon> = {
-  terminal: SquareTerminalIcon,
-  "doc.text": FileTextIcon,
-  doc: FileTextIcon,
-  magnifyingglass: SearchIcon,
-  pencil: PencilIcon,
-};
-
-export function chipIcon(symbol: string): LucideIcon {
-  return ICONS[symbol] ?? WrenchIcon;
+/**
+ * The helper's chip labels as one line: "Read 6 files, ran 3 commands" (redesign #184).
+ * The first label keeps its capital; the next ones start in lower case.
+ */
+export function foldText(chips: Chip[]): string {
+  return chips
+    .map((chip, i) => (i === 0 ? chip.text : chip.text.charAt(0).toLowerCase() + chip.text.slice(1)))
+    .join(", ");
 }
 
-/** Tool calls folded into round chips, side by side. A click opens a chip to its calls. */
+/** An answer's tool calls folded into one quiet line. A click opens one line per call with its result. */
 export function ToolsRow({ row }: { row: FeedRow }) {
-  const [open, setOpen] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
   const chips = row.chips ?? [];
-  const shown = open === null ? undefined : chips[open];
+  const calls = chips.flatMap((chip) => chip.calls);
+  const running = calls.some((c) => !c.done);
+  const text = foldText(chips);
   return (
-    <div className="text-sm">
-      <div className="flex flex-wrap gap-1.5">
-        {chips.map((chip, i) => <ToolChip key={i} chip={chip} open={open === i} onClick={() => setOpen(open === i ? null : i)} />)}
-      </div>
-      {shown && (
-        <ul aria-label={`${shown.text} calls`} className="mt-1.5 ml-2 border-l border-border pl-3">
-          {shown.calls.map((call, i) => (
-            <li key={i} className="py-0.5">
-              <span className="text-dim">{call.name}</span> <span className="font-mono text-xs">{call.summary}</span>{" "}
-              {!call.done ? <Spinner size={11} className="text-working" /> : call.error ? <span className="text-blocked">failed</span> : <CheckIcon aria-label="done" className="inline size-3 text-done" />}
-              {call.output && <pre className="mt-0.5 whitespace-pre-wrap font-mono text-xs text-dim">{call.output}</pre>}
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="flex max-w-full items-center gap-2 text-[12.5px] text-dim hover:text-muted"
+      >
+        <span aria-hidden className={`inline-block w-[9px] shrink-0 text-[9px] text-faint transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+        {running && <Spinner size={11} className="text-working" />}
+        <span className="truncate">{text}</span>
+      </button>
+      {open && (
+        <ul aria-label={`${text} calls`} className="flex flex-col gap-0.5 pl-[17px] font-mono text-[11.5px] leading-5 text-dim">
+          {calls.map((call, i) => (
+            <li key={i} className="flex min-w-0 items-center gap-2" title={call.name}>
+              <span className="min-w-0 truncate text-ink-85">{call.summary || call.name}</span>
+              {!call.done ? (
+                <Spinner size={11} className="text-working" />
+              ) : call.error ? (
+                <span role="img" aria-label="failed" className="shrink-0 text-ink-100">✕</span>
+              ) : null}
+              {call.output && <span className="min-w-0 truncate">{oneLine(call.output)}</span>}
             </li>
           ))}
         </ul>
       )}
     </div>
-  );
-}
-
-function ToolChip({ chip, open, onClick }: { chip: Chip; open: boolean; onClick: () => void }) {
-  const Icon = chipIcon(chip.symbol);
-  const running = chip.calls.some((c) => !c.done);
-  return (
-    <button type="button" aria-expanded={open} onClick={onClick} className="flex h-7 items-center gap-1.5 rounded-full border border-border bg-chrome px-3 text-muted hover:text-foreground">
-      {running ? <Spinner size={11} className="text-working" /> : <Icon aria-hidden className="size-3.5" />}
-      <span>{chip.text}</span>
-      <ChevronDownIcon aria-hidden className={`size-3 transition-transform ${open ? "rotate-180" : ""}`} />
-    </button>
   );
 }

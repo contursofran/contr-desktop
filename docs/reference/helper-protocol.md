@@ -369,10 +369,10 @@ heights by it.
 | | `pics` (with `--pictures` only) | Where the pictures are in the log, for `serve` and `pictures`. |
 | | `from` (a note from another agent) | One line, "↳ docs-worker: first line", that opens to the whole note. |
 | `assistant` | `text` (markdown), `ts` | Full-width markdown. |
-| `tools` | `chips`, `ts` | A chip: "Ran 3 commands", expands to the calls. |
+| `tools` | `chips`, `ts` | One line of the chip labels ("Read 6 files, ran 3 commands"); it opens to one line per call. |
 | `perm` | `perm`, `text` (the title), `ts` | The approval card (when `perm.state` is `pending`). |
 | `question` | `question`, `ts` | The question card. |
-| `status` | `text` | A centered note ("Context compacted"). |
+| `status` | `text` | A thin centered line ("Context compacted"). |
 | `sep` | `text` ("14:05", "Yesterday 09:12", "Mon 2 Nov 18:30") | A time separator. |
 | `footer` | `text` ("01:41 · Worked 36s · 3 tools") | The turn footer, under the turn's last row. |
 
