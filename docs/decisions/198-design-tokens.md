@@ -14,7 +14,7 @@
 - `dim` is `--ink-50`, not `--ink-42` as on some mocks: in light, `--ink-42` and `--ink-45` do not
   reach 4.5:1 on `--win`. `contrast.test.ts` checks text in light on the three fills.
 - PR and issue colors stay GitHub's, the one exception to the greys.
-- Inter and JetBrains Mono come from `@fontsource-variable` and are bundled; no web fonts.
+- Inter and JetBrains Mono come from `@fontsource-variable` and are bundled; no web fonts. The build keeps the font files as files (`assetsInlineLimit` in `vite.config.ts`): the CSP allows only `'self'`, so a `data:` font does not load.
 - The status glyph is one part, `ui/StatusGlyph.tsx`: working ⠋ turns, waiting ⠿ pulses, idle ⠶,
   blocked ⠿ pulses in red. CSS draws the frames, so no timer runs for each row. Reduced motion stops it.
 - The terminal takes `--win`, `--terminal-text` and `--ink-95`; its ANSI colors stay herdr-contr's.

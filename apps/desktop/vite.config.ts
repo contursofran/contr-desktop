@@ -6,6 +6,7 @@ export default defineConfig({
   root: "src/renderer",
   base: "./",
   plugins: [react(), tailwindcss()],
-  build: { outDir: "../../out/renderer", emptyOutDir: true },
+  // Fonts stay files: the CSP (index.html) allows only 'self', so an inlined data: font does not load.
+  build: { outDir: "../../out/renderer", emptyOutDir: true, assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined) },
   test: { root: ".", include: ["src/**/*.test.{ts,tsx}"] },
 });
