@@ -50,7 +50,8 @@
 .chat-markdown li.task-list-item input[type="checkbox"] {
   margin: 0;
   margin-inline: 0 10px;
-  vertical-align: -2px;
+  /* The mock puts the box 2 px under the top of a 21 px line. */
+  vertical-align: -1px;
   /* Draw the box from theme tokens: the native disabled box is too pale. */
   appearance: none;
   display: inline-grid;
