@@ -5,6 +5,7 @@ import { registerCoreIpc } from "./core/ipc";
 import { startCore } from "./core/start";
 import { handleImageScheme, registerImageScheme } from "./localImages";
 import { registerBoardIpc } from "./board/ipc";
+import { registerDigestIpc } from "./digest/ipc";
 import { registerRefsIpc } from "./refs/ipc";
 import { registerSidebarIpc } from "./sidebar/ipc";
 import { registerFootIpc } from "./foot/ipc";
@@ -50,6 +51,7 @@ void app.whenReady().then(async () => {
   registerTerminalIpc();
   registerRefsIpc(chatTerminal);
   registerBoardIpc(app.getAppPath(), chatTerminal);
+  registerDigestIpc(app.getAppPath(), chatTerminal);
   registerSidebarIpc(app.getAppPath());
   registerFootIpc(app.getAppPath());
   registerOwnerIpc(app.getAppPath());
