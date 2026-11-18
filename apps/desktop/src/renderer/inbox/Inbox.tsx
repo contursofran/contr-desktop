@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { OwnerItems, SidebarAgent } from "../../shared/api";
 import { isCardKey } from "../chat/card/Card";
-import { Note, Question, Todo, useSavedNote } from "../chat/owner/OwnerCards";
+import { Note, useSavedNote } from "../chat/owner/OwnerCards";
 import { StatusGlyph } from "../ui/StatusGlyph";
+import { OpenQuestion, OpenTodo } from "./OpenItem";
 import { inboxItems, openId, rowSub, rowText, type Item } from "./order";
 
 /** Why the last read of the owner items failed, or null after a good read. */
@@ -39,7 +40,7 @@ const endText = "font-mono text-[11px] text-dim";
  */
 function Row({ item, glyph, id, text, sub, end, action, onPress }: { item: string; glyph: "blocked" | "idle"; id: string; text: string; sub: string; end?: string; action?: ReactNode; onPress: () => void }) {
   return (
-    <div data-item={item} className="grid min-h-11 grid-cols-[14px_36px_1fr_auto] items-center gap-x-3 border-t border-hairline px-2.5 py-2 text-[13px]">
+    <div data-item={item} className="grid min-h-11 grid-cols-[16px_36px_1fr_auto] items-center gap-x-3 border-t border-hairline px-2.5 py-2 text-[13px]">
       <button type="button" onClick={onPress} className={`grid grid-cols-subgrid items-center text-left ${action ? "col-span-3" : "col-span-4"}`}>
         <StatusGlyph state={glyph} />
         <span className="font-mono text-[11px] text-dim">{id}</span>
@@ -76,7 +77,7 @@ function DoneEnd({ id, onSaved }: { id: string; onSaved: (n: string) => void }) 
 
 /**
  * The Inbox in the main pane: one row per open item of every coordinator, oldest first, then the agents blocked on a prompt.
- * One item is open as its card (the oldest, until the owner opens another with a press or Arrow Up and Down); the card takes the digit and Enter keys.
+ * One item is open, and its row is the card (the oldest, until the owner opens another with a press or Arrow Up and Down); the card takes the digit and Enter keys.
  * A blocked agent's row opens the agent's chat with its card.
  * While the last read of the owner items failed, a line says why; the items are the last good read.
  */
@@ -104,15 +105,10 @@ export function Inbox({ items, blocked, name, onOpen }: { items: OwnerItems; blo
         {list.map((entry) => {
           const { item } = entry;
           if (item.id === open) {
-            return (
-              <div key={item.id} data-item={item.id} className="flex items-start gap-3 py-1.5 pl-2.5 [&+div]:border-t-0">
-                <StatusGlyph state={entry.kind === "question" ? "blocked" : "idle"} className="mt-3.5" />
-                <div className="min-w-0 flex-1">
-                  <p className="mb-1 text-[11.5px] text-dim">{name(item.coordinator)}</p>
-                  {entry.kind === "question" ? <Question q={entry.item} rest={0} onSaved={setNote} /> : <Todo t={entry.item} rest={0} onSaved={setNote} />}
-                </div>
-              </div>
-            );
+            const sub = rowSub(entry, name(item.coordinator));
+            return entry.kind === "question"
+              ? <OpenQuestion key={item.id} q={entry.item} sub={sub} onSaved={setNote} />
+              : <OpenTodo key={item.id} t={entry.item} sub={sub} onSaved={setNote} />;
           }
           const n = entry.kind === "question" ? entry.item.options.length : 0;
           return (

@@ -123,6 +123,8 @@ export interface ContrApi {
   /** Calls the listener when the app menu's "Check for Updates…" asks to show Settings. Returns the unsubscribe. */
   onOpenSettings(listener: () => void): () => void;
   terminal: TerminalApi;
+  /** The `contr-pr` card: one PR from gh (`gh pr view`) and its worker from the orchestration tool. null: gh gave no PR. */
+  prCard(n: number): Promise<PrCard | null>;
 }
 
 /** The answer of `tabTitle`: the title, the terminal is gone (hc runs and does not list it), or hc failed. */
@@ -396,3 +398,35 @@ export interface ChangeLog {
 }
 /** Main to renderer: show the Settings view (the app menu's "Check for Updates…"). */
 export const OPEN_SETTINGS_EVENT = "contr:open-settings";
+
+/** One check of a PR's head (gh's rollup). Times are ms; a check that runs has no `completedAt`, a queued one no `startedAt`. */
+export interface PrCheck {
+  name: string;
+  state: "pass" | "fail" | "running" | "queued" | "skipped";
+  startedAt: number | null;
+  completedAt: number | null;
+}
+
+/** The `contr-pr` card's data, as gh and the orchestration tool say now. */
+export interface PrCard {
+  number: number;
+  title: string;
+  state: "open" | "draft" | "merged" | "closed";
+  url: string;
+  additions: number;
+  deletions: number;
+  /** The head branch and the base branch. */
+  branch: string;
+  base: string;
+  files: number;
+  /** The head commit's full SHA. */
+  head: string;
+  checks: PrCheck[];
+  /** The latest review: its author, gh's state (APPROVED, CHANGES_REQUESTED, COMMENTED) and the commit it reviewed. */
+  review: { author: string; state: string; sha: string | null } | null;
+  /** gh's mergeStateStatus (CLEAN, BLOCKED, BEHIND, DIRTY, UNSTABLE, DRAFT, UNKNOWN). */
+  merge: string | null;
+  /** The worker of the PR's branch. null: no worker has it. */
+  worker: { name: string; state: WorkerState } | null;
+}
+export const PR_CARD_CHANNEL = "contr:pr-card";

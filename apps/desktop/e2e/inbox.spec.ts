@@ -34,13 +34,16 @@ const count = (app: ElectronApplication) =>
 async function shoot(page: Page, name: string) {
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
+    // A chip's label fades its color (transition-colors): wait for the color transitions, not the endless glyph motion.
+    await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished)));
     await page.screenshot({ path: path.join(shots, `${name}-${scheme}.png`) });
   }
 }
 
 test("the Inbox row opens every open item, oldest first; an answer here closes it everywhere", async () => {
   test.setTimeout(60_000);
-  const { app, page, runs } = await open();
+  // The fake gh knows #15 (a ref of D7); it runs in a scratch folder.
+  const { app, page, runs } = await open(undefined, { CONTR_REPO_DIR: mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")) });
   const row = page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /^Inbox/ });
   await expect(row).toHaveText("Inbox5");
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 5", 5]);
@@ -53,7 +56,7 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   await expect(list).toContainText("Inbox5 open · oldest first");
   // One row per item, oldest first. The oldest is open as its card; the others are one line: id, text, kind, title, from, coordinator, end.
   await expect(list.locator("[data-item]")).toHaveText([
-    /^Chat panel usability auditD7 · The coordinator asks/,
+    /^D7Question · Inbox order · from b-15 · Chat panel usability auditWhich items show first in the inbox\?/,
     "D8Does the Dock badge count to-dos?Question · Dock badge · from b-16 · Chat panel usability audit2 answers",
     "D9Not for this chat.Question · Other · from b-30 · Install health check1 answer",
     "T3Log in to the staging server, then run pnpm e2e in apps/desktop.To do · from b-15 · Chat panel usability auditDone",
@@ -61,6 +64,15 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   ]);
   await expect(list.getByRole("region", { name: "Owner question" })).toHaveCount(1);
   await expect(list).not.toContainText("more after this");
+  // The open row is the card (screens.html screen 4, `.ibx.is-open`): one glyph, no card in it.
+  const card = list.locator('[data-item="D7"]');
+  await expect(card.getByRole("img", { name: "Needs you" })).toHaveCount(1);
+  await expect(card.locator("section")).toHaveCount(0);
+  expect(await card.evaluate((e) => { const s = getComputedStyle(e); return [s.borderRadius, s.paddingTop, s.paddingLeft, s.marginTop, s.gridTemplateColumns.split(" ")[0]]; })).toEqual(["12px", "12px", "10px", "6px", "16px"]);
+  // The recommended answer is picked, so Send answer is on; #15 is a ref chip.
+  await expect(card.getByRole("button", { name: /Oldest first/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(card.getByRole("button", { name: "Send answer" })).toBeEnabled();
+  await expect(card.locator('[data-ref-kind="pr"]')).toHaveAttribute("aria-label", /^PR #15/);
   await shoot(page, "inbox-list");
 
   // Arrow Down opens the next item; its card takes the digit keys.
@@ -117,7 +129,7 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 2", 2]);
   await row.click();
   const list = page.getByRole("region", { name: "Inbox" });
-  await expect(list.locator("[data-item]")).toHaveText([/^Install health checkD9 · The coordinator asks/, "Release notes draftWaits on a promptOpen chat"]);
+  await expect(list.locator("[data-item]")).toHaveText([/^D9Question · Other · from b-30 · Install health checkNot for this chat\./, "Release notes draftWaits on a promptOpen chat"]);
   await shoot(page, "inbox-blocked");
 
   await list.locator('[data-item="t11"]').getByRole("button").click();

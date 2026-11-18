@@ -61,9 +61,9 @@
   --color-issue-open: var(--issue-open);
   --color-issue-done: var(--issue-done);
   --color-issue-notplanned: var(--issue-notplanned);
-  /* The chat's reading column (docs/design/recipe-herdr.md): `max-w-read` on the rows, the
+  /* The chat's reading column (docs/design/redesign/chat-screen.html, `.col`): `max-w-read` on the rows, the
      status line, the reply box, the cards and the error note, so they line up. */
-  --container-read: 1000px;
+  --container-read: 760px;
 }
 
 /* The PR and issue state colors, GitHub's (the one exception to the greys). */

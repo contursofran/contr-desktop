@@ -22,8 +22,19 @@ test("the sidebar head has the machine switch, the foot the plan usage and Setti
   const head = page.locator("aside > header");
   await expect(head).toContainText("contr");
   await expect(head.getByRole("button", { name: "Machine" })).toHaveText("This computer");
+  // #227 (owner, D142): the switch is on the one 40 px row with "contr" and the icons, as the mock. "This computer ▾" is cut
+  // with "…"; the label for screen readers and the tooltip have the full name.
   const label = head.getByTestId("machine-label");
-  expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+  await expect(head).toHaveCSS("height", "40px");
+  const top = async (e: import("@playwright/test").Locator) => (await e.boundingBox())!.y + (await e.boundingBox())!.height / 2;
+  expect(Math.abs((await top(label)) - (await top(head.getByRole("button", { name: "Search" }))))).toBeLessThan(1);
+  await expect(label).toHaveCSS("text-overflow", "ellipsis");
+  await expect(label).toHaveCSS("font-size", "12px");
+  expect(await label.evaluate((e) => getComputedStyle(e, "::after").content)).toBe('" ▾"');
+  await expect(head.getByRole("button", { name: "Machine, This computer" })).toBeVisible();
+  await head.getByRole("button", { name: "Machine" }).hover();
+  await expect(page.getByRole("tooltip")).toHaveText("This computer");
+  await page.mouse.move(600, 400);
   // Search and the foot's Add machine do nothing yet: inert, as the top bar's +.
   await expect(head.getByRole("button", { name: "Search" })).toHaveAttribute("aria-disabled", "true");
   await expect(head.getByRole("button", { name: "Hide sidebar" })).toBeVisible();

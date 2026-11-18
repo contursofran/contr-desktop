@@ -27,6 +27,15 @@
   font-size: 1em;
   font-weight: 600;
 }
+/* The answer's headings: the mock's `.col h3` (docs/design/redesign/chat-screen.html). The margins
+   give the mock's space: 12 px row gap and 8 px more above. */
+.chat-markdown.chat-answer :is(h1, h2, h3, h4, h5, h6) {
+  margin: 20px 0 12px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ink-100);
+}
 /* The indent is on each item, not on the list: an item with dir="auto" puts its marker on its own start side. */
 .chat-markdown ul { list-style-type: disc; padding-inline-start: 0; }
 .chat-markdown ol { list-style-type: decimal; padding-inline-start: 0; }
@@ -35,32 +44,36 @@
 .chat-markdown ul ul { list-style-type: circle; }
 .chat-markdown ol ol { list-style-type: lower-alpha; }
 .chat-markdown li + li { margin-top: 0.25rem; }
-/* GitHub-style task lists: the checkbox replaces the list marker. */
-.chat-markdown li.task-list-item { list-style-type: none; }
+/* GitHub-style task lists: the checkbox replaces the list marker. The box is the mock's `.chk`
+   (docs/design/redesign/screens.html): 14 px, radius 4, an ink-35 ring; on: an ink-85 fill. */
+.chat-markdown li.task-list-item { list-style-type: none; margin-inline-start: 0; }
 .chat-markdown li.task-list-item input[type="checkbox"] {
-  margin-inline: -1.25rem 0.35em;
-  vertical-align: middle;
+  margin: 0;
+  margin-inline: 0 10px;
+  /* The mock puts the box 2 px under the top of a 21 px line. */
+  vertical-align: -1px;
   /* Draw the box from theme tokens: the native disabled box is too pale. */
   appearance: none;
   display: inline-grid;
   place-content: center;
-  width: 0.9em;
-  height: 0.9em;
-  border: 1px solid var(--color-muted);
-  border-radius: 0.2em;
-  background: var(--color-canvas);
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--ink-35);
+  background: transparent;
 }
 .chat-markdown li.task-list-item input[type="checkbox"]:checked {
-  border-color: var(--color-working);
-  background: var(--color-working);
+  box-shadow: none;
+  background: var(--ink-85);
 }
 .chat-markdown li.task-list-item input[type="checkbox"]:checked::before {
   content: "";
-  width: 0.25em;
-  height: 0.5em;
-  margin-top: -0.1em;
+  width: 4px;
+  height: 7px;
+  margin-top: -1px;
   border: solid var(--color-canvas);
-  border-width: 0 0.12em 0.12em 0;
+  border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }
 .chat-markdown a:not([data-slot="context-chip"]) {

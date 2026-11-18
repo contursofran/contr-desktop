@@ -45,6 +45,9 @@ test("tool calls fold into one line that opens to one line per call; the footer 
   expect(await color(calls.nth(0).locator("span").first())).toBe("rgba(255, 255, 255, 0.85)");
   expect(await color(p)).toBe("rgba(255, 255, 255, 0.5)");
   expect(await hair.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgba(255, 255, 255, 0.06)");
+  // The time line is on a hairline too: the mock's `.fold`.
+  const sep = await chatRow(page, "sep-1");
+  expect(await sep.locator("span").first().evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgba(255, 255, 255, 0.06)");
   expect(await p.evaluate((e) => getComputedStyle(e).fontFamily)).toContain("JetBrains Mono");
   await page.mouse.move(0, 0);
   await fold.blur();
