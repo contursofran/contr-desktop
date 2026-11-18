@@ -42,14 +42,14 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Messages | Reads the chat | — | `list "Chat"` | The owner's messages as right-aligned bubbles; the agent's text as Markdown | `app` |
-| Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code with a language label and Copy; tables in a frame; diff lines colored; long words wrap | `app`, `markdown` |
+| Messages | Reads the chat | — | `list "Chat"` | The owner's messages as right-aligned blocks with the selected fill; the agent's text as Markdown | `app` |
+| Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; diff lines colored; long words wrap | `app`, `markdown` |
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
 | Tool-call chips | Opens a chip | Click, or Enter on the chip | `button "Read 1 file"` | The chip opens to its calls (`aria-expanded`) | `keys`, `markdown` |
 | Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools" | `app`, `colors` |
 | PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged"` | A chip with gh's state: the GitHub icon and a faint outline in the `pr-*` or `issue-*` token, the number in ink (dim when closed without a result; a closed PR is grey); an unknown number stays text | `chips` |
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
-| Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A word for each kind; local images draw | `remarks` |
+| Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A label column and the text, no bar; only "Decision needed" is red; local images draw in a hairline frame | `remarks` |
 | Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |
 | Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | Drawn diagrams; a block past a limit shows as code | `diagrams` |
 | Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | Grey bars, largest first, with the value and note as text; a line with the latest point brightest and one outlier labelled; an unknown kind stays code | `charts` |

@@ -49,7 +49,7 @@ To show a local PNG, JPEG or SVG, write `![alt](absolute path)` alone on its lin
 
 ## Remarks
 
-A quote whose first line is a tag shows as a remark with a colored bar and a word. At most two remarks in one answer.
+A quote whose first line is a tag shows as a remark: a label in a column and the text. Only "Decision needed" is red. At most two remarks in one answer.
 
 | Tag | Use for | Shows |
 |---|---|---|

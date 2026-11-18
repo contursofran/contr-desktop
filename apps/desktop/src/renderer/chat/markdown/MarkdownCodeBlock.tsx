@@ -1,7 +1,7 @@
 // Copied in part from t3code apps/web/src/components/chat/MarkdownCodeBlock.tsx and
 // MarkdownCodeBlock.logic.ts at the commit in THIRD_PARTY_NOTICES.md (MIT).
 // Changes: no settings, wrap, run, diagram, Pierre icons, LRU cache or
-// streaming lines; a UI SDK tooltip on the copy button and our theme tokens.
+// streaming lines; a UI SDK tooltip on the copy button and the contr tokens.
 import { Tip } from "../../ui/Tip";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { use, useEffect, useRef, type ReactNode } from "react";
@@ -38,17 +38,17 @@ export function MarkdownCodeBlock({
     <div
       ref={ref}
       dir="ltr"
-      className="chat-markdown-codeblock my-[0.65rem] overflow-hidden rounded-lg border border-border bg-raised leading-snug"
+      className="chat-markdown-codeblock my-[0.65rem] overflow-hidden rounded-[10px] border border-hairline leading-snug"
       data-language={language}
     >
-      <div className="flex items-center justify-between gap-2 pt-1.5 pr-1.5 pb-0 pl-3 select-none">
-        <span className="truncate font-mono text-xs text-muted">{language}</span>
+      <div className="flex h-7 items-center justify-between gap-2 border-b border-hairline pr-1.5 pl-3 select-none">
+        <span className="truncate font-mono text-[11px] text-dim">{language}</span>
         <Tip label={copyLabel} side="top">
           <button
             type="button"
             onClick={() => copy(code.endsWith("\n") ? code.slice(0, -1) : code)}
             aria-label={copyLabel}
-            className="rounded p-1 text-muted hover:bg-hover hover:text-foreground"
+            className="grid size-[22px] place-items-center rounded text-dim hover:bg-hover hover:text-foreground"
           >
             {copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
           </button>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { FeedRow } from "../../../shared/api";
 
-/** The owner's message: a right-aligned bubble. A note from another agent (`from`) is one line that opens. */
+/** The owner's message: a right-aligned block with the selected fill (redesign, #183). A note from another agent (`from`) is one line that opens. */
 export function UserRow({ row }: { row: FeedRow }) {
   const [open, setOpen] = useState(false);
   const text = row.text ?? "";
@@ -15,7 +15,7 @@ export function UserRow({ row }: { row: FeedRow }) {
   }
   return (
     <div className="flex flex-col items-end gap-1">
-      <p dir="auto" className="max-w-[80%] whitespace-pre-wrap rounded-2xl [overflow-wrap:anywhere] bg-raised px-4 py-2 text-sm">{text}</p>
+      <p dir="auto" className="max-w-[80%] whitespace-pre-wrap rounded-xl [overflow-wrap:anywhere] bg-selected px-3.5 py-2 text-[13.5px] leading-[21px] text-ink-100 shadow-[var(--shadow-selected)]">{text}</p>
       {row.images ? <span className="text-xs text-dim">{row.images === 1 ? "1 picture" : `${row.images} pictures`}</span> : null}
     </div>
   );
