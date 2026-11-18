@@ -41,7 +41,7 @@ test("with the agent's card and an owner question, key 1 answers only the agent'
   await expect(q).toContainText("D7 · The coordinator asks");
   // The agent's card owns the keys: the owner question shows no key badges.
   await expect(approval.getByRole("button")).toHaveText(["1Allow once", "2Deny"]);
-  await expect(q.getByRole("button").filter({ hasText: /first/ })).toHaveText(["Oldest first · recommendedMatches the design; nothing waits forever.", "Newest firstNew work shows at once; old items wait."]);
+  await expect(q.getByRole("radio")).toHaveText(["Oldest first · recommendedMatches the design; nothing waits forever.", "Newest firstNew work shows at once; old items wait."]);
   await key(page, "1");
   await expect(approval).toContainText("Answer sent. Waiting for the agent.");
   expect(answers()).toEqual([{ cmd: "approve", terminal: "t7", request: "toolu_01HxQ7bVf3kPz9Ns2RtLmW4d", allow: true }]);

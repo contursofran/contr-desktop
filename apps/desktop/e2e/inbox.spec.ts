@@ -70,12 +70,20 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   await expect(card.locator("section")).toHaveCount(0);
   expect(await card.evaluate((e) => { const s = getComputedStyle(e); return [s.borderRadius, s.paddingTop, s.paddingLeft, s.marginTop, s.gridTemplateColumns.split(" ")[0]]; })).toEqual(["12px", "12px", "10px", "6px", "16px"]);
   // The recommended answer is picked, so Send answer is on; #15 is a ref chip.
-  await expect(card.getByRole("button", { name: /Oldest first/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(card.getByRole("radio", { name: "Oldest first · recommended", exact: true })).toBeChecked();
   await expect(card.getByRole("button", { name: "Send answer" })).toBeEnabled();
   await expect(card.locator('[data-ref-kind="pr"]')).toHaveAttribute("aria-label", /^PR #15/);
   await shoot(page, "inbox-list");
 
-  // Arrow Down opens the next item; its card takes the digit keys.
+  // Inside the radio group, Arrow Down picks another answer in the same item.
+  const oldest = card.getByRole("radio", { name: "Oldest first · recommended", exact: true });
+  const newest = card.getByRole("radio", { name: "Newest first", exact: true });
+  await oldest.press("ArrowDown");
+  await expect(newest).toBeFocused();
+  await expect(newest).toBeChecked();
+  await newest.blur();
+
+  // Arrow Down on the page opens the next item; its card takes the digit keys.
   await page.keyboard.press("ArrowDown");
   await expect(list.getByRole("region", { name: "Owner question" })).toContainText("Does the Dock badge count to-dos?");
   await expect(list.locator('[data-item="D7"]')).toHaveText(/^D7Which items show first in the inbox\?Question · Inbox order/);
@@ -88,7 +96,9 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   await expect(list.locator('[data-item="D8"]')).toHaveCount(0);
   // A press on a row opens it.
   await list.locator('[data-item="D9"]').getByRole("button").click();
-  await list.locator('[data-item="D9"]').getByRole("button", { name: /Ok/ }).click();
+  const fallback = list.locator('[data-item="D9"]').getByRole("radio", { name: "Ok", exact: true });
+  await expect(fallback).toBeChecked();
+  await fallback.click();
   await expect(list.locator('[data-item="D9"]')).toHaveCount(0);
   // Done at the end of a closed to-do row marks it done.
   await list.locator('[data-item="T3"]').getByRole("button", { name: "Done" }).click();
@@ -136,7 +146,7 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
   await expect(list).toHaveCount(0);
   const card = page.getByRole("region", { name: "Question" });
   await expect(card).toContainText("Where should the draft text be kept?");
-  await card.getByRole("button", { name: /localStorage/ }).click();
+  await card.getByRole("radio", { name: "localStorage", exact: true }).click();
   await expect(card).toContainText("Answer sent. Waiting for the agent.");
   expect(JSON.parse(readFileSync(log, "utf8").trim())).toMatchObject({ cmd: "answer", terminal: "t11", answers: [{ picks: [1] }] });
 

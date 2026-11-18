@@ -1,3 +1,5 @@
+import { Checkbox, CheckboxGroup, CheckboxIndicator } from "@ui-sdk/react/checkbox";
+import { Radio, RadioGroup } from "@ui-sdk/react/radio";
 import { CheckIcon } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type { Card as CardData, PromptResult, QuestionCard, Sidebar } from "../../../shared/api";
@@ -24,7 +26,7 @@ const CONTROL = "button, a[href], summary, [role=button], [role=tab], [role=link
  */
 export function isCardKey(event: KeyboardEvent): boolean {
   const target = event.target as HTMLElement | null;
-  if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return false;
+  if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return false;
   if (target?.closest?.(TYPING)) return false;
   return event.key !== "Enter" || !target?.closest?.(CONTROL);
 }
@@ -46,8 +48,8 @@ export function Card({ card }: { card: CardData }) {
  */
 export const cardBox = "mx-auto mb-2 flex w-full max-w-read flex-col gap-0.5 rounded-xl border border-input-line bg-chrome p-3 text-sm";
 /** One answer: the key or the check box, then the label and its detail. */
-export const optionRow = "flex w-full items-start gap-3 rounded-[9px] px-3 py-2 text-left hover:bg-hover disabled:opacity-50";
-export const keyMark = "mt-0.5 shrink-0 font-mono text-[11px] text-dim";
+const optionRow = "flex w-full items-start gap-3 rounded-[9px] px-3 py-2 text-left hover:bg-hover disabled:opacity-50";
+const keyMark = "mt-0.5 shrink-0 font-mono text-[11px] text-dim";
 export const primaryButton = "flex h-7 shrink-0 items-center rounded-lg bg-selected px-3 text-[12.5px] text-ink-100 shadow-[inset_0_0_0_1px_var(--input-line)] disabled:opacity-50";
 export const ownField = "h-[30px] min-w-0 flex-1 rounded-lg border border-input-line bg-transparent px-2.5 text-[12.5px] text-foreground outline-none placeholder:text-dim";
 
@@ -98,21 +100,92 @@ export function CardText({ children }: { children: ReactNode }) {
 }
 
 /** The label of an answer. "recommended" shows only where the source marks it. */
-export function OptionLabel({ label, recommended }: { label: string; recommended?: boolean }) {
+function OptionLabel({ label, recommended }: { label: string; recommended?: boolean }) {
   return <span className="text-[13px] text-ink-90">{label}{recommended ? " · recommended" : ""}</span>;
 }
 
 /** The line under an answer's label (`.opt .d`). */
-export function OptionDetail({ text }: { text: string }) {
+function OptionDetail({ text }: { text: string }) {
   return <span className="mt-0.5 text-xs leading-[17px] text-dim">{text}</span>;
 }
 
-/** The pick-any check box. The button's `aria-pressed` gives the state; the box only shows it. */
-function Check({ on }: { on: boolean }) {
+type AnswerOption = { label: string; recommended?: boolean; detail?: string };
+
+const answerRows = "mt-1.5 flex flex-col";
+const answerRow = `${optionRow} data-checked:bg-hover`;
+const answerName = (option: AnswerOption) => option.label + (option.recommended ? " · recommended" : "");
+
+export function RadioAnswers({ label, options, picked, disabled, keys = true, onSelect, onPick }: {
+  label: string;
+  options: AnswerOption[];
+  picked: number | null;
+  disabled: boolean;
+  keys?: boolean;
+  onSelect: (i: number) => void;
+  onPick: (i: number) => void;
+}) {
+  if (!options.length) return <div className={answerRows} />;
   return (
-    <span aria-hidden className={`mt-0.5 grid size-3.5 shrink-0 place-items-center rounded ${on ? "bg-ink-85 text-canvas" : "shadow-[inset_0_0_0_1px_var(--ink-35)]"}`}>
-      {on && <CheckIcon className="size-2.5" strokeWidth={3} />}
-    </span>
+    <RadioGroup
+      aria-label={label}
+      className={answerRows}
+      disabled={disabled}
+      value={picked === null ? null : String(picked)}
+      onValueChange={(value, details) => {
+        if (value !== null && details.reason === "list-navigation") onSelect(Number(value));
+      }}
+    >
+      {options.map((option, i) => (
+        <Radio
+          key={option.label}
+          value={String(i)}
+          aria-label={answerName(option)}
+          aria-description={option.detail || undefined}
+          aria-keyshortcuts={keys && i < 9 ? String(i + 1) : undefined}
+          onClick={() => onPick(i)}
+          className={answerRow}
+        >
+          {keys && <span className={keyMark}>{i + 1}</span>}
+          <span className="flex flex-col">
+            <OptionLabel label={option.label} recommended={option.recommended} />
+            {option.detail && <OptionDetail text={option.detail} />}
+          </span>
+        </Radio>
+      ))}
+    </RadioGroup>
+  );
+}
+
+function CheckboxAnswers({ label, options, picked, disabled, onChange }: {
+  label: string;
+  options: AnswerOption[];
+  picked: number[];
+  disabled: boolean;
+  onChange: (picks: number[]) => void;
+}) {
+  return (
+    <CheckboxGroup aria-label={label} className={answerRows} disabled={disabled} value={picked.map(String)} onValueChange={(values) => onChange(values.map(Number))}>
+      {options.map((option, i) => (
+        <Checkbox
+          key={option.label}
+          value={String(i)}
+          aria-label={answerName(option)}
+          aria-description={option.detail || undefined}
+          aria-keyshortcuts={i < 9 ? String(i + 1) : undefined}
+          className={`${answerRow} group`}
+        >
+          <span aria-hidden className="mt-0.5 grid size-3.5 shrink-0 place-items-center rounded shadow-[inset_0_0_0_1px_var(--ink-35)] group-data-checked:bg-ink-85 group-data-checked:text-canvas group-data-checked:shadow-none">
+            <CheckboxIndicator className="grid place-items-center">
+              <CheckIcon className="size-2.5" strokeWidth={3} />
+            </CheckboxIndicator>
+          </span>
+          <span>
+            <OptionLabel label={option.label} recommended={option.recommended} />
+            {option.detail && <span className="ml-2 font-mono text-[11px] text-dim">{option.detail}</span>}
+          </span>
+        </Checkbox>
+      ))}
+    </CheckboxGroup>
   );
 }
 
@@ -185,66 +258,54 @@ function Question({ request, question }: { request: string; question: QuestionCa
     if (last) void send(final);
     else setAt(at + 1);
   }
-  function pick(i: number) {
+  const chosen = picks[at] ?? [];
+  function updatePicks(values: number[], advance = false) {
     if (off) return;
-    const mine = picks[at] ?? [];
-    const updated = picks.map((p, n) => (n !== at ? p : q.multi ? (mine.includes(i) ? mine.filter((x) => x !== i) : [...mine, i].sort()) : [i]));
+    const updated = picks.map((p, n) => (n === at ? values.toSorted() : p));
     setPicks(updated);
-    if (!q.multi) next(updated); // A one-choice pick moves on.
+    if (advance) next(updated);
   }
   useKeys((k) => {
     const n = Number(k);
-    if (n >= 1 && n <= q.options.length) pick(n - 1);
-    else if (n === q.options.length + 1 && !question.noOther) otherRef.current?.focus();
+    if (n >= 1 && n <= q.options.length) {
+      const i = n - 1;
+      if (q.multi) updatePicks(chosen.includes(i) ? chosen.filter((value) => value !== i) : [...chosen, i]);
+      else updatePicks([i], true);
+    } else if (n === q.options.length + 1 && !question.noOther) otherRef.current?.focus();
     else if (k === "Enter") next();
   });
-  const chosen = picks[at] ?? [];
   return (
     <section aria-label="Question" className={cardBox}>
       <AgentHead source={`${q.header}${qs.length > 1 ? ` · ${at + 1} of ${qs.length}` : ""}${q.multi ? " · pick any" : ""}`} />
       <CardText>{q.text}</CardText>
-      <div className="mt-1.5 flex flex-col">
-        {q.options.map((o, i) => (
-          <button
-            key={o.label}
-            type="button"
-            disabled={off}
-            aria-pressed={chosen.includes(i)}
-            aria-keyshortcuts={String(i + 1)}
-            onClick={() => pick(i)}
-            className={`${optionRow} ${chosen.includes(i) ? "bg-hover" : ""}`}
-          >
-            {q.multi ? <Check on={chosen.includes(i)} /> : <span className={keyMark}>{i + 1}</span>}
-            {/* One choice: the detail is a line under the label (`.opt .d`); pick any: a mono hint after it (`.opt .hint`). */}
-            <span className={q.multi ? "" : "flex flex-col"}>
-              <OptionLabel label={o.label} recommended={o.recommended} />
-              {o.detail && (q.multi ? <span className="ml-2 font-mono text-[11px] text-dim">{o.detail}</span> : <OptionDetail text={o.detail} />)}
-            </span>
-          </button>
-        ))}
-      </div>
-      {note && <CardNote>{note}</CardNote>}
-      <div className="flex items-center gap-3 pt-1.5">
-        {question.noOther ? <span className="flex-1" /> : (
-          <input
-            ref={otherRef}
-            aria-label="Own answer"
-            aria-keyshortcuts={String(q.options.length + 1)}
-            placeholder="Or type an answer"
-            disabled={off}
-            value={other[at] ?? ""}
-            onChange={(e) => {
-              setOther(other.map((v, n) => (n === at ? e.target.value : v)));
-              // Own text replaces the first answer that was picked for the owner.
-              if (!q.multi && e.target.value) setPicks(picks.map((p, n) => (n === at ? [] : p)));
-            }}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }}
-            className={ownField}
-          />
+      <form className="contents" onSubmit={(e) => { e.preventDefault(); next(); }}>
+        {q.multi ? (
+          <CheckboxAnswers key={at} label={q.text} options={q.options} picked={chosen} disabled={off} onChange={updatePicks} />
+        ) : (
+          <RadioAnswers key={at} label={q.text} options={q.options} picked={chosen[0] ?? null} disabled={off}
+            onSelect={(i) => updatePicks([i])} onPick={(i) => updatePicks([i], true)} />
         )}
-        <KeysLine text={`${keyRange(q.options.length)} ${q.multi ? "toggle" : "pick"}  ⏎ ${last ? "send" : "next"}`} />
-        <button type="button" disabled={off || !ready()} aria-keyshortcuts="Enter" onClick={() => next()} className={primaryButton}>{last ? "Send" : "Next"}</button>
-      </div>
+        {note && <CardNote>{note}</CardNote>}
+        <div className="flex items-center gap-3 pt-1.5">
+          {question.noOther ? <span className="flex-1" /> : (
+            <input
+              ref={otherRef}
+              aria-label="Own answer"
+              aria-keyshortcuts={q.options.length < 9 ? String(q.options.length + 1) : undefined}
+              placeholder="Or type an answer"
+              disabled={off}
+              value={other[at] ?? ""}
+              onChange={(e) => {
+                setOther(other.map((v, n) => (n === at ? e.target.value : v)));
+                if (!q.multi && e.target.value) setPicks(picks.map((p, n) => (n === at ? [] : p)));
+              }}
+              className={ownField}
+            />
+          )}
+          <KeysLine text={`${keyRange(q.options.length)} ${q.multi ? "toggle" : "pick"}  ⏎ ${last ? "send" : "next"}`} />
+          <button type="submit" disabled={off || !ready()} aria-keyshortcuts="Enter" className={primaryButton}>{last ? "Send" : "Next"}</button>
+        </div>
+      </form>
     </section>
   );
 }
