@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checksQuery, readChecks, readWorkers } from "./board";
+import { checksQuery, readChecks, readRoles, readWorkers } from "./board";
 
 describe("readWorkers", () => {
   it("maps the tool's status to a mark, and keeps the live entry of a name", () => {
@@ -54,5 +54,19 @@ describe("checks", () => {
       7: null,
     });
     expect(readChecks("not json", [1]).get(1)).toBeNull();
+  });
+});
+
+describe("readRoles", () => {
+  it("gives the role of the entry that readWorkers takes", () => {
+    const json = JSON.stringify([
+      { name: "b-10", parent: "t9", live: true, role: "planner" },
+      { name: "b-10", parent: "t1", live: true, role: "builder-medium" },
+      { name: "r-10", parent: "t1", live: true, role: "reviewer" },
+      { name: "x", parent: "t1", live: true },
+    ]);
+    expect(readRoles(json, "t1")).toEqual({ "b-10": "builder-medium", "r-10": "reviewer" });
+    expect(readRoles(json, "t9")).toEqual({ "b-10": "planner", "r-10": "reviewer" });
+    expect(readRoles("")).toEqual({});
   });
 });
