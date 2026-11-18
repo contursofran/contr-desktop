@@ -78,7 +78,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
         // on the box, as the status line, the reply box and the ↓ button are, with both scrollbar kinds.
         // The redesign's 64 px fade at the top (#180): rows pass under the Chat / Terminal switch and fade out.
         // The header space lets the first row scroll clear of the fade.
-        className="flex-1 px-4 [scrollbar-gutter:stable_both-edges] [mask-image:linear-gradient(to_bottom,transparent_0,#000_64px)]"
+        className="flex-1 px-4 md:px-14 [scrollbar-gutter:stable_both-edges] [mask-image:linear-gradient(to_bottom,transparent_0,#000_64px)]"
         ListHeaderComponent={<div className="h-12" />}
         data={rows}
         keyExtractor={(row) => row.id}
