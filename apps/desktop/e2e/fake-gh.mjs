@@ -1,18 +1,26 @@
 #!/usr/bin/env node
 // A fake gh for tests. `api graphql` answers each `nN: issueOrPullRequest(number: N)` of the
 // query from the table below; other numbers are null, as gh gives for unknown numbers.
-// FAKE_GH_LOG gets one JSON line per call: the numbers it asked for.
+// PRs #12, #14 and #15 have checks (passed, failed, running). FAKE_GH_LOG gets one JSON line per call: the numbers it asked for.
 // `pr list --state merged` gives two PRs (#12, #70); `pr list --state open` gives #14 (checks pass) and #51 (a check failed).
 // FAKE_GH_PR_LOG gets the arguments of each `pr list` as one JSON line.
 import { appendFileSync } from "node:fs";
 
-const pr = (n, state, isDraft = false) => ({ __typename: "PullRequest", state, isDraft, url: `https://github.com/o/r/pull/${n}` });
+// The head's check rollup: its state, and the count of check runs in each state.
+const rollup = (state, runs) => ({
+  commits: { nodes: [{ commit: { statusCheckRollup: { state, contexts: {
+    totalCount: Object.values(runs).reduce((a, b) => a + b, 0),
+    checkRunCountsByState: Object.entries(runs).map(([s, count]) => ({ state: s, count })),
+    statusContextCountsByState: [],
+  } } } }] },
+});
+const pr = (n, state, isDraft = false, checks = {}) => ({ __typename: "PullRequest", state, isDraft, url: `https://github.com/o/r/pull/${n}`, ...checks });
 const issue = (n, state, stateReason = null) => ({ __typename: "Issue", state, stateReason, url: `https://github.com/o/r/issues/${n}` });
 const table = {
   9: issue(9, "CLOSED", "COMPLETED"),
-  12: pr(12, "MERGED"),
-  14: pr(14, "OPEN"),
-  15: pr(15, "OPEN", true),
+  12: pr(12, "MERGED", false, rollup("SUCCESS", { SUCCESS: 6 })),
+  14: pr(14, "OPEN", false, rollup("FAILURE", { SUCCESS: 5, FAILURE: 1 })),
+  15: pr(15, "OPEN", true, rollup("PENDING", { SUCCESS: 4, IN_PROGRESS: 2 })),
   20: pr(20, "CLOSED"),
   21: issue(21, "OPEN"),
   22: issue(22, "CLOSED", "NOT_PLANNED"),

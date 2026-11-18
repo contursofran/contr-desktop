@@ -56,10 +56,12 @@ test("right-to-left text has a right-to-left base; code and English stay left to
   const quote = md.locator("blockquote:not(.chat-remark)");
   expect(await direction(quote)).toBe("rtl");
   expect(await quote.evaluate((e) => [getComputedStyle(e).borderRightWidth, getComputedStyle(e).borderLeftWidth])).toEqual(["2px", "0px"]);
-  // A Hebrew remark is right to left too: its bar and its English word are at the right.
+  // A Hebrew remark is right to left too: its English label column is at the right, the text to its left.
   const remark = md.locator(".chat-remark");
   expect(await direction(remark)).toBe("rtl");
-  expect(await remark.evaluate((e) => getComputedStyle(e).borderRightWidth)).toBe("3px");
+  const label = await box(remark.locator(".chat-remark-word"));
+  const said = await box(remark.locator(":scope > :not(.chat-remark-word)").first());
+  expect(label.x).toBeGreaterThan(said.x + said.width);
 
   expect(await direction(md.locator("th").first())).toBe("rtl");
   expect(await direction(md.locator("td").first())).toBe("rtl");

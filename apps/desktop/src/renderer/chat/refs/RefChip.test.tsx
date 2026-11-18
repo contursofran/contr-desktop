@@ -42,6 +42,23 @@ describe("RefChip", () => {
     }
   });
 
+  it.each([
+    ["passed", { state: "pass", passed: 6, failed: 0, total: 6 }, "6 of 6 checks passed", ">✓ 6/6</span>", "text-ink-45"],
+    ["running", { state: "pending", passed: 4, failed: 0, total: 6 }, "checks running, 4 of 6 passed", 'data-state="working"', "text-ink-45"],
+    ["failed", { state: "fail", passed: 5, failed: 1, total: 6 }, "1 of 6 checks failed", ">✕ 1</span>", "text-ink-100"],
+  ] as const)("draws %s checks after the number, out of the selection", (_, checks, label, mark, ink) => {
+    const out = chip({ kind: "pr", state: "open", url: "https://github.com/o/r/pull/7", checks });
+    expect(out).toContain(`aria-label="PR #7, Open, ${label}"`);
+    expect(out).toContain(`data-checks="${checks.state}" class="ms-[5px] select-none text-[11px] ${ink}"`);
+    expect(out).toContain(mark);
+    expect(out).toContain(">#7</span><span aria-hidden");
+  });
+
+  it("draws a running check's count after the glyph", () => {
+    const out = chip({ kind: "pr", state: "open", url: "u", checks: { state: "pending", passed: 4, failed: 0, total: 6 } });
+    expect(out).toMatch(/data-state="working"[^>]*><\/span> 4\/6<\/span>/);
+  });
+
   it("stays text while gh does not know the number", () => {
     ref = null;
     expect(renderToStaticMarkup(<RefChip number={7}>#7</RefChip>)).toBe("#7");
