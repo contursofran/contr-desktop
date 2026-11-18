@@ -117,10 +117,11 @@ if (failing) {
   const now = Math.floor(Date.now() / 1000);
   const h = (n) => now + n * 3600 + 600;
   // FAKE_HELPER_USAGE=stale: Claude read 2 days ago with each window past its reset; Codex with its own kinds.
+  // Keep both read ages ten minutes past the unit boundary.
   const plans = process.env.FAKE_HELPER_USAGE === "stale"
     ? [
-        { plan: "claude", read_at: now - 2 * 86_400, windows: [{ kind: "five_hour", used_percent: 12, resets_at: h(-40) }, { kind: "seven_day", used_percent: 17, resets_at: h(-1) }] },
-        { plan: "codex", read_at: now - 2 * 3600, windows: [{ kind: "primary", used_percent: 8, resets_at: h(3) }, { kind: "secondary", used_percent: 33.2, resets_at: h(100) }] },
+        { plan: "claude", read_at: now - 2 * 86_400 - 600, windows: [{ kind: "five_hour", used_percent: 12, resets_at: h(-40) }, { kind: "seven_day", used_percent: 17, resets_at: h(-1) }] },
+        { plan: "codex", read_at: now - 2 * 3600 - 600, windows: [{ kind: "primary", used_percent: 8, resets_at: h(3) }, { kind: "secondary", used_percent: 33.2, resets_at: h(100) }] },
       ]
     : [
         { plan: "claude", read_at: now, windows: [{ kind: "five_hour", used_percent: 38.4, resets_at: h(2) }, { kind: "seven_day", used_percent: 64.2, resets_at: h(96) }] },
