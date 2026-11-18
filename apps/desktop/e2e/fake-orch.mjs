@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A fake herdr-contr-orch for tests. `agents ls --all --json` lists four workers of the chat's agent (t7), one in
-// each state, three of them live, and a b-30 of another agent (t12) that the board must not show: it has no hc terminal, so it is not live (#57).
+// each state, three of them live, each with its role, and a b-30 of another agent (t12) that the board must not show: it has no hc terminal, so it is not live (#57).
 // With FAKE_ORCH_NONE=1 it lists no workers; FAKE_ORCH_LIST (a JSON file) is the list in place of the one below.
 // The live ones of t7 are the hc terminals t8 to t10 of fake-hc.mjs.
 // `owner open --json` prints the list in FAKE_ORCH_OWNER (a file; none: an empty list). `owner answer <id> <answer>` and
@@ -11,10 +11,10 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const workers = [
   { name: "b-30", parent: "t12", live: true, status: "blocked" },
-  { name: "b-30", address: "t8", parent: "t7", live: true, status: "working", issue: "30", title: "Flow and sequence diagrams" },
-  { name: "b-40", address: "t9", parent: "t7", live: true, status: "blocked", issue: "40", title: "Cards for prompts and questions" },
-  { name: "b-50", address: "t10", parent: "t7", live: true, status: "idle", title: "Virtual list" },
-  { name: "b-60", parent: "t7", live: false },
+  { name: "b-30", address: "t8", parent: "t7", live: true, status: "working", role: "builder-medium", issue: "30", title: "Flow and sequence diagrams" },
+  { name: "b-40", address: "t9", parent: "t7", live: true, status: "blocked", role: "builder", issue: "40", title: "Cards for prompts and questions" },
+  { name: "b-50", address: "t10", parent: "t7", live: true, status: "idle", role: "builder", title: "Virtual list" },
+  { name: "b-60", parent: "t7", live: false, role: "builder" },
 ];
 const argv = process.argv.slice(2);
 const args = argv.join(" ");
