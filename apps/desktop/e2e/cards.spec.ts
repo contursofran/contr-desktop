@@ -87,7 +87,7 @@ test("a question card sends the pick of key 2", async () => {
   const { app, page, answers } = await open("question");
   const section = page.getByRole("region", { name: "Question" });
   await expect(section).toContainText("Where should the draft text be kept?");
-  await expect(section).toContainText("Memory only (Recommended)Lost when the window closes");
+  await expect(section).toContainText("Memory only · recommendedLost when the window closes");
   await shoot(page, "card-question");
   await key(page, "2");
   await expect(section).toContainText("Answer sent. Waiting for the agent.");
@@ -156,4 +156,43 @@ test("in a 900x600 window a card keeps 16 px of side space, as the chat rows do"
     await page.screenshot({ path: path.join(shots, `card-narrow-${scheme}.png`) });
   }
   await app.close();
+});
+
+// The one question card (#182): the reply box's fill and line (`--side`, `--input-line`), no shadow, a red glyph.
+test("permission, question and pick-any use the one card: fill, line, glyph, check boxes and keys line", async () => {
+  test.setTimeout(90_000);
+  for (const [name, region, keys] of [["bash-permission", "Approval", "1-2 pick"], ["question", "Question", "1-2 pick  ⏎ send"], ["multi-question", "Question", "1-3 toggle  ⏎ next"]] as const) {
+    const { app, page } = await open(name);
+    const section = page.getByRole("region", { name: region });
+    await expect(section).toBeVisible();
+    for (const scheme of ["dark", "light"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      const look = await section.evaluate((el) => {
+        const probe = document.createElement("div");
+        probe.style.cssText = "background: var(--side); border: 1px solid var(--input-line); color: var(--blocked)";
+        document.body.append(probe);
+        const want = getComputedStyle(probe);
+        const got = getComputedStyle(el);
+        const glyph = getComputedStyle(el.querySelector('[data-state="blocked"]')!);
+        const r = { bg: [got.backgroundColor, want.backgroundColor], line: [got.borderTopColor, want.borderTopColor], glyph: [glyph.color, want.color], shadow: got.boxShadow };
+        probe.remove();
+        return r;
+      });
+      expect(look.bg[0]).toBe(look.bg[1]);
+      expect(look.line[0]).toBe(look.line[1]);
+      expect(look.glyph[0]).toBe(look.glyph[1]);
+      expect(look.shadow).toBe("none");
+    }
+    await expect(section.getByRole("img", { name: "Needs you" })).toHaveCount(1);
+    await expect(section).toContainText(keys);
+    if (name === "multi-question") {
+      // Pick-any shows check boxes, not key numbers; the keys still toggle.
+      await expect(section.getByRole("button", { name: /Typecheck/ })).toHaveText("Typechecktsc --noEmit");
+      await key(page, "2");
+      await expect(section.getByRole("button", { name: /Lint/ })).toHaveAttribute("aria-pressed", "true");
+      await expect(section.getByRole("button", { name: /Lint/ }).locator("svg")).toHaveCount(1);
+    }
+    if (region === "Question") await expect(section.getByRole("textbox", { name: "Own answer" })).toHaveAttribute("placeholder", "Or type an answer");
+    await app.close();
+  }
 });

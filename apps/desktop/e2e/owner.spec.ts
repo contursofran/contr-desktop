@@ -35,14 +35,13 @@ test("the owner answers a question and marks a to-do done; the next items show",
   test.setTimeout(60_000);
   const { app, page, runs } = await open();
   const q = page.getByRole("region", { name: "Owner question" });
-  await expect(q).toContainText("D7 · The coordinator asks · 1 more after this");
-  await expect(q).toContainText("Inbox order · from b-15");
+  await expect(q).toContainText("D7 · The coordinator asks · Inbox order · from b-15 · 1 more after this");
   await expect(q).toContainText("Which items show first in the inbox?");
   await expect(q.getByRole("button").filter({ hasText: /first/ })).toHaveText([
-    "1Oldest first (Recommended)Matches the design; nothing waits forever.",
+    "1Oldest first · recommendedMatches the design; nothing waits forever.",
     "2Newest firstNew work shows at once; old items wait.",
   ]);
-  await expect(q).toContainText("Refs: #15, docs/design/recipe-herdr.md");
+  await expect(q).toContainText("Refs#15docs/design/recipe-herdr.md");
   await expect(q).not.toContainText("Not for this chat.");
   const t = page.getByRole("region", { name: "Owner to-do" });
   await expect(t).toContainText("T3 · To do · 1 more after this");
