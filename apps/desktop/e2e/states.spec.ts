@@ -128,7 +128,7 @@ test("with more tabs than fit, the tab row's scrollbar is below the tabs, not on
   expect(m.scrollbar).toBeGreaterThan(0);
   // At least 2 px between the shown tab's box and the scrollbar.
   expect(m.gap).toBeGreaterThanOrEqual(2);
-  expect(m.tab).toBe(29);
+  expect(m.tab).toBe(28);
   expect(m.bar).toBe(40);
   await shoot(page, "tabs-scrollbar-narrow");
   await app.close();

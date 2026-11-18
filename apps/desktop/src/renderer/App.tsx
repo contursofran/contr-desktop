@@ -99,28 +99,29 @@ export function App() {
   return (
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
-      <main className="flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onShowSidebar={hidden ? () => setHidden(false) : undefined} right={!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />} />
+      <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
+        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />}
         {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} />}
       </main>
     </div>
   );
 }
 
-/** The Chat / Terminal switch at the top right of the work area (docs/design/README.md part 3). */
+/** The Chat / Terminal switch at the top right of the work area, under the tab bar (docs/design/redesign/chat-screen.html). */
 function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): ReactNode {
   const tab = (s: Side, label: string) => (
     <button
       type="button"
       aria-pressed={side === s}
       onClick={() => onSide(s)}
-      className={`rounded px-2.5 py-0.5 text-xs ${side === s ? "bg-raised text-foreground" : "text-muted hover:bg-hover"}`}
+      className={`rounded-md px-2.5 py-[3px] text-[11.5px] leading-4 ${side === s ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-dim hover:text-muted"}`}
     >
       {label}
     </button>
   );
   return (
-    <div role="group" aria-label="Chat or Terminal" className="flex shrink-0 gap-0.5 rounded-md border border-border bg-chrome p-0.5 [-webkit-app-region:no-drag]">
+    <div role="group" aria-label="Chat or Terminal" className="absolute top-[52px] right-3.5 z-10 flex gap-0.5 rounded-lg bg-canvas p-0.5 shadow-[inset_0_0_0_1px_var(--panel-line)]">
       {tab("chat", "Chat")}
       {tab("terminal", "Terminal")}
     </div>

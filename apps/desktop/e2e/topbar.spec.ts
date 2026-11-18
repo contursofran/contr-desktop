@@ -38,19 +38,19 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
     const label = tabs.getByRole("tab", { name }).locator("[data-title]");
     expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
   }
-  // Herdr's normal tabs: from the left of the bar, 3 px apart, 29 px tall, 7 px corners; only the shown tab has a × and a fill.
+  // The redesign's tabs (#180): from the left of the bar, 2 px apart, 28 px tall, 8 px corners; only the shown tab has a × and a fill.
   await expect(tabs.locator("[data-tab-close]")).toHaveCount(1);
   await expect(tabs.getByRole("button", { name: "Close Install health check" })).toBeVisible();
   const box = async (name: string) => (await tabs.getByRole("tab", { name }).locator("..").boundingBox())!;
   const [first, second] = [await box(names[0]), await box(names[1])];
-  expect(first.height).toBe(29);
+  expect(first.height).toBe(28);
   expect(first.x - (await tabs.locator("..").boundingBox())!.x).toBe(10);
-  expect(Math.round(second.x - (first.x + first.width))).toBe(3);
+  expect(Math.round(second.x - (first.x + first.width))).toBe(2);
   const style = (name: string) => tabs.getByRole("tab", { name }).locator("..").evaluate((e) => {
     const s = getComputedStyle(e);
     return { radius: s.borderTopLeftRadius, font: s.fontSize, weight: s.fontWeight, bg: s.backgroundColor };
   });
-  expect(await style(names[1])).toMatchObject({ radius: "7px", font: "12.8px", weight: "400" });
+  expect(await style(names[1])).toMatchObject({ radius: "8px", font: "12.5px", weight: "400" });
   expect((await style(names[0])).bg).toBe("rgba(0, 0, 0, 0)");
   expect((await style(names[1])).bg).not.toBe("rgba(0, 0, 0, 0)");
   const plus = (await tabs.getByRole("button", { name: "New tab" }).boundingBox())!;

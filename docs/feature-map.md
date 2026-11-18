@@ -35,7 +35,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
 | New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `popups` |
-| Chat or Terminal | Clicks the switch at the right | Click | `group "Chat or Terminal" > button "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
+| Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `group "Chat or Terminal" > button "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
 | Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `states` |
 
 ## Chat
