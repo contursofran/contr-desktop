@@ -95,7 +95,7 @@ test("Tab goes from the top bar to the card and the reply box before the chat ro
   const { app, page } = await open("bash-permission");
   const reply = page.getByRole("textbox", { name: /Reply to/ });
   await expect(page.getByRole("region", { name: "Approval" })).toBeVisible();
-  await page.getByRole("button", { name: "Terminal" }).focus();
+  await page.getByRole("radio", { name: "Terminal" }).focus();
   const stops: string[] = [];
   for (let i = 0; i < 6 && !(await reply.evaluate((el) => el === document.activeElement)); i++) {
     await page.keyboard.press("Tab");

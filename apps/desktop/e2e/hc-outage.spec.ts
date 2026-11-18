@@ -75,7 +75,7 @@ test("the terminal attaches again by itself when hc comes back after an outage",
   const app = await launchApp({ ...env, CONTR_TERMINAL: "t7", FAKE_HC_DOWN: down });
   const page = await app.firstWindow();
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
-  await page.getByRole("button", { name: "Terminal" }).click();
+  await page.getByRole("radio", { name: "Terminal" }).click();
   const note = page.getByRole("alert", { name: "Terminal error" });
   await expect(note.locator("p")).toHaveText("The connection to hc ended.");
   await expect(projects(page).getByText("hc is not reachable", { exact: true })).toBeVisible();

@@ -70,10 +70,10 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
 
   // The Chat / Terminal switch still works.
-  const sw = page.getByRole("group", { name: "Chat or Terminal" });
-  await sw.getByRole("button", { name: "Terminal" }).click();
-  await expect(sw.getByRole("button", { name: "Terminal" })).toHaveAttribute("aria-pressed", "true");
-  await sw.getByRole("button", { name: "Chat" }).click();
+  const sw = page.getByRole("radiogroup", { name: "Chat or Terminal" });
+  await sw.getByRole("radio", { name: "Terminal" }).click();
+  await expect(sw.getByRole("radio", { name: "Terminal" })).toBeChecked();
+  await sw.getByRole("radio", { name: "Chat" }).click();
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
 
   // × closes the shown tab and shows the next one.
