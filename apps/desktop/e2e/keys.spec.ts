@@ -59,21 +59,21 @@ test("a number key in the own-answer box or an open menu is text, and Enter on a
   test.setTimeout(60_000);
   const { app, page, answers } = await open("multi-question");
   const card = page.getByRole("region", { name: "Question" });
-  await expect(card.getByRole("button", { name: /Typecheck/ })).toHaveAttribute("aria-keyshortcuts", "1");
+  await expect(card.getByRole("checkbox", { name: "Typecheck", exact: true })).toHaveAttribute("aria-keyshortcuts", "1");
   await expect(card.getByRole("button", { name: "Next" })).toHaveAttribute("aria-keyshortcuts", "Enter");
   const own = card.getByRole("textbox", { name: "Own answer" });
   await expect(own).toHaveAttribute("aria-keyshortcuts", "4");
   await own.focus();
   await page.keyboard.type("2");
   await expect(own).toHaveValue("2");
-  await expect(card.getByRole("button", { name: /Lint/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(card.getByRole("checkbox", { name: "Lint", exact: true })).not.toBeChecked();
   // The model menu: its typeahead keeps the number key.
   await page.getByRole("button", { name: "Model" }).click();
   await expect(page.getByRole("menu", { name: "Model" })).toBeVisible();
   await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest("[role=menu]"))).toBe(true);
   await page.keyboard.press("1");
   await page.keyboard.press("Escape");
-  await expect(card.getByRole("button", { name: /Typecheck/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(card.getByRole("checkbox", { name: "Typecheck", exact: true })).not.toBeChecked();
   // Enter on a tool chip opens it; the question does not go on.
   const chip = page.getByRole("button", { name: "Read 1 file" });
   await chip.focus();
@@ -83,7 +83,7 @@ test("a number key in the own-answer box or an open menu is text, and Enter on a
   // With the focus on the page the keys answer.
   await blur(page);
   await page.keyboard.press("1");
-  await expect(card.getByRole("button", { name: /Typecheck/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(card.getByRole("checkbox", { name: "Typecheck", exact: true })).toBeChecked();
   await page.keyboard.press("Enter");
   await expect(card).toContainText("Branch · 2 of 2");
   expect(answers()).toEqual([]);

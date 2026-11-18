@@ -95,15 +95,40 @@ test("a question card sends the pick of key 2", async () => {
   await app.close();
 });
 
+test("the agent radio group moves the pick with arrows and sends it with Enter", async () => {
+  const { app, page, answers } = await open("question");
+  const group = page.getByRole("radiogroup", { name: "Where should the draft text be kept?" });
+  const first = group.getByRole("radio", { name: "Memory only · recommended", exact: true });
+  const second = group.getByRole("radio", { name: "localStorage", exact: true });
+  await expect(first).toBeChecked();
+  await first.focus();
+  await first.press("ArrowDown");
+  await expect(second).toBeFocused();
+  await expect(second).toBeChecked();
+  await expect(first).not.toBeChecked();
+  expect(answers()).toEqual([]);
+  await second.press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "Answer sent. Waiting for the agent." })).toBeVisible();
+  expect(answers()).toEqual([{ cmd: "answer", terminal: "t7", request: "toolu_01Ra4mVn6ZcX2bQ8tWy5Hk9p", answers: [{ picks: [1] }] }]);
+  await app.close();
+});
+
 test("a multi-select question takes picks, then the next question's own answer", async () => {
   test.setTimeout(60_000);
   const { app, page, answers } = await open("multi-question");
   const section = page.getByRole("region", { name: "Question" });
   await expect(section).toContainText("Checks · 1 of 2 · pick any");
+  const group = section.getByRole("group", { name: "Which checks should run before the push?" });
+  const lint = group.getByRole("checkbox", { name: "Lint", exact: true });
+  await lint.press("Space");
+  await expect(lint).toBeChecked();
+  await lint.press("Space");
+  await expect(lint).not.toBeChecked();
   await key(page, "1");
   await key(page, "3");
-  await expect(section.getByRole("button", { name: /Tests/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(section.getByRole("checkbox", { name: "Tests · recommended", exact: true })).toBeChecked();
   await shoot(page, "card-multi");
+  await lint.blur();
   await key(page, "Enter");
   await expect(section).toContainText("Merge main into the branch first?");
   await key(page, "3");
@@ -130,8 +155,8 @@ test("Enter on a pick-any question with nothing picked does nothing; a one-choic
   await expect(section).toContainText("Branch · 2 of 2");
   // The first answer is picked (screens.html `.opt.is-picked`): it has the hover fill, and Enter sends it.
   await page.emulateMedia({ colorScheme: "dark" });
-  const yes = section.getByRole("button", { name: /^1\s*Yes/ });
-  await expect(yes).toHaveAttribute("aria-pressed", "true");
+  const yes = section.getByRole("radio", { name: "Yes · recommended", exact: true });
+  await expect(yes).toBeChecked();
   // `--hover` in dark, rgba(255,255,255,0.045): Chromium rounds the alpha to 8 bits.
   await expect(yes).toHaveCSS("background-color", "rgba(255, 255, 255, 0.043)");
   await expect(section.getByRole("button", { name: "Send" })).toBeEnabled();
@@ -198,10 +223,10 @@ test("permission, question and pick-any use the one card: fill, line, glyph, che
     }
     if (name === "multi-question") {
       // Pick-any shows check boxes, not key numbers; the keys still toggle.
-      await expect(section.getByRole("button", { name: /Typecheck/ })).toHaveText("Typechecktsc --noEmit");
+      await expect(section.getByRole("checkbox", { name: "Typecheck", exact: true })).toHaveText("Typechecktsc --noEmit");
       await key(page, "2");
-      await expect(section.getByRole("button", { name: /Lint/ })).toHaveAttribute("aria-pressed", "true");
-      await expect(section.getByRole("button", { name: /Lint/ }).locator("svg")).toHaveCount(1);
+      await expect(section.getByRole("checkbox", { name: "Lint", exact: true })).toBeChecked();
+      await expect(section.getByRole("checkbox", { name: "Lint", exact: true }).locator("svg")).toHaveCount(1);
     }
     if (region === "Question") await expect(section.getByRole("textbox", { name: "Own answer" })).toHaveAttribute("placeholder", "Or type an answer");
     await app.close();
