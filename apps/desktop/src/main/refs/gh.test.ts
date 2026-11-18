@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { readCwd, readRefs, RefCache, refsQuery } from "./gh";
+import { readCwd, readRefs, RefCache, refsQuery, toChecks } from "./gh";
 
 const answer = JSON.stringify({
   data: {
@@ -36,6 +36,28 @@ describe("gh refs", () => {
     ]);
     expect(m.get(8)).toBeNull();
     expect(m.get(9)).toBeNull();
+  });
+
+  it("asks for the head's check rollup and its counts", () => {
+    expect(refsQuery([12])).toContain("statusCheckRollup { state contexts { totalCount checkRunCountsByState");
+  });
+
+  it("reads a PR's checks: passed, failed and all, from check runs and status contexts", () => {
+    const runs = (s: string, counts: Record<string, number>, total: number) => ({
+      state: s,
+      contexts: {
+        totalCount: total,
+        checkRunCountsByState: Object.entries(counts).map(([state, count]) => ({ state, count })),
+        statusContextCountsByState: [{ state: "SUCCESS", count: 1 }, { state: "ERROR", count: 0 }],
+      },
+    });
+    expect(toChecks(runs("SUCCESS", { SUCCESS: 4, SKIPPED: 1, NEUTRAL: 0 }, 6))).toEqual({ state: "pass", passed: 6, failed: 0, total: 6 });
+    expect(toChecks(runs("PENDING", { SUCCESS: 3, IN_PROGRESS: 2 }, 6))).toEqual({ state: "pending", passed: 4, failed: 0, total: 6 });
+    expect(toChecks(runs("FAILURE", { SUCCESS: 3, FAILURE: 1, TIMED_OUT: 1 }, 6))).toEqual({ state: "fail", passed: 4, failed: 2, total: 6 });
+    expect(toChecks(runs("ERROR", {}, 1))?.state).toBe("fail");
+    expect(toChecks(null)).toBeUndefined();
+    const pr = { __typename: "PullRequest", state: "OPEN", isDraft: false, url: "u", commits: { nodes: [{ commit: { statusCheckRollup: runs("SUCCESS", { SUCCESS: 1 }, 2) } }] } };
+    expect(readRefs(JSON.stringify({ data: { repository: { n1: pr } } }), [1]).get(1)).toEqual({ kind: "pr", state: "open", url: "u", checks: { state: "pass", passed: 2, failed: 0, total: 2 } });
   });
 
   it("gives null for all numbers when gh fails", () => {
