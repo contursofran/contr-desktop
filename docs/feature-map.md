@@ -45,10 +45,10 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Messages | Reads the chat | — | `list "Chat"` | The owner's messages as right-aligned blocks with the selected fill; the agent's text as Markdown | `app` |
 | Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; diff lines colored; long words wrap | `app`, `markdown` |
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
-| Tool-call chips | Opens a chip | Click, or Enter on the chip | `button "Read 1 file"` | The chip opens to its calls (`aria-expanded`) | `keys`, `markdown` |
-| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools" | `app`, `colors` |
+| Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `tool-calls`, `keys`, `app` |
+| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `colors`, `tool-calls` |
+| Compaction line | Reads a compaction | — | text "Context compacted" | A thin centered line on hairlines | `tool-calls` |
 | PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged, 6 of 6 checks passed"` | A chip with gh's state: the GitHub icon and a faint outline in the `pr-*` or `issue-*` token, the number in ink (dim when closed without a result; a closed PR is grey); a PR with checks adds ✓ 6/6, the working glyph and 4/6, or ✕ 1 (not in a copied selection); an unknown number stays text | `chips` |
-| Worker, owner item, decision and file chips | — (no chat part uses them yet) | — | `[data-chip-parts]` in the spec | `chat/refs`: a worker with its status glyph, an owner item with a red outline while open, a decision in mono, a path with a file icon | `chip-parts` |
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
 | Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A label column and the text, no bar; only "Decision needed" is red; local images draw in a hairline frame | `remarks` |
 | Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |
