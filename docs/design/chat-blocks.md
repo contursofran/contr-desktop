@@ -92,6 +92,11 @@ For a merge order, a `contr-queue` block, one line `#<n> <label>` for each step 
 #665 Fewer lines -- waits for #656
 ```
 
+When the owner comes back and asks where things are, an empty `contr-digest` block. contr fills "Since you left": the PRs merged since the owner's message before the last one, the workers busy now, the items that wait for the owner (in red), and the open PRs with a failed check. A block with text shows as code.
+
+```contr-digest
+```
+
 ## Diagrams
 
 Write a diagram only when the arrows say more than a list. Put the block at the top level of the answer, with only these lines. A block that does not parse or is too large shows as code; a larger or other diagram stays as a list or a table.
@@ -111,6 +116,24 @@ A sequence, as a `contr-seq` block: one line `A -> B: message` for each message,
 owner -> lead: fix #696
 lead -> b-696: build it
 b-696 --> lead: PR open
+```
+
+## Charts
+
+Write a chart only for one measure. Put the block at the top level of the answer, with only these lines. A block that does not parse or is too large shows as code. A value is a number with an optional unit (`412k`, `6.1`, `72%`); `k` and `M` scale it, and all the values of one chart have the same unit.
+
+A bar chart, as a `contr-chart bar` block: one line `<label> | <value> | <note>` for each bar. contr sorts the bars, largest first, and shows the value and the note as text. At most 12 bars; no negative values.
+
+```contr-chart bar
+b-31 | 412k | ctx 72%
+b-60 | 318k | ended
+```
+
+A line chart, as a `contr-chart line` block: one line `<x> | <y>` for each point, oldest first. The latest point is the brightest and shows its value; contr labels one outlier (modified z-score above 3.5). From 2 to 60 points.
+
+```contr-chart line
+11:10 | 6.1
+14:52 | 6.5
 ```
 
 ## What the chat does not show
