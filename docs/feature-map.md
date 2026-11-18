@@ -103,10 +103,11 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Open items | Opens the Inbox | Click | `region "Inbox"` | Every open item, oldest first | `inbox` |
-| Answer a question | Picks an answer or writes one | Click, keys; `button "Send answer"` | `region "Owner question"` | The item closes everywhere; the next shows | `owner`, `inbox` |
-| Mark a to-do done | Clicks Done | Click | `region "Owner to-do" > button "Done"` | The item closes; Copy copies a command in it | `owner`, `inbox` |
-| Blocked agent | An agent or worker waits on a prompt | `FAKE_HELPER_CARD` | `region "Inbox"` | An item under the agent's title; a press opens its chat with the card; it closes when the agent goes on | `inbox` |
+| Open items | Opens the Inbox | Click | `region "Inbox"` | One row per open item, oldest first: glyph, id, text, kind, from, coordinator, end. The oldest is open as its card | `inbox` |
+| Move between items | Opens another item | `ArrowDown`, `ArrowUp`, or a press on a row | `region "Inbox" [data-item]` | That item opens as its card; the one before goes back to one line | `inbox` |
+| Answer a question | Picks an answer or writes one | Click, keys (in the Inbox, the open item takes 1-9 and Enter); `button "Send answer"` | `region "Owner question"` | The item closes everywhere; the next shows | `owner`, `inbox` |
+| Mark a to-do done | Clicks Done | Click | `region "Owner to-do" > button "Done"`, or `button "Done"` at the end of a closed to-do row | The item closes; Copy copies a command in it | `owner`, `inbox` |
+| Blocked agent | An agent or worker waits on a prompt | `FAKE_HELPER_CARD` | `region "Inbox"` | A row after the owner items, with the agent's title, "Waits on a prompt" and "Open chat"; a press opens its chat with the card; it closes when the agent goes on | `inbox` |
 | Failed answer | Answers when the tool fails | `FAKE_ORCH_OWNER_FAIL=1`, `FAKE_ORCH_OWNER_UNREACHED=1` | `region "Owner question"` | The card stays with the tool's message; "coordinator not reached" shows the note alone | `owner` |
 | Failed read | The tool's list cannot be read | `FAKE_ORCH_OWNER_BAD=<file>` | `region "Inbox"` | The last good list and the typed text stay; the Inbox says why | `owner-read` |
 

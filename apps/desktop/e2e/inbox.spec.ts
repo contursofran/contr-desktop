@@ -50,27 +50,40 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   await row.click();
   await expect(row).toHaveAttribute("aria-current", "true");
   const list = page.getByRole("region", { name: "Inbox" });
+  await expect(list).toContainText("Inbox5 open · oldest first");
+  // One row per item, oldest first. The oldest is open as its card; the others are one line: id, text, kind, title, from, coordinator, end.
   await expect(list.locator("[data-item]")).toHaveText([
     /^Chat panel usability auditD7 · The coordinator asks/,
-    /^Chat panel usability auditD8 · The coordinator asks/,
-    /^Install health checkD9 · The coordinator asks/,
-    /^Chat panel usability auditT3 · To do/,
-    /^Chat panel usability auditT4 · To know/,
+    "D8Does the Dock badge count to-dos?Question · Dock badge · from b-16 · Chat panel usability audit2 answers",
+    "D9Not for this chat.Question · Other · from b-30 · Install health check1 answer",
+    "T3Log in to the staging server, then run pnpm e2e in apps/desktop.To do · from b-15 · Chat panel usability auditDone",
+    "T4The CI cache is now keyed on the lockfile.To know · from b-16 · Chat panel usability auditDone",
   ]);
+  await expect(list.getByRole("region", { name: "Owner question" })).toHaveCount(1);
   await expect(list).not.toContainText("more after this");
   await shoot(page, "inbox-list");
 
-  // Digit keys do not answer in the Inbox: many cards show at once.
-  await page.keyboard.press("1");
+  // Arrow Down opens the next item; its card takes the digit keys.
+  await page.keyboard.press("ArrowDown");
+  await expect(list.getByRole("region", { name: "Owner question" })).toContainText("Does the Dock badge count to-dos?");
+  await expect(list.locator('[data-item="D7"]')).toHaveText(/^D7Which items show first in the inbox\?Question · Inbox order/);
+  await page.keyboard.press("ArrowUp");
+  await expect(list.getByRole("region", { name: "Owner question" })).toContainText("Which items show first in the inbox?");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("2");
+  // Each answer starts its own orch run. Two runs at once append to the log in either order (#119),
+  // so each press waits until the item before has closed.
+  await expect(list.locator('[data-item="D8"]')).toHaveCount(0);
+  // A press on a row opens it.
+  await list.locator('[data-item="D9"]').getByRole("button").click();
   await list.locator('[data-item="D9"]').getByRole("button", { name: /Ok/ }).click();
-  // Each press starts its own orch run. Two runs at once append to the log in either order (#119),
-  // so the second press waits until the first item has closed.
   await expect(list.locator('[data-item="D9"]')).toHaveCount(0);
+  // Done at the end of a closed to-do row marks it done.
   await list.locator('[data-item="T3"]').getByRole("button", { name: "Done" }).click();
-  await expect(list.locator("[data-item]")).toHaveCount(3);
-  await expect(row).toHaveText("Inbox · 3");
-  await expect.poll(() => count(app)).toEqual(["contr · Inbox 3", 3]);
-  expect(runs()).toEqual([expect.stringMatching(/^answer D9 Ok$/), "done T3"]);
+  await expect(list.locator("[data-item]")).toHaveCount(2);
+  await expect(row).toHaveText("Inbox · 2");
+  await expect.poll(() => count(app)).toEqual(["contr · Inbox 2", 2]);
+  expect(runs()).toEqual([expect.stringMatching(/^answer D8 No$/), expect.stringMatching(/^answer D9 Ok$/), "done T3"]);
 
   // The coordinator's chat no longer shows T3: the next to-do is T4.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /Chat panel usability audit/ }).click();
@@ -104,7 +117,7 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 2", 2]);
   await row.click();
   const list = page.getByRole("region", { name: "Inbox" });
-  await expect(list.locator("[data-item]")).toHaveText([/^(blocked)?Release notes draftWaits on a prompt$/, /^Install health checkD9 · The coordinator asks/]);
+  await expect(list.locator("[data-item]")).toHaveText([/^Install health checkD9 · The coordinator asks/, "Release notes draftWaits on a promptOpen chat"]);
   await shoot(page, "inbox-blocked");
 
   await list.locator('[data-item="t11"]').getByRole("button").click();
@@ -134,7 +147,7 @@ test("a worker blocked on a prompt is an Inbox item under its title; a press ope
   await expect(nav.getByRole("button", { name: /Cards for prompts and questions/ }).getByLabel("blocked")).toBeVisible();
   await row.click();
   const list = page.getByRole("region", { name: "Inbox" });
-  await expect(list.locator("[data-item]")).toHaveText([/^(blocked)?Cards for prompts and questionsWaits on a prompt$/]);
+  await expect(list.locator("[data-item]")).toHaveText(["Cards for prompts and questionsWaits on a promptOpen chat"]);
   await list.locator('[data-item="t9"]').getByRole("button").click();
   await expect(list).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Reply to Cards for prompts and questions" })).toBeVisible();
