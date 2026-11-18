@@ -38,6 +38,12 @@ test("contr-flow and contr-seq draw; a block past a limit shows as code", async 
   expect(backEdge.labelTop).toBeGreaterThan(backEdge.curveBottom);
   expect(backEdge.dashed).toBe("3 3");
   // #190: the running box is the brightest, with the status glyph; a done box has ✓ (the first name above).
+  // #224: a box with no mark has no empty slot: its name starts where a mark would.
+  const left = async (name: string, sel: string) => {
+    const [box, t] = [(await flow.locator(`[data-node="${name}"] rect`).boundingBox())!, (await flow.locator(`[data-node="${name}"] ${sel}`).first().boundingBox())!];
+    return Math.round(t.x - box.x);
+  };
+  expect(await left("merge", "text")).toBe(await left("issue", "text"));
   const stroke = (name: string) => flow.locator(`[data-node="${name}"] rect`).evaluate((r) => getComputedStyle(r).stroke);
   expect(await stroke("build")).not.toBe(await stroke("merge"));
   await expect(flow.locator('[data-node="build"] .status-glyph')).toHaveAttribute("data-state", "working");

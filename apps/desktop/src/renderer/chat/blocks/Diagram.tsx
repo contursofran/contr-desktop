@@ -98,7 +98,8 @@ function FlowView({ flow }: { flow: Flow }) {
         const mark = node.state && MARK[node.state];
         const glyph = node.state && GLYPH[node.state];
         const ink = node.state === "done" ? "var(--color-dim)" : node.state === "running" ? "var(--ink-100)" : "var(--ink-85)";
-        const tx = x + 14 + (marked ? 16 : 0);
+        // The name follows the mark, as in the mock; a box with no mark has no empty slot.
+        const tx = x + 14 + (mark || glyph ? 16 : 0);
         return (
           <g key={node.name} data-node={node.name} data-state={node.state}>
             <rect x={x + 0.5} y={y + 0.5} width={boxW - 1} height={boxH - 1} rx={8}
