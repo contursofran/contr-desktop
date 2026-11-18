@@ -37,6 +37,16 @@ test("the reading column is at most 760 px and its parts line up", async () => {
   await expect(chatList(page).locator('[data-row-id="a6"]')).toBeInViewport();
   await chatRow(page, "a6");
 
+  const adjacent = chatList(page).locator('[data-row-id="a5"], [data-row-id="a6"]');
+  await expect(adjacent).toHaveCount(2);
+  const gap = await adjacent.evaluateAll(([before, after]) => ({
+    height: getComputedStyle(before.nextElementSibling!).height,
+    distance: after.getBoundingClientRect().top - before.getBoundingClientRect().bottom,
+  }));
+  expect(gap.height).toBe("12px");
+  // Legend List can round a row height to the nearest pixel.
+  expect(gap.distance).toBeCloseTo(12, 0);
+
   const wide = await edges(page);
   expect(wide.row.width).toBe(760);
   expect(wide.status).toEqual(wide.row);

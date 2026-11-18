@@ -1,14 +1,13 @@
 import type { Element } from "hast";
 import { ImageOff } from "lucide-react";
-import { Component, Suspense, useMemo, useState, type ComponentProps, type ReactNode } from "react";
+import { useMemo, useState, type ComponentProps, type ReactNode } from "react";
 import { diagramFor } from "../blocks/Diagram";
-import { DiffCode, HighlightedCode, MarkdownCodeBlock, extractFenceLanguage, isDiffLanguage } from "./MarkdownCodeBlock";
+import { MarkdownCodeBlock, extractFenceLanguage } from "./MarkdownCodeBlock";
 import { contrBlock } from "../blocks/contrBlock";
 import { RefChip } from "../refs/RefChip";
 import { MarkdownTable } from "./MarkdownTable";
 import { createMarkdownRenderer } from "./markdownRenderer";
 import { CHAT_MARKDOWN_REHYPE_PLUGINS, CHAT_MARKDOWN_REMARK_PLUGINS } from "./pipeline";
-import { useColorScheme } from "./useColorScheme";
 import "./markdown.css";
 
 type WithNode<T extends keyof React.JSX.IntrinsicElements> = ComponentProps<T> & { node?: Element };
@@ -20,19 +19,7 @@ function textOf(node: Element | undefined): string {
     .join("");
 }
 
-/** Shows the plain code when the highlighter fails to load. */
-class PlainOnError extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
-}
-
 function Pre({ node, children }: WithNode<"pre">) {
-  const theme = useColorScheme();
   const codeNode = node?.children.find((c): c is Element => c.type === "element" && c.tagName === "code");
   const className = codeNode?.properties.className;
   const language = extractFenceLanguage(Array.isArray(className) ? className.join(" ") : undefined);
@@ -40,25 +27,9 @@ function Pre({ node, children }: WithNode<"pre">) {
   const meta = codeNode?.properties.dataCodeMeta;
   const block = contrBlock(language, code, typeof meta === "string" ? meta : undefined);
   if (block) return block;
-  const plain = <pre>{children}</pre>;
   const diagram = diagramFor(language, code);
   if (diagram) return diagram;
-  if (isDiffLanguage(language)) {
-    return (
-      <MarkdownCodeBlock code={code} language={language}>
-        <DiffCode code={code} />
-      </MarkdownCodeBlock>
-    );
-  }
-  return (
-    <MarkdownCodeBlock code={code} language={language}>
-      <PlainOnError fallback={plain}>
-        <Suspense fallback={plain}>
-          <HighlightedCode code={code} language={language} theme={theme} />
-        </Suspense>
-      </PlainOnError>
-    </MarkdownCodeBlock>
-  );
+  return <MarkdownCodeBlock code={code} language={language}>{children}</MarkdownCodeBlock>;
 }
 
 function Link({ node, ...props }: WithNode<"a">) {

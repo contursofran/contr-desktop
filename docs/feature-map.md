@@ -43,7 +43,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Messages | Reads the chat | — | `list "Chat"` | The owner's messages as right-aligned blocks with the selected fill; the agent's text as Markdown | `app` |
-| Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; diff lines colored; long words wrap | `app`, `markdown` |
+| Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code and diffs in plain ink in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; long words wrap | `app`, `markdown` |
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
 | Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `tool-calls`, `keys`, `app` |
 | Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `colors`, `tool-calls` |
@@ -60,6 +60,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |
 | Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
 | Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `column` |
+| Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `column` |
 | Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `scroll` |
 | Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `jump` |
 | Loading | Opens a chat before the first feed answer | `FAKE_HELPER_SLOW_FEED=3000` | `status "Reading the chat"` | The loader and "Reading the chat…" | `reply-send` |
