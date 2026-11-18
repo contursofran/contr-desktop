@@ -51,15 +51,13 @@ another project, so it has no copy here.
   what is open for the owner, a board only when it changed, one line when
   nothing changed.
 
-## Open questions for the owner
+## The owner's answers (2026-11-18)
 
-Do not build these until the owner answers:
-
-1. A closed PR: red as on GitHub, or grey, so that red only means "needs
-   you"? (#188)
-2. Files and Changes on the right of the tab bar: keep them or not? (#180)
-3. The selected sidebar row: Herdr's grey fill, or the design system's rule
-   (no fill, brighter text)? (#179)
+1. A closed PR is grey, not red: red only means "needs you". (#188)
+2. Files and Changes are not on the tab bar: the app has no files panel or
+   PR reader. (#180)
+3. The selected sidebar row has Herdr's grey fill (`--selected` and
+   `--shadow-selected`), as in the mock. (#179)
 
 ## Rules for builders
 

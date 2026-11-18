@@ -33,17 +33,17 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
     return () => clearInterval(id);
   }, []);
   return (
-    <footer className="shrink-0 border-t border-border">
+    <footer className="shrink-0 border-t border-hairline">
       {rows.length > 0 && (
-        <ul aria-label="Plan usage" className="flex flex-col gap-2.5 px-5 pt-3 pb-1.5">
+        <ul aria-label="Plan usage" className="flex flex-col gap-[9px] px-[18px] pt-3 pb-1.5">
           {rows.map((r) => {
             const row = (
-              <li key={r.plan} aria-label={r.plan} className="flex h-4 items-center gap-2">
-                <span className="w-[52px] shrink-0 text-xs text-muted">{r.plan}</span>
-                <span role="meter" aria-label={`${r.plan} usage`} aria-valuenow={r.percent ?? undefined} aria-valuetext={r.percent === null ? "No current data" : undefined} aria-valuemin={0} aria-valuemax={100} className="h-1 min-w-0 flex-1 overflow-hidden rounded-sm bg-hover">
-                  <span className="block h-full bg-faint" style={{ width: `${Math.min(100, r.percent ?? 0)}%` }} />
+              <li key={r.plan} aria-label={r.plan} className="flex h-4 items-center gap-3">
+                <span className="w-11 shrink-0 text-xs text-dim">{r.plan}</span>
+                <span role="meter" aria-label={`${r.plan} usage`} aria-valuenow={r.percent ?? undefined} aria-valuetext={r.percent === null ? "No current data" : undefined} aria-valuemin={0} aria-valuemax={100} className="h-1 min-w-0 flex-1 overflow-hidden rounded-sm bg-meter-track">
+                  <span className="block h-full bg-meter-fill" style={{ width: `${Math.min(100, r.percent ?? 0)}%` }} />
                 </span>
-                <span className="shrink-0 font-mono text-[11px] text-muted">{r.value}</span>
+                <span className="shrink-0 font-mono text-[11px] whitespace-nowrap text-muted">{r.value}</span>
               </li>
             );
             const tip = usageTip(r, now);
@@ -51,16 +51,16 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
           })}
         </ul>
       )}
-      <div className="flex gap-1 px-2.5 pt-1 pb-2.5">
-        <button type="button" aria-pressed={settingsShown} onClick={onSettings} className={`flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] hover:bg-hover ${settingsShown ? "bg-selected text-foreground" : "text-muted"}`}>
-          <Settings aria-hidden className="size-4" />
+      <div className="flex gap-1 px-2 pt-1 pb-2">
+        <button type="button" aria-pressed={settingsShown} onClick={onSettings} className={`flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] hover:bg-hover ${settingsShown ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-muted"}`}>
+          <Settings aria-hidden strokeWidth={1.6} className="size-[15px]" />
           Settings
           {ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
         </button>
         {/* Add machine does nothing yet: inert as the top bar's +. */}
         <Tip label="Add machine (not yet)" side="top">
-          <button type="button" aria-label="Add machine" aria-disabled="true" className="flex size-7 items-center justify-center self-center rounded-lg text-faint">
-            <Plus aria-hidden className="size-4" />
+          <button type="button" aria-label="Add machine" aria-disabled="true" className="flex size-[26px] items-center justify-center self-center rounded-lg text-faint">
+            <Plus aria-hidden strokeWidth={1.6} className="size-3.5" />
           </button>
         </Tip>
       </div>

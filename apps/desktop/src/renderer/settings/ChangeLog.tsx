@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChangeLog as Log } from "../../shared/api";
 import { markOf, OPEN_COUNT } from "./marks";
-
-const button = "rounded-md border border-border px-3 py-1 text-xs hover:bg-hover disabled:opacity-50";
+import { buttonClass, Group, Row } from "./rows";
 
 /**
  * Settings > Change log, under Updates: the newest releases, newest first, each with its version, date and the
@@ -25,33 +24,34 @@ export function ChangeLog({ current, checked }: { current: string | undefined; c
   const releases = log?.releases ?? [];
   const shown = older ? releases : releases.slice(0, OPEN_COUNT);
   return (
-    <div className="flex flex-col gap-2">
-      <h2 className="text-xs font-medium text-muted">Change log</h2>
-      <div role="region" aria-label="Change log" className="flex flex-col gap-3 rounded-xl border border-border bg-raised px-4 py-3">
-        {loading && !log?.releases && <span role="status" className="text-xs text-muted">Loading the change log…</span>}
+    <Group title="Change log">
+      <div role="region" aria-label="Change log">
+        {loading && !log?.releases && (
+          <Row>
+            <span role="status" className="text-xs text-muted">Loading the change log…</span>
+          </Row>
+        )}
         {!loading && log?.error && (
-          <div className="flex items-center justify-between gap-4">
-            <span role="alert" className="text-xs text-error">{log.error}</span>
-            <button type="button" onClick={() => load(true)} className={button}>Retry</button>
-          </div>
+          <Row>
+            <span role="alert" className="mr-auto text-xs text-error">{log.error}</span>
+            <button type="button" onClick={() => load(true)} className={buttonClass()}>Retry</button>
+          </Row>
         )}
         {shown.length > 0 && (
-          <ol className="flex flex-col gap-3">
+          <ol>
             {shown.map((r) => {
               const mark = markOf(r.version, current);
               return (
-                <li key={r.tag || r.version} aria-label={`contr ${r.version}`} className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="flex items-center gap-3">
-                      <span className="font-mono text-[13px]">{r.version}</span>
-                      {mark && (
-                        <span aria-label="Mark" className="flex items-center gap-1.5 text-xs text-muted">
-                          {mark === "New" && <span className="size-1.5 rounded-full bg-working" />}
-                          {mark}
-                        </span>
-                      )}
-                    </span>
-                    <span aria-label="Date" className="font-mono text-[11px] text-muted">{r.date}</span>
+                <li key={r.tag || r.version} aria-label={`contr ${r.version}`} className="flex flex-col gap-1 border-b border-hairline px-1 py-2.5 text-[13px] text-ink-85">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[13px]">{r.version}</span>
+                    {mark && (
+                      <span aria-label="Mark" className="flex items-center gap-1.5 text-xs text-muted">
+                        {mark === "New" && <span className="size-1.5 rounded-full bg-working" />}
+                        {mark}
+                      </span>
+                    )}
+                    <span aria-label="Date" className="ml-auto font-mono text-[11.5px] text-muted">{r.date}</span>
                   </div>
                   {r.changes.length > 0 && (
                     <ul className="flex list-disc flex-col gap-0.5 pl-4 text-xs marker:text-muted">
@@ -64,9 +64,11 @@ export function ChangeLog({ current, checked }: { current: string | undefined; c
           </ol>
         )}
         {!older && releases.length > OPEN_COUNT && (
-          <button type="button" onClick={() => setOlder(true)} className={`self-start ${button}`}>Show older</button>
+          <Row>
+            <button type="button" onClick={() => setOlder(true)} className={buttonClass()}>Show older</button>
+          </Row>
         )}
       </div>
-    </div>
+    </Group>
   );
 }

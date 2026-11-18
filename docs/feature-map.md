@@ -35,7 +35,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
 | New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `popups` |
-| Chat or Terminal | Clicks the switch at the right | Click | `group "Chat or Terminal" > button "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
+| Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `group "Chat or Terminal" > button "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
 | Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `states` |
 
 ## Chat
@@ -115,9 +115,9 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Theme | Picks System, Light or Dark | Click; Left and Right arrows | `region "Settings" > radiogroup "Theme"` | The theme changes and stays over a restart; one Tab stop | `settings`, `theme`, `uisdk-settings` |
-| Helper path | Reads the helper path | — | label "Helper path", `button "Copy path"` | The whole path in a tooltip; Copy says "Copied" | `settings`, `small-texts` |
+| Helper path | Reads the helper path | — | label "Helper path", `button "Copy path"` | The path in mono, cut from the left so the file name shows; the whole path in a tooltip; Copy says "Copied" | `settings`, `small-texts` |
 | Version | Reads the version part | — | label "Newest version" | "Development build" with no release URL, and no Update button | `update` |
-| Check for updates | Clicks Check now, or the app menu's Check for Updates… | Click | `button "Check now"` | "Checking…", then the newest version and the last check | `update` |
+| Check for updates | Clicks Check now, or the app menu's Check for Updates… | Click | `button "Check now"` | In the group head: "Checking…", then the last check; the newest version in its row | `update` |
 | Update | Clicks Update | `CONTR_UPDATE_URL`, `CONTR_VERSION` | `button "Update"`, label "Update ready" | A dot in the foot; the .dmg downloads, or the .zip installs and shows "Restart to update"; failures show their message | `update`, `update-file` |
 | Change log | Reads the releases | `CONTR_RELEASES_URL` | `region "Change log"`, `button "Show older"`, `button "Retry"` | Newest first, with marks and dates; Loading, a failure text with Retry | `changelog`, `update-file` |
 | Window size | Makes the window small | — | — | The window is at least 640 × 480 | `restart` |
