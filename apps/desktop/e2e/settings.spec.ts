@@ -35,6 +35,14 @@ test("Settings opens from the foot, sets the theme from the tokens, and keeps it
   await expect(theme.getByRole("radio")).toHaveText(["System", "Dark", "Light"]);
   await expect(theme.getByRole("radio", { name: "System" })).toHaveAttribute("aria-checked", "true");
   await expect(view.getByLabel("Helper path")).toHaveText(env.CONTR_HELPER);
+  // #187: a long path is cut from the left: the file name shows, the start of the path does not.
+  const cut = await view.getByLabel("Helper path").evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const text = el.firstElementChild!.getBoundingClientRect();
+    return { width: box.width, start: text.left < box.left, end: Math.abs(text.right - box.right) < 1 };
+  });
+  expect(cut).toEqual({ width: expect.any(Number), start: true, end: true });
+  expect(cut.width).toBeLessThanOrEqual(420);
 
   await theme.getByRole("radio", { name: "Dark" }).click();
   await expect(theme.getByRole("radio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");

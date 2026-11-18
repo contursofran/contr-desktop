@@ -1,8 +1,8 @@
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useEffect, useState, type ReactNode } from "react";
 import type { CoreState, Settings, ThemeChoice, UpdateState } from "../../shared/api";
-import { PathText } from "../ui/PathText";
 import { ChangeLog } from "./ChangeLog";
+import { buttonClass, Group, PathValue, Row, Value } from "./rows";
 import { updateView, type UpdateView } from "./updateView";
 
 const THEMES: { value: ThemeChoice; label: string }[] = [
@@ -11,7 +11,7 @@ const THEMES: { value: ThemeChoice; label: string }[] = [
   { value: "light", label: "Light" },
 ];
 
-/** The Settings view in the main pane: the theme choice, the updates, the core, the change log, and the helper path. All colors from the theme tokens. */
+/** The Settings view in the main pane, as groups of rows (#187): the theme, the updates, the core, the change log, and the helper path. All colors from the theme tokens. */
 export function SettingsView() {
   const [data, setData] = useState<Settings>();
   useEffect(() => {
@@ -21,40 +21,36 @@ export function SettingsView() {
     void window.contr.setTheme(theme).then((t) => setData((d) => d && { ...d, theme: t }));
   };
   return (
-    <section aria-label="Settings" className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-        <h1 className="text-lg font-semibold">Settings</h1>
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-medium text-muted">Appearance</h2>
-          <div className="flex items-center justify-between rounded-xl border border-border bg-raised px-4 py-3">
-            <span className="text-[13px]">Theme</span>
+    <section aria-label="Settings" className="min-h-0 flex-1 overflow-y-auto px-14 pt-7 pb-5">
+      <div className="mx-auto flex w-full max-w-[640px] flex-col">
+        <h1 className="pb-3.5 text-base font-semibold text-ink-100">Settings</h1>
+        <Group title="Appearance">
+          <Row label="Theme">
             <SegmentedControl<ThemeChoice>
               aria-label="Theme"
               value={data?.theme ?? null}
               onValueChange={(v) => v && choose(v)}
-              className="relative isolate flex gap-1 rounded-lg border border-border bg-chrome p-0.5"
+              className="relative isolate flex gap-0.5 rounded-lg bg-canvas p-0.5 shadow-[inset_0_0_0_1px_var(--color-border)]"
             >
-              <SegmentedControlIndicator className="absolute -z-10 top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-md bg-selected" />
+              <SegmentedControlIndicator className="absolute -z-10 top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-md bg-selected shadow-[var(--shadow-selected)]" />
               {THEMES.map((t) => (
                 <SegmentedControlItem
                   key={t.value}
                   value={t.value}
-                  className="relative rounded-md px-3 py-1 text-xs text-muted outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-foreground data-checked:text-foreground data-checked:hover:bg-transparent"
+                  className="relative rounded-md px-2.5 py-[3px] text-[11.5px] text-dim outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-foreground data-checked:text-ink-100 data-checked:hover:bg-transparent"
                 >
                   {t.label}
                 </SegmentedControlItem>
               ))}
             </SegmentedControl>
-          </div>
-        </div>
+          </Row>
+        </Group>
         <Updates />
-        <div className="flex flex-col gap-2">
-          <h2 className="text-xs font-medium text-muted">Helper</h2>
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-raised px-4 py-3">
-            <span className="text-[13px]">Path</span>
-            <PathText label="Helper path" path={data?.helper ?? ""} />
-          </div>
-        </div>
+        <Group title="Helper">
+          <Row label="Path">
+            <PathValue label="Helper path" path={data?.helper ?? ""} />
+          </Row>
+        </Group>
       </div>
     </section>
   );
@@ -110,10 +106,9 @@ function Core() {
       onCheck={() => void window.contr.checkCore(true)}
     >
       {c?.root && (
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-[13px]">Folder</span>
-          <PathText label="Core folder" path={c.root} />
-        </div>
+        <Row label="Folder">
+          <PathValue label="Core folder" path={c.root} />
+        </Row>
       )}
     </UpdateCard>
   );
@@ -129,7 +124,7 @@ function useNow(): number {
   return now;
 }
 
-/** One update card (Updates, Core): the version, the newest one with its button, the last check, progress, status and error. */
+/** One update group (Updates, Core): the last check and Check now in its head, then rows: the version, the newest one with its button, progress, status and error. */
 function UpdateCard({ title, view: v, current, labels, onCheck, onUpdate, onRestart, children }: {
   title: string;
   view: UpdateView;
@@ -142,41 +137,52 @@ function UpdateCard({ title, view: v, current, labels, onCheck, onUpdate, onRest
   children?: ReactNode;
 }) {
   return (
-    <section aria-label={title} className="flex flex-col gap-2">
-      <h2 className="text-xs font-medium text-muted">{title}</h2>
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-raised px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-[13px]">Version</span>
-          <span className="flex items-center gap-3">
-            <span aria-label={labels.current} className="font-mono text-[11px] text-muted">{current}</span>
+    <section aria-label={title}>
+      <Group
+        title={title}
+        aside={
+          <>
+            {v.lastCheck && <span aria-label={labels.lastCheck} className="font-mono text-[11px] text-dim">{v.lastCheck}</span>}
             {v.check && (
-              <button type="button" disabled={v.check.disabled} onClick={onCheck} className="rounded-md border border-border px-3 py-1 text-xs hover:bg-hover disabled:opacity-50">
+              <button type="button" disabled={v.check.disabled} onClick={onCheck} className={buttonClass()}>
                 {v.check.label}
               </button>
             )}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <span className="text-[13px]">Newest</span>
-          <span className="flex items-center gap-3">
-            <span aria-label={labels.newest} className="font-mono text-[11px] text-muted">{v.newest}</span>
-            {v.action?.kind === "restart" ? (
-              <button type="button" onClick={onRestart} className="rounded-md bg-working px-3 py-1 text-xs text-white">
-                {v.action.label}
-              </button>
-            ) : v.action && (
-              <button type="button" disabled={v.action.disabled} onClick={onUpdate} className="rounded-md bg-working px-3 py-1 text-xs text-white disabled:opacity-60">
-                {v.action.label}
-              </button>
-            )}
-          </span>
-        </div>
+          </>
+        }
+      >
+        <Row label="Version">
+          <Value label={labels.current}>{current}</Value>
+        </Row>
+        <Row label="Newest">
+          <Value label={labels.newest}>{v.newest}</Value>
+          {v.action?.kind === "restart" ? (
+            <button type="button" onClick={onRestart} className={buttonClass(true)}>
+              {v.action.label}
+            </button>
+          ) : v.action && (
+            <button type="button" disabled={v.action.disabled} onClick={onUpdate} className={buttonClass(true)}>
+              {v.action.label}
+            </button>
+          )}
+        </Row>
         {children}
-        {v.lastCheck && <span aria-label={labels.lastCheck} className="text-xs text-muted">{v.lastCheck}</span>}
-        {v.progress != null && <progress aria-label="Download" max={100} value={v.progress} className="h-1 w-full" />}
-        {v.status && <span role="status" className="text-xs text-muted">{v.status}</span>}
-        {v.error && <span role="alert" className="text-xs text-error">{v.error}</span>}
-      </div>
+        {v.progress != null && (
+          <Row>
+            <progress aria-label="Download" max={100} value={v.progress} className="h-1 w-full" />
+          </Row>
+        )}
+        {v.status && (
+          <Row>
+            <span role="status" className="text-xs text-muted">{v.status}</span>
+          </Row>
+        )}
+        {v.error && (
+          <Row>
+            <span role="alert" className="text-xs text-error">{v.error}</span>
+          </Row>
+        )}
+      </Group>
     </section>
   );
 }
