@@ -62,8 +62,19 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
   await expect(same.getByLabel("Worker b-40, blocked")).toBeVisible();
 
   const queue = row.getByRole("list", { name: "Merge order" });
-  await expect(queue.locator("> li")).toHaveText([/1#70Parse the blocks$/, /2#31✓ 6\/6Status board\s*waits for #70/, /3#41.*4\/6Queue block\s*waits for #31/]);
-  await expect(queue.locator('[data-ref-state="merged"]')).toHaveCount(1);
+  // #190: a rail; the step number is at the right, and the note is under the label. The PR chips carry gh's checks.
+  await expect(queue.locator("> li")).toHaveText([/^#70 Parse the blocks1$/, /^#31✓ 6\/6 Status boardwaits for #702$/, /^#41.*4\/6 Queue blockwaits for #31✓ 6\/63$/]);
+  await expect(queue.locator('> li > div > div:first-child [data-ref-state="merged"]')).toHaveCount(1);
+  // Done, now, next from gh: #70 merged, #31 open, #41 draft. The #70 in the note is a chip too.
+  await expect.poll(() => queue.locator("> li").evaluateAll((li) => li.map((l) => l.getAttribute("data-step")))).toEqual(["done", "now", "next"]);
+  await expect(queue.locator("> li").nth(1).locator(".text-dim [data-ref-kind]")).toHaveText("#70");
+  // #224: as the mock, now and next differ by the ring (ink-100 now, ink-50 next; Tailwind puts empty shadows first); the title is the same on each row.
+  await page.emulateMedia({ colorScheme: "dark" });
+  const ring = (i: number) => queue.locator("> li").nth(i).locator("> span").first();
+  await expect(ring(1)).toHaveCSS("box-shadow", /rgb\(244, 244, 245\) 0px 0px 0px 1\.5px inset$/);
+  await expect(ring(2)).toHaveCSS("box-shadow", /rgba\(255, 255, 255, 0\.5\) 0px 0px 0px 1\.5px inset$/);
+  const title = (i: number) => queue.locator("> li").nth(i).locator("> div > div").first().evaluate((d) => [getComputedStyle(d).color, getComputedStyle(d).fontWeight]);
+  expect(await title(1)).toEqual(await title(2));
 
   // The block that does not parse shows as code.
   await expect(row.locator("pre")).toHaveCount(1);

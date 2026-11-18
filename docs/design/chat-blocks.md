@@ -116,7 +116,7 @@ review -> build: blockers
 review [waiting]
 ```
 
-A sequence, as a `contr-seq` block: one line `A -> B: message` for each message, top to bottom; `A --> B: reply` for a reply (dashed); `A -> A: text` for a message to itself. The text is required; a name has no `:`. At most 6 actors, 16 messages, 28 characters for a name and 40 for a message.
+A sequence, as a `contr-seq` block: one line `A -> B: message` for each message, top to bottom; `A --> B: reply` for a reply (dashed); `A -> A: text` for a message to itself. A message to `you` or `owner` shows in red: use it only for what needs the owner. The text is required; a name has no `:`. At most 6 actors, 16 messages, 28 characters for a name and 40 for a message.
 
 ```contr-seq
 owner -> lead: fix #696
