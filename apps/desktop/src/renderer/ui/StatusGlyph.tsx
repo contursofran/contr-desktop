@@ -19,14 +19,15 @@ const INK: Record<GlyphState, string> = {
 /**
  * The status glyph: working ⠋ (turns), waiting ⠿ (pulses), idle ⠶, blocked ⠿ in red (pulses).
  * The glyph and its motion come from CSS (index.css `.status-glyph`), so no timer runs for each row.
+ * The mock's `.g` is 15 px in a 14 px box; `small` is the tab's glyph (screens.html `.tab .g`): 12 px in a 10 px box.
  */
-export function StatusGlyph({ state, className = "" }: { state: GlyphState; className?: string }) {
+export function StatusGlyph({ state, small = false, className = "" }: { state: GlyphState; small?: boolean; className?: string }) {
   return (
     <span
       role="img"
       aria-label={LABELS[state]}
       data-state={state}
-      className={`status-glyph inline-block w-3.5 shrink-0 text-center font-mono text-[15px] leading-4 ${INK[state]} ${className}`}
+      className={`status-glyph inline-block shrink-0 text-center font-mono leading-4 ${small ? "w-2.5 text-[12px]" : "w-3.5 text-[15px]"} ${INK[state]} ${className}`}
     />
   );
 }

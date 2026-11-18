@@ -30,7 +30,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, with its title whole | `topbar` |
+| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `topbar` |
 | Switch by tab | Clicks a tab | Click | `tab "Install health check"` | The chat switches | `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |

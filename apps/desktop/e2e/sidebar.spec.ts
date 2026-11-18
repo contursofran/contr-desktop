@@ -145,6 +145,10 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
     await expect(chev).toHaveCSS("color", await ink("ink-35"));
     // The Projects "+" is ink-50.
     await expect(nav.getByRole("button", { name: "Add project" })).toHaveCSS("color", await ink("ink-50"));
+    // Under the 40 px head (#241, screens.html): the Inbox row 2 px down (`.nav` margin-top), the Projects label 6 px under it.
+    const top = async (l: ReturnType<typeof page.locator>) => (await l.boundingBox())!;
+    const [head, inbox, label] = [await top(page.locator("aside header")), await top(nav.getByRole("button", { name: /^Inbox/ })), await top(nav.getByRole("heading", { name: "Projects" }).locator(".."))];
+    expect([inbox.y - (head.y + head.height), label.y - (inbox.y + inbox.height)]).toEqual([2, 6]);
     await page.screenshot({ path: path.join(shots, `sidebar-mock-${scheme}.png`) });
   }
   await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();

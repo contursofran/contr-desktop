@@ -58,7 +58,8 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
  * then the title, then the status glyph while it works or needs the owner, or a 6 px dot in `done` while unread.
  * The shown tab has the sidebar's fill and a faint inset line.
  * A tab with no agent keeps the sparkle: herdr-contr takes that icon from Herdr's program table, which we do not have.
- * A label grows to 170 px; tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's.
+ * A tab is at most `--tab-max-width` (180 px, tokens.css) wide: a longer title is cut with "…" and its tooltip has the full title.
+ * Tabs do not shrink, the tab row scrolls sideways when it is full, with a thin scrollbar as Herdr's.
  * A tab is at most as wide as the row: in a narrower row its label truncates. The scrollbar is
  * a 3 px `::-webkit-scrollbar` that takes its own room under the tabs (an overlay one drew over the shown tab),
  * and it scrolls the shown tab into view when the shown tab, the tabs or the row's width change (Herdr: `scroll_to_item(active)`).
@@ -108,15 +109,15 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
               const title = tabLabel(data, t, titles);
               const agent = findAgent(data, t);
               return (
-                <TabOrderItem key={t} value={t} className={`flex h-7 max-w-full shrink-0 touch-none select-none items-center gap-2 rounded-lg px-2.5 text-[12.5px] data-grabbed:w-0.5 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:shadow-none data-grabbed:*:hidden ${shown ? "bg-chrome text-ink-100 shadow-[inset_0_0_0_1px_var(--panel-line)]" : "text-dim hover:bg-hover hover:text-muted"}`}>
+                <TabOrderItem key={t} value={t} className={`flex h-7 max-w-[min(100%,var(--tab-max-width))] shrink-0 touch-none select-none items-center gap-2 rounded-lg px-2.5 text-[12.5px] data-grabbed:w-0.5 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:shadow-none data-grabbed:*:hidden ${shown ? "bg-chrome text-ink-100 shadow-[inset_0_0_0_1px_var(--panel-line)]" : "text-dim hover:bg-hover hover:text-muted"}`}>
                   <Tip label={title}>
                     <button type="button" role="tab" aria-selected={shown} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-2">
                       {agent ? <AgentIcon kind={agent.kind} size={15} color="var(--color-muted)" /> : <Sparkle aria-hidden className="size-3.5 shrink-0" />}
-                      <span data-title className="max-w-[170px] truncate">{title}</span>
+                      <span data-title className="truncate">{title}</span>
                     </button>
                   </Tip>
-                  {agent?.state === "working" && <StatusGlyph state="working" />}
-                  {agent?.state === "blocked" && <StatusGlyph state="blocked" />}
+                  {agent?.state === "working" && <StatusGlyph state="working" small />}
+                  {agent?.state === "blocked" && <StatusGlyph state="blocked" small />}
                   {agent?.state === "done" && <span role="img" aria-label="done" data-state="done" className="size-1.5 shrink-0 rounded-full bg-done" />}
                   {shown && (
                     <button type="button" data-tab-close aria-label={`Close ${title}`} onClick={() => onClose(t)} className="flex text-dim hover:text-foreground">

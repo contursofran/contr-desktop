@@ -153,7 +153,7 @@ function InboxRow({ count, shown, onOpen }: { count: number; shown: boolean; onO
       aria-current={shown || undefined}
       aria-label={count > 0 ? `Inbox, ${count} open` : "Inbox"}
       onClick={onOpen}
-      className={`mt-1.5 flex h-[30px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] ${shown ? SELECTED : "text-ink-85 hover:bg-hover"}`}
+      className={`mt-0.5 flex h-[30px] w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] ${shown ? SELECTED : "text-ink-85 hover:bg-hover"}`}
     >
       <Inbox aria-hidden strokeWidth={1.6} className="size-[15px] shrink-0 text-muted" />
       <span className="flex-1">Inbox</span>

@@ -33,11 +33,15 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await tabs.getByRole("tab", { name: "Install health check" }).click();
   const names = ["Chat panel usability audit", "Install health check", "Release notes draft"];
   await expect(tabs.getByRole("tab")).toHaveText(names);
-  // All titles fit: the tabs grow, nothing is cut.
-  for (const name of names) {
-    const label = tabs.getByRole("tab", { name }).locator("[data-title]");
-    expect(await label.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
-  }
+  // A tab is at most `--tab-max-width` (180 px, #228): a short title fits, a long one is cut with "…".
+  for (const name of names) expect((await tabs.getByRole("tab", { name }).locator("..").boundingBox())!.width).toBeLessThanOrEqual(180);
+  const fits = (name: string) => tabs.getByRole("tab", { name }).locator("[data-title]").evaluate((e) => e.scrollWidth <= e.clientWidth);
+  expect(await fits("Release notes draft")).toBe(true);
+  expect(await fits("Chat panel usability audit")).toBe(false);
+  await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" }).locator("[data-title]")).toHaveCSS("text-overflow", "ellipsis");
+  await tabs.getByRole("tab", { name: "Chat panel usability audit" }).hover();
+  await expect(page.getByRole("tooltip")).toHaveText("Chat panel usability audit");
+  await page.mouse.move(600, 400);
   // The redesign's tabs (#180): from the left of the bar, 2 px apart, 28 px tall, 8 px corners; only the shown tab has a × and a fill.
   await expect(tabs.locator("[data-tab-close]")).toHaveCount(1);
   await expect(tabs.getByRole("button", { name: "Close Install health check" })).toBeVisible();
