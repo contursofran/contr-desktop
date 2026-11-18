@@ -52,6 +52,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
 | Remarks | Reads `> [!NOTE]` and other remarks | `fixture=remarks-session` | — | A label column and the text, no bar; only "Decision needed" is red; local images draw in a hairline frame | `remarks` |
 | Board and queue | Reads `contr-status` and `contr-queue` | `fixture=blocks-session` | `list "Workers"`, `list "Merge order"` | A board and a queue; a bad block stays code | `blocks` |
+| Digest | Reads `contr-digest` | `fixture=digest-session` | `region "Since you left"`, `[data-cell]` | PRs merged and CI failures from gh, workers busy and items for you from the orchestration tool; red only for items for you; a block with text stays code | `digest` |
 | Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | Drawn diagrams; a block past a limit shows as code | `diagrams` |
 | Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | Grey bars, largest first, with the value and note as text; a line with the latest point brightest and one outlier labelled; an unknown kind stays code | `charts` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |

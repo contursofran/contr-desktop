@@ -65,6 +65,8 @@ export interface ContrApi {
   answer(request: string, answers: { picks: number[]; other?: string }[]): Promise<PromptResult>;
   /** The `contr-status` board: worker states from the orchestration tool, and each issue's PR checks from gh. */
   board(issues: number[]): Promise<Board>;
+  /** The `contr-digest` counts: gh (merges, failed checks) and the orchestration tool (workers, owner items). */
+  digest(): Promise<Digest>;
   /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
   replyInfo(): Promise<ReplyInfo>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
@@ -195,6 +197,19 @@ export interface Board {
   orchestrating: number;
 }
 
+/** "Since you left": counts from the owner's last message (`since`, ms) to now. A count that its source did not give is null. */
+export interface Digest {
+  since: number | null;
+  /** PRs merged at or after `since` (gh). */
+  merged: number | null;
+  /** Live workers of the chat's agent that work now (the orchestration tool). */
+  busy: number | null;
+  /** Open owner questions and to-dos of the chat's agent (the orchestration tool). */
+  waiting: number | null;
+  /** Open PRs with a failed check on their head (gh). */
+  failing: number | null;
+}
+
 /** The reply box's data. A part the helper does not know is null (or empty). */
 export interface ReplyInfo {
   agent: string | null;
@@ -242,6 +257,7 @@ export const OPEN_REF_CHANNEL = "contr:open-ref";
 export const APPROVE_CHANNEL = "contr:approve";
 export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
+export const DIGEST_CHANNEL = "contr:digest";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
 export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";

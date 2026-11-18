@@ -2,6 +2,8 @@
 // A fake gh for tests. `api graphql` answers each `nN: issueOrPullRequest(number: N)` of the
 // query from the table below; other numbers are null, as gh gives for unknown numbers.
 // PRs #12, #14 and #15 have checks (passed, failed, running). FAKE_GH_LOG gets one JSON line per call: the numbers it asked for.
+// `pr list --state merged` gives two PRs (#12, #70); `pr list --state open` gives #14 (checks pass) and #51 (a check failed).
+// FAKE_GH_PR_LOG gets the arguments of each `pr list` as one JSON line.
 import { appendFileSync } from "node:fs";
 
 // The head's check rollup: its state, and the count of check runs in each state.
@@ -32,6 +34,13 @@ const table = {
   70: pr(70, "MERGED"),
 };
 const args = process.argv.slice(2);
+if (args[0] === "pr" && args[1] === "list") {
+  if (process.env.FAKE_GH_PR_LOG) appendFileSync(process.env.FAKE_GH_PR_LOG, `${JSON.stringify(args)}\n`);
+  const merged = [{ number: 12 }, { number: 70 }];
+  const open = [{ number: 14, statusCheckRollup: [{ conclusion: "SUCCESS" }] }, { number: 51, statusCheckRollup: [{ conclusion: "SUCCESS" }, { conclusion: "FAILURE" }] }];
+  process.stdout.write(JSON.stringify(args.includes("merged") ? merged : open));
+  process.exit(0);
+}
 if (args[0] !== "api" || args[1] !== "graphql") process.exit(1);
 const query = args.find((a) => a.startsWith("query=")) ?? "";
 const numbers = [...query.matchAll(/number: (\d+)/g)].map((m) => Number(m[1]));

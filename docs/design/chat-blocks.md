@@ -92,6 +92,11 @@ For a merge order, a `contr-queue` block, one line `#<n> <label>` for each step 
 #665 Fewer lines -- waits for #656
 ```
 
+When the owner comes back and asks where things are, an empty `contr-digest` block. contr fills "Since you left": the PRs merged since the owner's message before the last one, the workers busy now, the items that wait for the owner (in red), and the open PRs with a failed check. A block with text shows as code.
+
+```contr-digest
+```
+
 ## Diagrams
 
 Write a diagram only when the arrows say more than a list. Put the block at the top level of the answer, with only these lines. A block that does not parse or is too large shows as code; a larger or other diagram stays as a list or a table.
