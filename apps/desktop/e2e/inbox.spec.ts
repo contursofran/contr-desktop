@@ -42,7 +42,7 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   test.setTimeout(60_000);
   const { app, page, runs } = await open();
   const row = page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /^Inbox/ });
-  await expect(row).toHaveText("Inbox · 5");
+  await expect(row).toHaveText("Inbox5");
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 5", 5]);
   await expect(page.getByRole("navigation", { name: "Projects" })).toContainText("Install health check");
   await shoot(page, "inbox-row");
@@ -68,7 +68,7 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   await expect(list.locator('[data-item="D9"]')).toHaveCount(0);
   await list.locator('[data-item="T3"]').getByRole("button", { name: "Done" }).click();
   await expect(list.locator("[data-item]")).toHaveCount(3);
-  await expect(row).toHaveText("Inbox · 3");
+  await expect(row).toHaveText("Inbox3");
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 3", 3]);
   expect(runs()).toEqual([expect.stringMatching(/^answer D9 Ok$/), "done T3"]);
 
@@ -100,7 +100,7 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
     FAKE_HELPER_ANSWER_LOG: log,
   });
   const row = page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /^Inbox/ });
-  await expect(row).toHaveText("Inbox · 2");
+  await expect(row).toHaveText("Inbox2");
   await expect.poll(() => count(app)).toEqual(["contr · Inbox 2", 2]);
   await row.click();
   const list = page.getByRole("region", { name: "Inbox" });
@@ -117,7 +117,7 @@ test("an agent blocked on a prompt is an Inbox item; a press opens its card, and
 
   // hc says the agent goes on: the item closes.
   writeFileSync(status, JSON.stringify({ t11: "working" }));
-  await expect(row).toHaveText("Inbox · 1", { timeout: 20_000 });
+  await expect(row).toHaveText("Inbox1", { timeout: 20_000 });
   await expect.poll(() => count(app), { timeout: 20_000 }).toEqual(["contr · Inbox 1", 1]);
   await app.close();
 });
@@ -130,8 +130,8 @@ test("a worker blocked on a prompt is an Inbox item under its title; a press ope
   const { app, page } = await open([], { FAKE_HC_STATUS: status });
   const nav = page.getByRole("navigation", { name: "Projects" });
   const row = nav.getByRole("button", { name: /^Inbox/ });
-  await expect(row).toHaveText("Inbox · 1");
-  await expect(nav.getByRole("button", { name: /Cards for prompts and questions/ }).getByLabel("blocked")).toBeVisible();
+  await expect(row).toHaveText("Inbox1");
+  await expect(nav.getByRole("button", { name: /Cards for prompts and questions/ }).getByRole("img", { name: "Needs you" })).toBeVisible();
   await row.click();
   const list = page.getByRole("region", { name: "Inbox" });
   await expect(list.locator("[data-item]")).toHaveText([/^(blocked)?Cards for prompts and questionsWaits on a prompt$/]);
