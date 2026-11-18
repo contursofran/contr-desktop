@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Folder, Inbox, Plus } from "lucide-react";
+import { Folder, Inbox, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { Sidebar as SidebarData, SidebarAgent, SidebarProject } from "../../shared/api";
 import { StateMark } from "../chat/blocks/Marks";
@@ -21,10 +21,12 @@ function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
   );
 }
 
-/** The status glyph shows only while the agent works or needs the owner (docs/design/redesign, sidebar). */
+/**
+ * The status glyph (docs/design/redesign, sidebar): working ⠋, idle ⠶ in ink-30, blocked ⠿ in red.
+ * A done agent has none (#217). hc and the tool give no "waiting" that is not for the owner: their `waiting` is blocked.
+ */
 function Mark({ agent }: { agent: SidebarAgent }) {
-  if (agent.state === "working") return <StatusGlyph state="working" />;
-  return agent.state === "blocked" ? <StatusGlyph state="blocked" /> : null;
+  return agent.state === "done" ? null : <StatusGlyph state={agent.state} />;
 }
 
 function count(a: SidebarAgent): number {
@@ -69,7 +71,6 @@ function Workers({ agents, selected, depth, onSelect }: { agents: SidebarAgent[]
 
 function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; selected: string; since: number | null; onSelect: (t: string) => void }) {
   const shown = agent.terminal === selected;
-  const unread = !shown && agent.state === "done";
   const n = count(agent);
   return (
     <li>
@@ -78,7 +79,7 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
           type="button"
           aria-current={shown || undefined}
           onClick={() => onSelect(agent.terminal)}
-          className={`flex w-full items-start gap-2.5 rounded-lg py-1.5 pr-2.5 pl-[26px] text-left text-[13px] leading-[18px] ${shown ? SELECTED : unread ? "font-semibold text-ink-100 hover:bg-hover" : "text-muted hover:bg-hover"}`}
+          className={`flex w-full items-start gap-2.5 rounded-lg py-1.5 pr-2.5 pl-[26px] text-left text-[13px] leading-[18px] ${shown ? SELECTED : "text-ink-60 hover:bg-hover"}`}
         >
           <span className="flex h-[18px] items-center"><AgentIcon agent={agent} size={15} /></span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -107,17 +108,13 @@ function loadClosed(): Set<string> {
   }
 }
 
-function contains(agents: SidebarAgent[], terminal: string): boolean {
-  return agents.some((a) => a.terminal === terminal || contains(a.workers, terminal));
-}
-
 /** A project row (docs/design/redesign, sidebar): chevron, favicon or folder, name, mono branch, and the commits ahead and behind. */
-function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProject; shown: boolean; closed: boolean; onToggle: () => void }) {
-  const Chevron = closed ? ChevronRight : ChevronDown;
+function ProjectRow({ project, closed, onToggle }: { project: SidebarProject; closed: boolean; onToggle: () => void }) {
   return (
     <div className="mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px]">
-      <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex w-2.5 shrink-0 justify-center text-dim hover:text-muted">
-        <Chevron aria-hidden strokeWidth={2.5} className="size-[11px]" />
+      <button type="button" aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} aria-expanded={!closed} onClick={onToggle} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-35 hover:text-muted">
+        {/* The mock's text chevron. U+FE0E keeps ▶ a text glyph, not an emoji. */}
+        <span aria-hidden>{closed ? "▶\uFE0E" : "▼"}</span>
       </button>
       {project.favicon ? (
         <img data-icon="favicon" src={project.favicon} alt="" className="size-[15px] shrink-0 rounded opacity-70" />
@@ -127,7 +124,7 @@ function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProj
       {/* The name reads in full: the branch shrinks first (to nothing), then the marks, then the counts; the name truncates last. */}
       {/* Its tooltip has the whole name. */}
       <Tip label={project.name} side="right">
-        <span data-name className={`max-w-full shrink-[0.001] truncate font-medium ${shown ? "text-ink-100" : "text-ink-85"}`}>{project.name}</span>
+        <span data-name className="max-w-full shrink-[0.001] truncate font-medium text-ink-85">{project.name}</span>
       </Tip>
       {/* A branch with no room wraps to a second line that the 16 px box hides. */}
       {project.branch && (
@@ -212,7 +209,7 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
         <h2 className="flex-1 text-xs font-medium text-dim">Projects</h2>
         {/* Add project does nothing yet: inert as the top bar's +. */}
         <Tip label="Add project (not yet)" side="right">
-          <button type="button" aria-label="Add project" aria-disabled="true" className="flex size-[26px] items-center justify-center rounded-lg text-faint">
+          <button type="button" aria-label="Add project" aria-disabled="true" className="flex size-[26px] items-center justify-center rounded-lg text-dim">
             <Plus aria-hidden strokeWidth={1.6} className="size-3.5" />
           </button>
         </Tip>
@@ -221,7 +218,7 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
       {data.projects.length === 0 && <p className="px-2.5 py-1 text-xs text-muted">{data.hcError ? "hc is not reachable" : "No agents"}</p>}
       {data.projects.map((p) => (
         <section key={p.name} aria-label={p.name} className="mb-1.5 flex flex-col gap-px">
-          <ProjectRow project={p} shown={contains(p.agents, data.selected)} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />
+          <ProjectRow project={p} closed={closed.has(p.name)} onToggle={() => toggle(p.name)} />
           {!closed.has(p.name) && (
             <ul className="flex flex-col gap-px">
               {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
