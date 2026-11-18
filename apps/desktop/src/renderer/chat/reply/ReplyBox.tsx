@@ -115,7 +115,7 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
   return (
     <form
       aria-label="Reply"
-      className="mx-auto mb-4 w-full max-w-read rounded-lg border border-border bg-raised p-2"
+      className="mx-auto mb-4 flex w-full max-w-read flex-col gap-3.5 rounded-xl border border-input-line bg-chrome pt-[11px] pr-3 pb-[9px] pl-3.5"
       onSubmit={(event) => {
         event.preventDefault();
         void send();
@@ -131,17 +131,17 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
         onPaste={(event) => void onPaste(event)}
-        className="w-full resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-dim"
+        className="w-full resize-none bg-transparent text-[13px] leading-[18px] text-foreground outline-none placeholder:text-faint"
       />
       {error && (
-        <p role="alert" className="mb-1 text-xs text-blocked">
+        <p role="alert" className="-mt-2 text-xs text-error">
           Not sent: {error}
         </p>
       )}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3 text-xs text-dim">
         <Tip label="Attach image" side="top">
-          <button type="button" aria-label="Attach image" onClick={() => void onAttach()} className="rounded-full p-1 text-muted hover:bg-hover hover:text-foreground">
-            <Plus aria-hidden className="size-4" />
+          <button type="button" aria-label="Attach image" onClick={() => void onAttach()} className="grid size-[18px] place-items-center rounded-md text-dim hover:bg-hover hover:text-foreground">
+            <Plus aria-hidden className="size-3.5" />
           </button>
         </Tip>
         <ModelButton info={info} send={sendCommand} />
@@ -152,7 +152,7 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
           type="submit"
           aria-label="Send"
           disabled={message === ""}
-          className="rounded-full bg-foreground px-3 py-0.5 text-sm text-canvas disabled:bg-hover disabled:text-faint"
+          className="grid size-6 shrink-0 place-items-center rounded-full bg-foreground text-xs text-canvas disabled:bg-[var(--hover-strong)] disabled:text-dim"
         >
           ↑
         </button>

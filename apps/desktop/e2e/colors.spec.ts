@@ -61,14 +61,16 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     expect(await page.locator("main").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(t.canvas);
     expect(await tabLoader.evaluate((e) => getComputedStyle(e).color)).toBe(t.working);
     expect(await sideLoader.evaluate((e) => getComputedStyle(e).color)).toBe(t.foreground);
-    expect(await page.getByLabel("Status").getByRole("status").evaluate((e) => getComputedStyle(e).color)).toBe(t.foreground);
+    // The status line's glyph is in `working` (ink-100), as the redesign's `.g` glyph (#181).
+    expect(await page.getByLabel("Status").getByRole("status").evaluate((e) => getComputedStyle(e).color)).toBe(t.working);
     await expect(page.getByText(/Worked 1m 0s/)).toHaveCSS("color", QUIET[scheme].dim);
     await expect(tabs.locator("[data-tab-close]").first()).toHaveCSS("color", QUIET[scheme].dim);
     await expect(page.getByRole("button", { name: "New tab" })).toHaveCSS("color", QUIET[scheme].faint);
     await expect(page.locator("aside > header").getByRole("button", { name: "Search" })).toHaveCSS("color", QUIET[scheme].faint);
     await expect(page.locator("aside > footer").getByRole("button", { name: "Add machine" })).toHaveCSS("color", QUIET[scheme].faint);
     await expect(page.getByRole("listitem", { name: "Claude" }).getByText("Claude", { exact: true })).toHaveCSS("color", QUIET[scheme].muted);
-    await expect(page.getByRole("form", { name: "Reply" }).getByRole("button", { name: "Send" })).toHaveCSS("color", QUIET[scheme].faint);
+    // The empty box's Send is `dim` (ink-50) on `--hover-strong`, as the redesign's `.send` (#181).
+    await expect(page.getByRole("form", { name: "Reply" }).getByRole("button", { name: "Send" })).toHaveCSS("color", QUIET[scheme].dim);
     await expect(page.getByRole("meter", { name: "Claude usage" }).locator("span")).toHaveCSS("background-color", QUIET[scheme].faint);
     await page.screenshot({ path: path.join(shots, `colors-working-${scheme}.png`) });
   }
