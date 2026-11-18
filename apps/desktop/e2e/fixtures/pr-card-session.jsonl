@@ -1,0 +1,2 @@
+{"id": "u1", "k": "user", "ts": 1793667720000, "text": "how is the status board PR?"}
+{"id": "r1", "k": "assistant", "ts": 1793667780000, "text": "```contr-pr\n#31\n```\n\nOne e2e check fails; b-31 fixes it.\n\n```contr-pr\nnot a number\n```\n"}

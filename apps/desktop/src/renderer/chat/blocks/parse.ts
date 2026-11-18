@@ -41,3 +41,9 @@ export function parseQueue(code: string): QueueStep[] | null {
 
 /** A `contr-digest` block has no lines: the app reads the counts. A block with text shows as code. */
 export const parseDigest = (code: string): boolean => lines(code).length === 0;
+
+/** A `contr-pr` block holds one PR number (`#31`); the app reads the rest. Other text: null, and the block shows as code. */
+export function parsePr(code: string): number | null {
+  const m = /^#?(\d+)$/.exec(lines(code).join(" "));
+  return m ? Number(m[1]) : null;
+}

@@ -4,10 +4,12 @@ import { ChartBlock } from "./ChartBlock";
 import { DigestBlock } from "./DigestBlock";
 import { parseDigest, parseQueue, parseStatus } from "./parse";
 import { QueueBlock } from "./QueueBlock";
+import { parsePr } from "./parse";
+import { PrCardBlock } from "./PrCardBlock";
 import { StatusBlock } from "./StatusBlock";
 
 /**
- * A `contr-status`, `contr-queue`, `contr-chart` or `contr-digest` fence drawn as its block; null for other languages and
+ * A `contr-status`, `contr-queue`, `contr-chart`, `contr-digest` or `contr-pr` fence drawn as its block; null for other languages and
  * for a block that does not parse. `meta` is the rest of the fence line (`bar` or `line` for a chart, `same` for a board).
  */
 export function contrBlock(language: string | undefined, code: string, meta?: string): ReactNode | null {
@@ -24,5 +26,9 @@ export function contrBlock(language: string | undefined, code: string, meta?: st
     return chart && <ChartBlock chart={chart} />;
   }
   if (language === "contr-digest") return parseDigest(code) ? <DigestBlock /> : null;
+  if (language === "contr-pr") {
+    const n = parsePr(code);
+    return n ? <PrCardBlock number={n} /> : null;
+  }
   return null;
 }
