@@ -7,6 +7,8 @@
 - The head has the red status glyph: the card needs the owner. Red is used only for that.
 - Pick-any shows check boxes in place of the key numbers. The button's `aria-pressed` gives the state;
   the box is hidden from screen readers.
+- The head of an agent's card names the shown agent (name in mono, title) and the card's age, from the app's own
+  data, then the source's text (#231 undoes "only the source's text" for the head).
 - The card shows only text that the source gives: "recommended" only where the source marks it, no
   "Run this command?" line. The option order stays the source's order, so each key picks the same answer.
 - The keys line names only keys that work today. Esc does nothing on the card, so the line has no "esc".

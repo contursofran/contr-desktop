@@ -100,7 +100,7 @@ test("the Inbox row opens every open item, oldest first; an answer here closes i
   // The coordinator's chat no longer shows T3: the next to-do is T4.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: /Chat panel usability audit/ }).click();
   await expect(list).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Owner to-do" })).toContainText("T4 · To know");
+  await expect(page.getByRole("region", { name: "Owner to-do" })).toContainText("T4The CI cache is now keyed on the lockfile.To know · from b-16");
   await app.close();
 });
 
