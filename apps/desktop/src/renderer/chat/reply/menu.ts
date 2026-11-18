@@ -1,4 +1,4 @@
-import type { ReplyInfo } from "../../../shared/api";
+import type { ReplyInfo, SpeedTier } from "../../../shared/api";
 
 /** How long a choice shows before the helper agrees (herdr-contr #208). */
 export const PENDING_MS = 15_000;
@@ -7,6 +7,7 @@ export const PENDING_MS = 15_000;
 export interface Pending {
   model?: string;
   effort?: string;
+  tier?: SpeedTier;
   at: number;
 }
 
@@ -16,13 +17,22 @@ export function modelLabel(model: string | null, models: ReplyInfo["models"]): s
   return models.find((m) => m.value === model)?.label ?? model;
 }
 
-/** The model and effort to show: a pending choice wins until the helper agrees or it is too old. */
-export function shown(info: ReplyInfo, pending: Pending | null, now: number): { model: string | null; effort: string | null } {
+/** A pending choice wins until the helper agrees or the pending time ends. */
+export function shown(info: ReplyInfo, pending: Pending | null, now: number) {
   const live = pending && now - pending.at < PENDING_MS ? pending : null;
   return {
     model: live?.model && live.model !== info.model ? live.model : info.model,
     effort: live?.effort && live.effort !== info.effort ? live.effort : info.effort,
+    tier: live?.tier ?? info.tier,
   };
+}
+
+export function speedChoices(tiers: ReplyInfo["tiers"]): { value: SpeedTier; label: string }[] {
+  if (tiers.length === 0) return [];
+  const choices: { value: SpeedTier; label: string }[] = [{ value: "standard", label: "Standard" }];
+  if (tiers.includes("fast")) choices.push({ value: "fast", label: "Fast" });
+  if (tiers.includes("ultrafast")) choices.push({ value: "ultrafast", label: "Ultrafast" });
+  return choices;
 }
 
 /** The command that the menu sends: the helper has no command that sets the model or effort. */
@@ -43,9 +53,9 @@ export function serial() {
 /** Program names by the helper's agent kind. Another kind shows as it is. */
 const PROGRAMS: Record<string, string> = { claude: "Claude Code", codex: "Codex" };
 
-/** The model button's tooltip (docs/design/recipe-herdr.md): "Opus 5.5 · medium effort · Claude Code", with only the known parts. */
-export function modelTip(label: string, effort: string | null, agent: string | null): string {
-  return [label, effort && `${effort} effort`, agent && (PROGRAMS[agent] ?? agent)].filter(Boolean).join(" · ");
+/** The model button's tooltip with only the known parts. */
+export function modelTip(label: string, effort: string | null, agent: string | null, tier?: string | null): string {
+  return [label, effort && `${effort} effort`, tier, agent && (PROGRAMS[agent] ?? agent)].filter(Boolean).join(" · ");
 }
 
 /** The context ring's tooltip in plain words, not the helper's tag text. */

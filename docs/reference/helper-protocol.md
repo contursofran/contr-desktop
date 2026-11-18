@@ -54,6 +54,7 @@ does not download; `install-isolated.sh` copies the sidecar in.
 | `queue` | `--terminal <addr>` `[--cache <file>]` (Rust sidecar only; `serve` and other machines) | `queued` |
 | `working` | `--terminal <addr>` `[--cache <file>]` (Rust sidecar only; read only) | `working`, `background` |
 | `model` | `--terminal <addr>` `[--cache <file>]` (Rust sidecar only; read only) | `model` |
+| `tier` | `--terminal <addr> --tier <standard\|fast\|ultrafast>` `[--cache <file>]` (Rust sidecar only) | `done` |
 | `suggestion` | `--terminal <addr>` `[--cache <file>]` (Rust sidecar only; read only: an observer attach, no input) | `suggestion` |
 | `panel` | `--terminal <addr>` `[--cache <file>]` (Rust sidecar only; read only) | `panel` |
 | `keys` | `--terminal <addr> --keys <json>` `[--cache <file>]` (Rust sidecar only) | `done` |
@@ -368,13 +369,18 @@ heights by it.
 | `user` | `text`, `ts`, `images` (count, when any) | A right-aligned bubble. |
 | | `pics` (with `--pictures` only) | Where the pictures are in the log, for `serve` and `pictures`. |
 | | `from` (a note from another agent) | One line, "↳ docs-worker: first line", that opens to the whole note. |
-| `assistant` | `text` (markdown), `ts` | Full-width markdown. |
+| `assistant` | `text` (markdown), `ts`, optional `output_tokens`, `seconds`, `tps` | Full-width markdown. |
 | `tools` | `chips`, `ts` | One line of the chip labels ("Read 6 files, ran 3 commands"); it opens to one line per call. |
 | `perm` | `perm`, `text` (the title), `ts` | The approval card (when `perm.state` is `pending`). |
 | `question` | `question`, `ts` | The question card. |
 | `status` | `text` | A thin centered line ("Context compacted"). |
 | `sep` | `text` ("14:05", "Yesterday 09:12", "Mon 2 Nov 18:30") | A time separator. |
 | `footer` | `text` ("01:41 · Worked 36s · 3 tools") | The turn footer, under the turn's last row. |
+
+Claude Code and Codex can report `output_tokens` for an answer and `seconds` from the prompt,
+tool result or start of the task to the last line of the answer. The time includes the wait for
+the first token. The last assistant row of the answer carries these fields when known. The helper
+reports `tps` as `output_tokens / seconds` when it has timing, at least 50 tokens and at least one second.
 
 A note from another agent is a message that is one `<hc from="t2 docs-worker">…</hc>`, as herdr-core's `hc send`
 types it. Its `user` row has `from` (the sender as hc wrote it: the terminal, then the name when it has one; `""`
@@ -410,8 +416,12 @@ approval is the `card` command's job.
 
 | Field | Meaning |
 |---|---|
-| `source` | `statusline` (herdr-contr's status line wrapper is on), `log` (only the model, from the log), `none`. |
-| `tags[]` | `kind` (`model`, `effort`, `context`, `cost`, `own`), `text`, `percent` (context only), `warn` (context 80% or more). With `autoCompactWindow` in Claude Code's settings and the tokens known, the context `text` is `ctx 120k / 250k`, and `percent` and `warn` are against that limit. With source `log`, the context tag comes from the log's newest assistant usage, only when `autoCompactWindow` is set. |
+| `source` | `statusline` (herdr-contr's status line wrapper is on), `log` (tags from the log), `none`. |
+| `tags[]` | `kind` (`model`, `effort`, `context`, `cost`, `own`, `tier`, `speed`), `text`, `percent` (context only), `warn` (context 80% or more). With `autoCompactWindow` in Claude Code's settings and the tokens known, the context `text` is `ctx 120k / 250k`, and `percent` and `warn` are against that limit. With source `log`, the context tag comes from the log's newest assistant usage. |
+
+- `tier` has text `fast` or `ultrafast` when an accelerated tier is active.
+- `speed` has text such as `58 tok/s` and `warn: false`. It is the median of up to five recent answers
+  with a measurement, rounded to a whole number. With no measurement, the helper omits the tag.
 
 The mod adds the cwd, the branch and the agent name from herdr-app's own `panes()` data.
 
@@ -500,16 +510,28 @@ any other key: `failed`, nothing sent. No panel on screen: `changed`, nothing se
 ### `model` (`model`)
 
 ```json
-{"type":"model","agent":"claude","model":"claude-opus-5-5","effort":"low"}
+{"type":"model","agent":"claude","model":"claude-opus-5-5","effort":"low","tier":"fast"}
 ```
 
-- The agent's model and effort, for the sidebar's agent rows. Read only. A part that is not known is `null`.
+- The agent's model, effort and tier. Read only. A part that is not known is `null`.
 - `model`: the newest model that the session log names.
+- `tier`: `standard`, `fast`, `ultrafast`, another text, or `null`. Claude Code takes it from its
+  newest main-thread assistant answer. Codex takes it from its latest thread settings, command line, or config.
 - `effort`, the first source that has it. Claude Code: herdr-contr's status line record, then `--effort <level>`
   on the agent's command line (the pane's processes and their children), then Claude Code's settings:
   `.claude/settings.local.json`, then `.claude/settings.json` in the pane's cwd, then the user's `settings.json`.
   In each file, `modelSettings.<model>.effortLevel` for the log's model, then a top-level `effortLevel`. Codex: the newest `turn_context` in the rollout, then `-c model_reasoning_effort=<level>` on the
   command line, then `model_reasoning_effort` in `config.toml`. Other agents: `null`.
+
+### `tier` (`tier`)
+
+The helper checks the input box and sends the command as it does for `send`. A `done` result of
+`unchanged` means the tier was already active. A result of `sent` means the command went out.
+Claude Code reports the new tier in `model` after the next answer records it.
+
+- `unknown_tier`: Claude Code has no known current speed.
+- `unsupported_tier`: the model or agent does not support the requested speed.
+- `no_tier_switch`: the agent has no speed tier switch.
 
 ### `usage` (`usage`)
 
@@ -567,6 +589,8 @@ files only; no key goes to the agent. Another agent: `commands` is empty (the mo
     pi's picker.
   - `agy`: a table (agy reads its list from its server): its slugs, `gemini-4-argon-medium`; it also saves the
     default.
+  A model choice can include `tiers`, for example `["fast","ultrafast"]`. The list gives the
+  documented accelerated tiers. Account or workspace access can affect availability.
   A value list with no hint gets the hint `<model>`. The mod finds a value by any part of its value or label.
   `screen: true`, sent bare
   it opens a screen in the terminal (a picker or a dialog: the chat cannot show it), so it goes out only with a
@@ -582,7 +606,7 @@ files only; no key goes to the agent. Another agent: `commands` is empty (the mo
   name and runs its first match, and pi sends a part of a name to the model as a message. A full name, with or
   without an argument, runs the command in all four (spike).
 
-### `done` (`approve`, `answer`, `send`)
+### `done` (`approve`, `answer`, `send`, `tier`)
 
 ```json
 {"result":"sent","type":"done"}
@@ -591,6 +615,7 @@ files only; no key goes to the agent. Another agent: `commands` is empty (the mo
 
 | `result` | Meaning | The mod |
 |---|---|---|
+| `unchanged` | `tier` found the requested tier already active. | Keeps the current tier. |
 | `sent` | The keys or the text went out. | Clears the card or the composer. |
 | `changed` | Another card, or none, is on screen now. Nothing was sent. | Reads `card` again. |
 | `unconfirmed` | herdr-core did not answer in time. The text or the key may still arrive. | Keeps the composer empty (a retry could send it twice) and says so; an approval shows as `answered`. |

@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import type { SpeedTier } from "../../../shared/api";
 import { Tip } from "../../ui/Tip";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { Attachments } from "./Attachments";
@@ -6,7 +7,7 @@ import { addImage, readDraft, removeImage, saveDraft } from "./drafts";
 import { composeMessage, isSendKey } from "./message";
 import { replyPlaceholder, serial } from "./menu";
 import { cutSent, outbox } from "./outbox";
-import { Branch, ContextRing, ModelButton, useReplyInfo } from "./ReplyFoot";
+import { Branch, ContextRing, ModelButton, OutputSpeed, useReplyInfo } from "./ReplyFoot";
 
 /** A text to put in the box. A new `id` puts it again. */
 export interface Draft {
@@ -55,6 +56,13 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
   async function sendCommand(command: string): Promise<boolean> {
     const result = await sendText(command);
     if (!result.ok) setError(result.message ?? "send failed");
+    return result.ok;
+  }
+
+  async function setTier(tier: SpeedTier): Promise<boolean> {
+    setError(null);
+    const result = await queue(() => window.contr.setTier(terminal, tier)).catch((e: unknown) => ({ ok: false, message: String(e) }));
+    if (!result.ok) setError(result.message ?? "Could not set the speed tier");
     return result.ok;
   }
 
@@ -144,9 +152,10 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
             <Plus aria-hidden className="size-3.5" />
           </button>
         </Tip>
-        <ModelButton info={info} send={sendCommand} />
+        <ModelButton info={info} send={sendCommand} setTier={setTier} />
         <span className="flex-1" />
         <ContextRing context={info.context} />
+        <OutputSpeed speed={info.speed} />
         <Branch branch={branch} />
         <button
           type="submit"

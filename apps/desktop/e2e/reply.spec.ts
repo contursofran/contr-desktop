@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
@@ -24,6 +24,71 @@ function launch(sendLog: string, env: Record<string, string> = {}) {
 
 const sent = (log: string) => !existsSync(log) ? [] : readFileSync(log, "utf8").trim().split("\n").map((l) => JSON.parse(l).text as string);
 
+test("the reply shows measured speed and lets the owner set the current model's speed tier", async () => {
+  const log = test.info().outputPath("send.jsonl");
+  const calls = test.info().outputPath("calls.jsonl");
+  const ack = test.info().outputPath("tier.txt");
+  const app = await launch(log, {
+    FAKE_HELPER_SPEED: "58 tok/s",
+    FAKE_HELPER_TIERS: "ultrafast,fast",
+    FAKE_HELPER_TIER: "fast",
+    FAKE_HELPER_TIER_ACK: ack,
+    FAKE_HELPER_CALL_LOG: calls,
+  });
+  try {
+    const page = await app.firstWindow();
+    const model = page.getByRole("button", { name: "Model" });
+    const menu = page.getByRole("menu", { name: "Model" });
+    await expect(model).toHaveText("Opus 5.5mediumfast");
+    await expect(page.getByRole("form", { name: "Reply" }).getByText("58 tok/s", { exact: true })).toBeVisible();
+    await model.click();
+    await expect(menu.getByText("Speed", { exact: true })).toBeVisible();
+    await expect(menu.getByRole("menuitemradio")).toHaveText(["Opus 5.5", "Sonnet 5", "low", "medium", "high", "Standard", "Fast", "Ultrafast"]);
+    await expect(menu.getByRole("menuitemradio", { name: "Fast", exact: true })).toHaveAttribute("aria-checked", "true");
+    for (const scheme of ["dark", "light"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.screenshot({ path: path.join(shots, `reply-speed-${scheme}.png`) });
+    }
+    await menu.getByRole("menuitemradio", { name: "Ultrafast" }).click();
+    await expect(model).toHaveText("Opus 5.5mediumultrafast");
+    await expect.poll(() => readFileSync(calls, "utf8")).toContain(JSON.stringify(["tier", "--terminal", "t7", "--tier", "ultrafast"]));
+    expect(sent(log)).toEqual([]);
+
+    writeFileSync(ack, "ultrafast");
+    await model.click();
+    await expect(menu.getByRole("menuitemradio", { name: "Ultrafast" })).toHaveAttribute("aria-checked", "true");
+    await menu.getByRole("menuitemradio", { name: "Standard" }).click();
+    await expect(model).toHaveText("Opus 5.5medium");
+    await expect.poll(() => readFileSync(calls, "utf8")).toContain(JSON.stringify(["tier", "--terminal", "t7", "--tier", "standard"]));
+
+    await model.click();
+    await menu.getByRole("menuitemradio", { name: "Sonnet 5" }).click();
+    await model.click();
+    await expect(menu.getByText("Speed", { exact: true })).toHaveCount(0);
+  } finally {
+    await app.close();
+  }
+});
+
+test("a failed tier switch hides the Speed group and keeps the helper's tier", async () => {
+  const log = test.info().outputPath("send.jsonl");
+  const app = await launch(log, { FAKE_HELPER_TIER: "fast", FAKE_HELPER_TIERS: "fast,ultrafast", FAKE_HELPER_TIER_ERROR: "no_tier_switch" });
+  try {
+    const page = await app.firstWindow();
+    const model = page.getByRole("button", { name: "Model" });
+    const menu = page.getByRole("menu", { name: "Model" });
+    await expect(model).toHaveText("Opus 5.5mediumfast");
+    await model.click();
+    await menu.getByRole("menuitemradio", { name: "Ultrafast" }).click();
+    await expect(page.getByRole("alert")).toContainText("This agent cannot switch speed tiers.");
+    await expect(model).toHaveText("Opus 5.5mediumfast");
+    await model.click();
+    await expect(menu.getByRole("menuitemradio", { name: "Ultrafast" })).toHaveCount(0);
+  } finally {
+    await app.close();
+  }
+});
+
 test("the reply box shows the model, effort, context and branch, and the menu sends /model and /effort", async () => {
   test.setTimeout(60_000);
   const log = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "send.jsonl");
@@ -33,6 +98,7 @@ test("the reply box shows the model, effort, context and branch, and the menu se
   const model = page.getByRole("button", { name: "Model" });
   await expect(model).toHaveText("Opus 5.5medium");
   await expect(page.getByLabel("Context 37%")).toHaveText("37%");
+  await expect(page.getByText(/tok\/s/)).toHaveCount(0);
   await expect(page.getByLabel("Branch")).toHaveText("agent/11-reply-menu");
   await page.getByRole("form", { name: "Reply" }).screenshot({ path: path.join(shots, "reply-foot-dark.png") });
 

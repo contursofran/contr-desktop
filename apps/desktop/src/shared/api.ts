@@ -67,8 +67,10 @@ export interface ContrApi {
   board(issues: number[]): Promise<Board>;
   /** The `contr-digest` counts: gh (merges, failed checks) and the orchestration tool (workers, owner items). */
   digest(): Promise<Digest>;
-  /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
+  /** Model, effort, speed tier, context, output speed and menu choices from the helper. */
   replyInfo(): Promise<ReplyInfo>;
+  /** Sets the speed tier of the active chat through the helper's `tier` command. */
+  setTier(terminal: string, tier: SpeedTier): Promise<{ ok: boolean; message?: string }>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
   branch(): Promise<string | null>;
   /** The Projects list and the selected agent. */
@@ -217,10 +219,16 @@ export interface Digest {
 }
 
 /** The reply box's data. A part the helper does not know is null (or empty). */
+export type SpeedTier = "standard" | "fast" | "ultrafast";
+export type AcceleratedTier = Exclude<SpeedTier, "standard">;
+
 export interface ReplyInfo {
   agent: string | null;
   model: string | null;
   effort: string | null;
+  tier: string | null;
+  tiers: AcceleratedTier[];
+  speed: string | null;
   context: { percent: number; text: string; warn: boolean } | null;
   models: { value: string; label: string }[];
   efforts: { value: string; label: string }[];
@@ -265,6 +273,7 @@ export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
 export const DIGEST_CHANNEL = "contr:digest";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
+export const SET_TIER_CHANNEL = "contr:set-tier";
 export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";
 export const SIDEBAR_EVENT = "contr:sidebar-event";
