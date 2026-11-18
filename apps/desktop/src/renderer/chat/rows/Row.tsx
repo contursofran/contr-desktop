@@ -19,7 +19,7 @@ export function Row({ row }: { row: FeedRow }) {
         </div>
       );
     case "assistant":
-      return <ChatMarkdown text={row.text ?? ""} />;
+      return <ChatMarkdown text={row.text ?? ""} answer />;
     case "footer":
       return <p className="text-xs text-dim">{row.text}</p>;
     case "status":

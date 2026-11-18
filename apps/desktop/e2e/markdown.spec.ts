@@ -84,20 +84,25 @@ test("long words wrap in the bubble and the text; tables have a frame; diffs col
     expect(await pre.evaluate((e) => getComputedStyle(e).whiteSpace)).toBe("pre");
     expect(await fits(pre)).toBe(false);
 
-    // F8: a 12 px rounded frame with a 1 px border, a `raised` header, no word cut in two.
+    // F8: hairlines above and between the rows; no frame and no header fill; no word cut in two.
     const frame = md.locator(".chat-markdown-table-container");
-    const style = await frame.evaluate((e) => {
+    const hairline = await token(page, "hairline", "color");
+    expect(await frame.evaluate((e) => {
       const s = getComputedStyle(e);
-      return [s.borderTopLeftRadius, s.borderTopWidth, s.borderTopColor, s.overflow];
-    });
-    expect(style).toEqual(["12px", "1px", await token(page, "border", "color"), "hidden"]);
+      return [s.borderTopWidth, s.borderTopColor, s.borderLeftWidth, s.borderTopLeftRadius];
+    })).toEqual(["1px", hairline, "0px", "0px"]);
     const th = frame.locator("th").first();
-    expect(await th.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(await token(page, "raised", "backgroundColor"));
+    expect(await th.evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).borderBottomColor]))
+      .toEqual(["rgba(0, 0, 0, 0)", hairline]);
+    expect(await th.evaluate((e) => getComputedStyle(e).color)).toBe(await token(page, "dim", "color"));
     await expect(frame.locator("th")).toHaveText(["Name", "Column four", "A very wide table column header one", "Status", "Checked by"]);
     expect(await brokenWords(frame.locator("table"))).toEqual([]);
     if (w === 900) {
-      // The table is wider than the panel here: it scrolls sideways inside its frame.
+      // A table wider than the panel scrolls sideways inside its frame. With the redesign's narrow cells
+      // this table fits at 900 px, so the frame is made narrow for the check.
+      await frame.evaluate((e) => { e.style.width = "400px"; });
       expect(await fits(frame.locator("> div"))).toBe(false);
+      await frame.evaluate((e) => { e.style.width = ""; });
     }
 
     // F16: added and removed lines get a soft fill; file headers and @@ are neutral.

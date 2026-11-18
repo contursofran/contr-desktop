@@ -144,8 +144,8 @@ const render = createMarkdownRenderer({
   urlTransform,
 });
 
-/** An agent's Markdown text, as t3code's chat shows it. */
-export function ChatMarkdown({ text }: { text: string }) {
+/** An agent's Markdown text, as t3code's chat shows it. `answer`: the chat's type (markdown.css, `.chat-answer`). */
+export function ChatMarkdown({ text, answer }: { text: string; answer?: boolean }) {
   const element = useMemo(() => render(text), [text]);
-  return <div className="chat-markdown">{element}</div>;
+  return <div className={answer ? "chat-markdown chat-answer" : "chat-markdown"}>{element}</div>;
 }
