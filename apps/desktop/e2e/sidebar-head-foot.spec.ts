@@ -70,7 +70,7 @@ test("Hide sidebar hides it, the top bar shows it again clear of the window butt
   const box = (await show.boundingBox())!;
   const mac = await page.evaluate(() => window.contr.platform === "darwin");
   expect(box.x).toBe(mac ? 76 : 10);
-  expect([box.width, box.height]).toEqual([28, 28]);
+  expect([box.width, box.height]).toEqual([26, 26]);
   expect(await show.evaluate((e) => getComputedStyle(e).getPropertyValue("-webkit-app-region"))).toBe("no-drag");
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
   for (const scheme of ["dark", "light"] as const) {

@@ -46,10 +46,10 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
   // An agent with no program picture keeps a one-color glyph in its state's color.
   await expect(nav.getByRole("button", { name: /Virtual list/ }).locator('[data-icon="agent"]')).toHaveCount(1);
 
-  // The loader: the braille frames in `working` on a tab; the sidebar row has the status glyph (#179).
-  const tabLoader = tab("Chat panel usability audit").getByRole("status");
-  await expect(tabLoader).toHaveText(/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]$/);
-  await expect(tabLoader).toHaveCSS("font-size", "12px");
+  // The status glyph in `working` on a tab (#180) and on a sidebar row (#179).
+  const tabLoader = tab("Chat panel usability audit").getByRole("img", { name: "Working" });
+  await expect(tabLoader).toHaveAttribute("data-state", "working");
+  await expect(tabLoader).toHaveCSS("width", "14px");
   const sideLoader = audit.getByRole("img", { name: "Working" });
   await expect(sideLoader).toHaveAttribute("data-state", "working");
   await expect(sideLoader).toHaveCSS("width", "14px");
@@ -58,7 +58,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     await page.emulateMedia({ colorScheme: scheme });
     const t = THEME[scheme];
     expect(await nav.evaluate((e) => getComputedStyle(e.closest("aside")!).backgroundColor)).toBe(t.chrome);
-    expect(await tabs.evaluate((e) => getComputedStyle(e.parentElement!).backgroundColor)).toBe(t.chrome);
+    expect(await tabs.evaluate((e) => getComputedStyle(e.parentElement!).backgroundColor)).toBe(t.canvas);
     expect(await page.locator("main").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(t.canvas);
     expect(await tabLoader.evaluate((e) => getComputedStyle(e).color)).toBe(t.working);
     expect(await sideLoader.evaluate((e) => getComputedStyle(e).color)).toBe(t.working);
@@ -74,7 +74,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     await page.screenshot({ path: path.join(shots, `colors-working-${scheme}.png`) });
   }
 
-  // A done and a blocked agent: a 6 px dot in `done` or `blocked` on its tab.
+  // A done agent: a 6 px dot in `done` on its tab; a blocked one: the status glyph in red.
   await nav.getByRole("button", { name: /Release notes draft/ }).click();
   await nav.getByRole("button", { name: /Cards for prompts and questions/ }).click();
   const done = tab("Release notes draft").locator('[data-state="done"]');
@@ -87,7 +87,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     expect(await done.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(THEME[scheme].done);
-    expect(await blocked.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(THEME[scheme].blocked);
+    expect(await blocked.evaluate((e) => getComputedStyle(e).color)).toBe(THEME[scheme].blocked);
     await page.screenshot({ path: path.join(shots, `colors-done-blocked-${scheme}.png`) });
   }
   await app.close();
