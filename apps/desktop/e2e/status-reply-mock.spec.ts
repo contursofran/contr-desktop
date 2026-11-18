@@ -9,8 +9,8 @@ const shots = path.resolve(e2e, "../../../tmp/shots");
 // docs/design/redesign/screens.html `.status` and chat-screen.html `.rf` and `.seg` (#230, #221).
 // Chromium keeps alpha in 8 bits, so 0.586 reads 0.584.
 const INK = {
-  dark: { bright: "rgb(244, 244, 245)", dim: "rgba(255, 255, 255, 0.5)" },
-  light: { bright: "rgb(20, 20, 20)", dim: "rgba(0, 0, 0, 0.584)" },
+  dark: { bright: "rgb(244, 244, 245)", dim: "rgba(255, 255, 255, 0.5)", detail: "rgba(255, 255, 255, 0.38)" },
+  light: { bright: "rgb(20, 20, 20)", dim: "rgba(0, 0, 0, 0.584)", detail: "rgba(0, 0, 0, 0.584)" },
 };
 
 function launch(env: Record<string, string> = {}) {
@@ -59,9 +59,9 @@ test("the status line, the model button and the switch are as the mock", async (
 
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
-    // The mock's mono is `--ink-38`; it keeps `dim` (ink-50), which reaches 4.5:1 in light (decision 198).
+    // The mono uses ink-38 in dark and dim for 4.5:1 contrast in light (decision 198).
     await expect(status.getByText("Hashing…")).toHaveCSS("color", INK[scheme].dim);
-    await expect(detail).toHaveCSS("color", INK[scheme].dim);
+    await expect(detail).toHaveCSS("color", INK[scheme].detail);
     await expect(status.getByText("Orchestrating · 3 workers")).toHaveCSS("color", INK[scheme].dim);
     await page.screenshot({ path: path.join(shots, `status-reply-${scheme}.png`) });
     const top = (await status.boundingBox())!;
@@ -74,10 +74,10 @@ test("the status line, the model button and the switch are as the mock", async (
 
 test("the context at 80% or more is bright ink, and a failed send is bright ink: red is only 'needs you'", async () => {
   test.setTimeout(60_000);
-  const app = await launch({ FAKE_HELPER_CONTEXT: "85", FAKE_HELPER_SEND_ERROR: "no_terminal" });
+  const app = await launch({ FAKE_HELPER_CONTEXT: "80", FAKE_HELPER_SEND_ERROR: "no_terminal" });
   const page = await app.firstWindow();
-  const context = page.getByLabel("Context 85%");
-  await expect(context).toHaveText("85%");
+  const context = page.getByLabel("Context 80%");
+  await expect(context).toHaveText("80%");
   const box = page.getByRole("textbox", { name: /Reply/ });
   await box.fill("one");
   await box.press("Enter");
@@ -86,6 +86,7 @@ test("the context at 80% or more is bright ink, and a failed send is bright ink:
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await expect(context).toHaveCSS("color", INK[scheme].bright);
+    await expect(context.locator('circle[stroke="currentColor"]')).toHaveCSS("stroke", INK[scheme].bright);
     await expect(alert).toHaveCSS("color", INK[scheme].bright);
     await page.getByRole("form", { name: "Reply" }).screenshot({ path: path.join(shots, `reply-context-warn-${scheme}.png`) });
   }
