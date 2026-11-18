@@ -21,7 +21,7 @@ const main = (app: ElectronApplication) =>
     dark: nativeTheme.shouldUseDarkColors,
     background: BrowserWindow.getAllWindows()[0]!.getBackgroundColor().toLowerCase(),
   }));
-const background = (dark: boolean) => (dark ? "#202020" : "#ffffff");
+const background = (dark: boolean) => (dark ? "#141518" : "#eff0f2");
 
 async function themeChoice(page: Page) {
   await page.locator("aside > footer").getByRole("button", { name: "Settings" }).click();

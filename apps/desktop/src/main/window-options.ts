@@ -1,7 +1,8 @@
 import type { BrowserWindowConstructorOptions } from "electron";
 
-/** The design's dark canvas (docs/design/README.md, Colors). */
-export const CANVAS_DARK = "#202020";
+/** The window fill `--win` of the contr design system (src/renderer/tokens.css), dark and light. */
+export const CANVAS_DARK = "#141518";
+export const CANVAS_LIGHT = "#eff0f2";
 
 /** Below about 604 px the reply box's model button breaks onto two lines; 640 keeps a margin. 480 as herdr-contr-mac. */
 export const MIN_WIDTH = 640;

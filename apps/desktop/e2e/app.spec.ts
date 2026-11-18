@@ -46,7 +46,7 @@ test("the window shows the helper's rows", async () => {
   await expect(tools).toContainText("12 passed");
   await expect(tools).toContainText("failed");
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector("main")!).backgroundColor);
-  expect(bg).toBe("rgb(32, 32, 32)");
+  expect(bg).toBe("rgb(20, 21, 24)");
   await chatRow(page, "u1");
   await page.screenshot({ path: path.join(shots, "helper-rows.png") });
   await chatRow(page, "a6");
@@ -129,7 +129,7 @@ test("assistant rows show as Markdown with code blocks and tables", async () => 
   await page.screenshot({ path: path.join(shots, "markdown-dark.png") });
   await page.emulateMedia({ colorScheme: "light" });
   const bg = await page.evaluate(() => getComputedStyle(document.querySelector("main")!).backgroundColor);
-  expect(bg).toBe("rgb(236, 236, 236)");
+  expect(bg).toBe("rgb(239, 240, 242)");
   await page.screenshot({ path: path.join(shots, "markdown-light.png") });
   await app.close();
 });

@@ -5,7 +5,7 @@ export const FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 export const FRAME_MS = 80;
 
 /**
- * The braille loader, as herdr-contr's `loader(size)`: a `size` px square, Menlo at `size` px, one
+ * The braille loader, as herdr-contr's `loader(size)`: a `size` px square, the mono font at `size` px, one
  * frame each 80 ms. The caller sets the color.
  */
 export function Spinner({ size, className = "" }: { size: number; className?: string }) {
@@ -18,7 +18,7 @@ export function Spinner({ size, className = "" }: { size: number; className?: st
     <span
       aria-label="running"
       role="status"
-      className={`inline-flex shrink-0 items-center justify-center font-[Menlo,monospace] leading-none ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center font-mono leading-none ${className}`}
       style={{ width: size, height: size, fontSize: size }}
     >
       {FRAMES[frame]}

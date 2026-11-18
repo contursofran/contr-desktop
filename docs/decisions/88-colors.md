@@ -1,5 +1,7 @@
 # Colors from herdr-contr's themes (#85)
 
+Replaced for the app colors by decision 198 (the contr design-system tokens). The terminal ANSI colors stay.
+
 - The theme tokens are herdr-contr's theme files: dark `herdr-app/themes/herdr-contr-mac.json`, light `herdr-contr-mac-light.json` (`colors`, plus `foreground`). The terminal takes `background`, `foreground`, `selection`, `cursor` and `ansi` from the same files.
 - `chrome` is the sidebar, the top bar and small control boxes; `canvas` is the work area. This follows the mods `herdr-contr-spaces`, `herdr-contr-tabs` and `herdr-contr`.
 - Claude Code and Codex show their own pictures in their own colors: Herdr's program table gives them `tint: false`. Other kinds are one-color glyphs, tinted as the mod does.

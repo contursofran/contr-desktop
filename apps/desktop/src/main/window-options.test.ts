@@ -11,7 +11,7 @@ describe("windowOptions", () => {
   });
   it("paints the dark canvas before the page loads", () => {
     expect(windowOptions("darwin", "p").backgroundColor).toBe(CANVAS_DARK);
-    expect(CANVAS_DARK).toBe("#202020");
+    expect(CANVAS_DARK).toBe("#141518");
   });
   it("has a minimum size of 640 x 480", () => {
     const o = windowOptions("darwin", "p");

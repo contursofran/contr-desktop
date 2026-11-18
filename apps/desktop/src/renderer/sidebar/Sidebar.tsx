@@ -80,7 +80,7 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
             {n > 0 && <span className="block text-xs font-normal text-muted">Orchestrating · {n} {n === 1 ? "worker" : "workers"}</span>}
           </span>
           {since !== null && agent.state !== "working" && (
-            <span data-age className="shrink-0 self-start font-[Menlo,monospace] text-[11px] leading-[18px] font-normal text-muted">{duration(since)}</span>
+            <span data-age className="shrink-0 self-start font-mono text-[11px] leading-[18px] font-normal text-muted">{duration(since)}</span>
           )}
           <Mark agent={agent} size={15} />
         </button>
@@ -127,13 +127,13 @@ function ProjectRow({ project, shown, closed, onToggle }: { project: SidebarProj
       {project.branch && (
         <span className="flex h-4 min-w-0 shrink-[1000] flex-wrap overflow-hidden">
           <span className="h-4 w-0" />
-          <span data-branch className="font-[Menlo,monospace] text-[11px] leading-4 whitespace-nowrap text-muted">{project.branch}</span>
+          <span data-branch className="font-mono text-[11px] leading-4 whitespace-nowrap text-muted">{project.branch}</span>
         </span>
       )}
       <span className="min-w-0 flex-1" />
       {closed && <span className="flex min-w-0 shrink-[100] overflow-hidden">{project.agents.map((a) => <span key={a.terminal} className="flex shrink-0 scale-[0.93]"><StateMark state={a.state} label={`${a.title}: ${a.state}`} /></span>)}</span>}
       {(project.ahead > 0 || project.behind > 0) && (
-        <span className="flex min-w-0 shrink-[10] gap-1.5 overflow-hidden font-[Menlo,monospace] text-[11px] whitespace-nowrap text-muted">
+        <span className="flex min-w-0 shrink-[10] gap-1.5 overflow-hidden font-mono text-[11px] whitespace-nowrap text-muted">
           {project.ahead > 0 && <span data-ahead>↑{project.ahead}</span>}
           {project.behind > 0 && <span data-behind>↓{project.behind}</span>}
         </span>

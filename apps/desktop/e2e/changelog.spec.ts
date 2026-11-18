@@ -107,10 +107,10 @@ test("the change log shows Loading while it reads, a failure text with Retry, an
   await expect(log.getByRole("alert")).toHaveText("Could not load the change log: HTTP 500");
   await expect(log.getByRole("status")).toHaveCount(0);
   // The `error` token: 4.5:1 on `raised` in light (#117), `blocked`'s orange in dark.
-  await expect(log.getByRole("alert")).toHaveCSS("color", "rgb(168, 80, 0)");
+  await expect(log.getByRole("alert")).toHaveCSS("color", "rgb(20, 20, 20)");
   await page.screenshot({ path: path.join(shots, "changelog-failed-light.png") });
   await page.emulateMedia({ colorScheme: "dark" });
-  await expect(log.getByRole("alert")).toHaveCSS("color", "rgb(255, 159, 10)");
+  await expect(log.getByRole("alert")).toHaveCSS("color", "rgb(244, 244, 245)");
   await page.screenshot({ path: path.join(shots, "changelog-failed-dark.png") });
   fake.fail = false;
   await log.getByRole("button", { name: "Retry" }).click();

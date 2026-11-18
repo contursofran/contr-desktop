@@ -1,64 +1,90 @@
 @layer ui-sdk;
 @import "tailwindcss";
 
-/* Theme tokens: herdr-contr's themes (herdr-app/themes in herdr-contr), dark from
-   herdr-contr-mac.json and light from herdr-contr-mac-light.json, `colors` plus `foreground`.
-   As in herdr-contr's mods: `chrome` is the sidebar and top bar, `canvas` the work area. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "./tokens.css";
+
+/* Theme tokens: the contr design system (tokens.css, #178). The Tailwind names stay, so each part
+   keeps its classes; each name points at one design-system token. Dark and light come from
+   tokens.css. Only the PR and issue colors are not greys (docs/design/redesign/README.md). */
 @theme {
-  --color-canvas: #202020;
-  --color-chrome: #1c1c1c;
-  --color-raised: #262626;
-  --color-hover: #2e2e2e;
-  --color-selected: #383838;
-  --color-border: #363636;
-  --color-muted: #9a9a9a;
-  --color-dim: #6a6a6a;
-  --color-faint: #6a6a6a;
-  --color-foreground: #dedede;
-  --color-accent: #0a84ff;
-  --color-working: #0a84ff;
-  --color-done: #30d158;
-  --color-blocked: #ff9f0a;
-  --color-error: #ff9f0a;
-  --color-pr-open: #3fb950;
-  --color-pr-draft: #9198a1;
-  --color-pr-merged: #ab7df8;
-  --color-pr-closed: #f85149;
-  --color-issue-open: #3fb950;
-  --color-issue-done: #ab7df8;
-  --color-issue-notplanned: #9198a1;
+  --font-sans: "Inter Variable", Inter, -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  --color-canvas: var(--win);
+  --color-chrome: var(--side);
+  --color-raised: var(--float);
+  --color-hover: var(--hover);
+  --color-selected: var(--selected);
+  --color-border: var(--panel-line);
+  --color-hairline: var(--hairline);
+  --color-rail: var(--rail);
+  --color-input-line: var(--input-line);
+  --color-float-line: var(--float-line);
+  --color-meter-track: var(--meter-track);
+  --color-meter-fill: var(--meter-fill);
+  --color-focus: var(--focus-ring);
+  --color-foreground: var(--ink-95);
+  /* Text in light reaches 4.5:1 on --win, --side and --float from ink-50 up (contrast.test.ts). */
+  --color-muted: var(--ink-62);
+  --color-dim: var(--ink-50);
+  /* Marks that are not text, and inert controls. */
+  --color-faint: var(--ink-30);
+  /* State shows by glyphs and icons, not by color: these are ink. Red is only "needs you". */
+  --color-accent: var(--ink-100);
+  --color-working: var(--ink-100);
+  --color-done: var(--ink-62);
+  --color-blocked: var(--blocked);
+  /* An error is text in full ink: red stays for "needs you" (docs/decisions/178-design-tokens.md). */
+  --color-error: var(--ink-100);
+  --color-claude: var(--claude);
+
+  --color-ink-100: var(--ink-100);
+  --color-ink-95: var(--ink-95);
+  --color-ink-90: var(--ink-90);
+  --color-ink-85: var(--ink-85);
+  --color-ink-62: var(--ink-62);
+  --color-ink-60: var(--ink-60);
+  --color-ink-50: var(--ink-50);
+  --color-ink-45: var(--ink-45);
+  --color-ink-42: var(--ink-42);
+  --color-ink-38: var(--ink-38);
+  --color-ink-35: var(--ink-35);
+  --color-ink-30: var(--ink-30);
+  --color-ink-26: var(--ink-26);
+
+  --color-pr-open: var(--pr-open);
+  --color-pr-draft: var(--pr-draft);
+  --color-pr-merged: var(--pr-merged);
+  --color-pr-closed: var(--pr-closed);
+  --color-issue-open: var(--issue-open);
+  --color-issue-done: var(--issue-done);
+  --color-issue-notplanned: var(--issue-notplanned);
   /* The chat's reading column (docs/design/recipe-herdr.md): `max-w-read` on the rows, the
      status line, the reply box, the cards and the error note, so they line up. */
   --container-read: 1000px;
 }
 
+/* The PR and issue state colors, GitHub's (the one exception to the greys). */
+:root {
+  --pr-open: #3fb950;
+  --pr-draft: #9198a1;
+  --pr-merged: #ab7df8;
+  --pr-closed: #f85149;
+  --issue-open: #3fb950;
+  --issue-done: #ab7df8;
+  --issue-notplanned: #9198a1;
+}
 @media (prefers-color-scheme: light) {
   :root {
-    --color-canvas: #ececec;
-    --color-chrome: #f5f5f5;
-    --color-raised: #ffffff;
-    --color-hover: #e2e2e2;
-    --color-selected: #d8d8d8;
-    --color-border: #d1d1d1;
-    /* `muted` and `dim` are not the theme file's #6e6e73 and #a1a1a6: text must reach 4.5:1 on
-       canvas, chrome and raised (docs/decisions/88-colors.md). `faint` keeps the file's pale value. */
-    --color-muted: #5f5f64;
-    --color-dim: #6a6a6f;
-    --color-faint: #a1a1a6;
-    --color-foreground: #1d1d1f;
-    --color-accent: #007aff;
-    --color-working: #007aff;
-    --color-done: #34c759;
-    --color-blocked: #ff9500;
-    /* Error text: `blocked`'s orange, dark enough for 4.5:1 on canvas, chrome and raised (docs/decisions/88-colors.md). */
-    --color-error: #a85000;
-    --color-pr-open: #1a7f37;
-    --color-pr-draft: #59636e;
-    --color-pr-merged: #8250df;
-    --color-pr-closed: #d1242f;
-    --color-issue-open: #1a7f37;
-    --color-issue-done: #8250df;
-    --color-issue-notplanned: #59636e;
+    --pr-open: #1a7f37;
+    --pr-draft: #59636e;
+    --pr-merged: #8250df;
+    --pr-closed: #d1242f;
+    --issue-open: #1a7f37;
+    --issue-done: #8250df;
+    --issue-notplanned: #59636e;
   }
 }
 
@@ -74,12 +100,31 @@
   --ui-primary: var(--color-accent);
   --ui-primary-foreground: var(--color-canvas);
   --ui-destructive: var(--color-pr-closed);
-  --ui-ring: var(--color-accent);
-  --ui-ring-border: var(--color-accent);
+  --ui-ring: var(--color-focus);
+  --ui-ring-border: var(--color-focus);
 }
 
 html,
 body {
   margin: 0;
-  background: var(--color-canvas);
+  background: var(--win);
+  color: var(--ink-95);
+  font-family: var(--font-sans);
+}
+
+/* The status glyph (ui/StatusGlyph.tsx): working turns, waiting and blocked pulse. */
+@keyframes status-braille {
+  0% { content: "⠋"; } 10% { content: "⠙"; } 20% { content: "⠹"; } 30% { content: "⠸"; } 40% { content: "⠼"; }
+  50% { content: "⠴"; } 60% { content: "⠦"; } 70% { content: "⠧"; } 80% { content: "⠇"; } 90% { content: "⠏"; }
+}
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.status-glyph[data-state="working"]::before { content: "⠋"; animation: status-braille 0.9s steps(1, end) infinite; }
+.status-glyph[data-state="waiting"]::before,
+.status-glyph[data-state="blocked"]::before { content: "⠿"; animation: status-pulse 1.6s ease-in-out infinite; }
+.status-glyph[data-state="idle"]::before { content: "⠶"; }
+@media (prefers-reduced-motion: reduce) {
+  .status-glyph::before { animation: none !important; }
 }
