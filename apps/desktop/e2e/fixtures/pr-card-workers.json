@@ -1,0 +1,4 @@
+[
+  { "name": "b-31", "parent": "t12", "live": true, "status": "idle", "issue": "31" },
+  { "name": "b-31", "address": "t8", "parent": "t7", "live": true, "status": "working", "issue": "31", "worktree": "/tmp/wt/agent/31-status-board", "title": "Status board" }
+]

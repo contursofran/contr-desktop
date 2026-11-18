@@ -6,6 +6,7 @@ import { startCore } from "./core/start";
 import { handleImageScheme, registerImageScheme } from "./localImages";
 import { registerBoardIpc } from "./board/ipc";
 import { registerDigestIpc } from "./digest/ipc";
+import { registerPrCardIpc } from "./prcard/ipc";
 import { registerRefsIpc } from "./refs/ipc";
 import { registerSidebarIpc } from "./sidebar/ipc";
 import { registerFootIpc } from "./foot/ipc";
@@ -58,6 +59,7 @@ void app.whenReady().then(async () => {
   registerSettingsIpc(app.getAppPath());
   setAppMenu(registerUpdateIpc().check, e2e);
   registerCoreIpc(app.getAppPath(), core);
+  registerPrCardIpc(app.getAppPath(), chatTerminal);
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
