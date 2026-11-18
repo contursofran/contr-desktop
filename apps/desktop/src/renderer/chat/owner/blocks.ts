@@ -27,3 +27,6 @@ export function splitTodo(markdown: string): TodoBlock[] {
   paragraphs(markdown.slice(at));
   return out;
 }
+
+/** The number of copy rows of a to-do: its new code spans and its code blocks ("3 commands" on the chat's row). */
+export const todoCommands = (blocks: TodoBlock[]): number => blocks.reduce((n, b) => n + (b.kind === "code" ? 1 : b.spans.length), 0);

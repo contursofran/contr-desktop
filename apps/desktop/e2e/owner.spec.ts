@@ -44,9 +44,12 @@ test("the owner answers a question and marks a to-do done; the next items show",
   await expect(q).toContainText("Refs#15docs/design/recipe-herdr.md");
   await expect(q).not.toContainText("Not for this chat.");
   const t = page.getByRole("region", { name: "Owner to-do" });
-  await expect(t).toContainText("T3 · To do · 1 more after this");
-  await expect(t).toContainText("from b-15");
+  // One row (screens.html screen 1, `.todo`): the id, the first paragraph on one line, the kind, who sent it and the commands.
+  await expect(t).toHaveText("T3Log in to the staging server, then run pnpm e2e in apps/desktop.To do · from b-15 · 3 commandsShowDone");
   await expect(t.locator("strong")).toHaveText("staging");
+  await expect(t.getByRole("button", { name: /^Copy / })).toHaveCount(0);
+  await t.getByRole("button", { name: "Show" }).click();
+  await expect(t.getByRole("button", { name: "Hide" })).toHaveAttribute("aria-expanded", "true");
   // Each new code span gets one copy row; a code block is a box with the code as written.
   await expect(t.getByRole("button", { name: /^Copy / })).toHaveCount(3);
   await expect(t.getByRole("button", { name: "Copy CONTR_E2E=1 pnpm e2e --repeat-each 3" })).toBeVisible();
@@ -56,7 +59,7 @@ test("the owner answers a question and marks a to-do done; the next items show",
   await expect(q).toContainText("D8 · The coordinator asks");
   await expect(q).not.toContainText("more after this");
   await t.getByRole("button", { name: "Done" }).click();
-  await expect(t).toContainText("T4 · To know");
+  await expect(t).toContainText("T4The CI cache is now keyed on the lockfile.To know · from b-16");
   await expect(t).toContainText("The CI cache is now keyed on the lockfile.");
   expect(runs()).toEqual(["answer D7 Oldest first", "done T3"]);
   await app.close();

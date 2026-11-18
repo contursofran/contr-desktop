@@ -37,7 +37,7 @@ test("a 1 typed in the reply box with a permission card shown stays text; a 1 wi
   test.setTimeout(60_000);
   const { app, page, answers } = await open("bash-permission");
   const card = page.getByRole("region", { name: "Approval" });
-  await expect(card.getByRole("button", { name: /Allow once/ })).toHaveAttribute("aria-keyshortcuts", "1");
+  await expect(card.getByRole("button", { name: /Allow once/ })).toHaveAttribute("aria-keyshortcuts", "1 Enter");
   await expect(card.getByRole("button", { name: /Deny/ })).toHaveAttribute("aria-keyshortcuts", "2");
   const reply = page.getByRole("textbox", { name: /Reply to/ });
   await reply.focus();

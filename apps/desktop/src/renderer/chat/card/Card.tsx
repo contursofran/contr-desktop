@@ -1,6 +1,8 @@
 import { CheckIcon } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import type { Card as CardData, PromptResult, QuestionCard } from "../../../shared/api";
+import type { Card as CardData, PromptResult, QuestionCard, Sidebar } from "../../../shared/api";
+import { duration } from "../../sidebar/ages";
+import { findAgent } from "../../topbar/TopBar";
 import { StatusGlyph } from "../../ui/StatusGlyph";
 
 /** The note for a `done` result that is not `sent` (docs/reference/helper-protocol.md, `done`). */
@@ -52,10 +54,42 @@ export const ownField = "h-[30px] min-w-0 flex-1 rounded-lg border border-input-
 /** The head: the red glyph (the card needs the owner), then what asks. */
 export function CardHead({ children }: { children: ReactNode }) {
   return (
-    <p className="flex items-center gap-2 px-3 pb-1.5 text-[11.5px] text-dim">
+    <p className="flex items-center gap-[9px] px-3 pb-1.5 text-[11.5px] text-dim">
       <StatusGlyph state="blocked" />
       <span className="min-w-0">{children}</span>
     </p>
+  );
+}
+
+/** The age of an agent's card: from the time it came to this chat. It draws again each 30 s, as the sidebar's ages do. */
+function useAge(): string {
+  const [since] = useState(Date.now);
+  const [now, setNow] = useState(since);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return duration(now - since);
+}
+
+/**
+ * The head of an agent's card (chat-screen.html `.qh`): the agent's name in mono, its title and the card's age from the
+ * sidebar's shown agent, then what the source says asks.
+ */
+function AgentHead({ source }: { source: string }) {
+  const [sidebar, setSidebar] = useState<Sidebar | null>(null);
+  useEffect(() => {
+    void window.contr.sidebar().then(setSidebar);
+    return window.contr.onSidebar(setSidebar);
+  }, []);
+  const agent = sidebar ? findAgent(sidebar, sidebar.selected) : undefined;
+  const age = useAge();
+  const name = agent?.name && agent.name !== agent.title ? agent.name : null;
+  return (
+    <CardHead>
+      {name && <span className="mr-[9px] font-mono text-[11px]">{name}</span>}
+      {[agent?.title, age, source].filter(Boolean).join(" · ")}
+    </CardHead>
   );
 }
 
@@ -66,6 +100,11 @@ export function CardText({ children }: { children: ReactNode }) {
 /** The label of an answer. "recommended" shows only where the source marks it. */
 export function OptionLabel({ label, recommended }: { label: string; recommended?: boolean }) {
   return <span className="text-[13px] text-ink-90">{label}{recommended ? " · recommended" : ""}</span>;
+}
+
+/** The line under an answer's label (`.opt .d`). */
+export function OptionDetail({ text }: { text: string }) {
+  return <span className="mt-0.5 text-xs leading-[17px] text-dim">{text}</span>;
 }
 
 /** The pick-any check box. The button's `aria-pressed` gives the state; the box only shows it. */
@@ -100,12 +139,13 @@ function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
     // Only a result where nothing went out and a retry may help gives the buttons back.
     if (r.result === "busy" || r.result === "failed" || r.result === "no-identity") setOff(false);
   }
-  useKeys((k) => (k === "1" ? void press(true) : k === "2" ? void press(false) : undefined));
+  // The first answer is picked (screens.html `.opt.is-picked`): Enter sends it.
+  useKeys((k) => (k === "1" || k === "Enter" ? void press(true) : k === "2" ? void press(false) : undefined));
   return (
     <section aria-label="Approval" className={cardBox}>
-      <CardHead>{card.title || `${card.tool} wants to run`}</CardHead>
+      <AgentHead source={card.title || `${card.tool} wants to run`} />
       {card.command && <pre className="whitespace-pre-wrap px-3 pt-0.5 pb-2 font-mono text-[11.5px] leading-[17px] text-muted">{card.command}</pre>}
-      <button type="button" disabled={off} aria-keyshortcuts="1" onClick={() => void press(true)} className={optionRow}>
+      <button type="button" disabled={off} aria-keyshortcuts="1 Enter" onClick={() => void press(true)} className={`${optionRow} bg-hover`}>
         <span className={keyMark}>1</span>
         <OptionLabel label="Allow once" />
       </button>
@@ -114,7 +154,7 @@ function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
         <OptionLabel label="Deny" />
       </button>
       {note && <CardNote>{note}</CardNote>}
-      <div className="flex justify-end pt-1.5"><KeysLine text="1-2 pick" /></div>
+      <div className="flex justify-end pt-1.5"><KeysLine text="1-2 pick  ⏎ send" /></div>
     </section>
   );
 }
@@ -122,7 +162,8 @@ function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
 function Question({ request, question }: { request: string; question: QuestionCard }) {
   const qs = question.questions;
   const [at, setAt] = useState(0);
-  const [picks, setPicks] = useState<number[][]>(() => qs.map(() => []));
+  // A one-choice question starts with its first answer picked (screens.html `.opt.is-picked`): Enter sends it.
+  const [picks, setPicks] = useState<number[][]>(() => qs.map((x) => (x.multi ? [] : [0])));
   const [other, setOther] = useState<string[]>(() => qs.map(() => ""));
   const [note, setNote] = useState<string | null>(null);
   const [off, setOff] = useState(false);
@@ -160,7 +201,7 @@ function Question({ request, question }: { request: string; question: QuestionCa
   const chosen = picks[at] ?? [];
   return (
     <section aria-label="Question" className={cardBox}>
-      <CardHead>{q.header}{qs.length > 1 ? ` · ${at + 1} of ${qs.length}` : ""}{q.multi ? " · pick any" : ""}</CardHead>
+      <AgentHead source={`${q.header}${qs.length > 1 ? ` · ${at + 1} of ${qs.length}` : ""}${q.multi ? " · pick any" : ""}`} />
       <CardText>{q.text}</CardText>
       <div className="mt-1.5 flex flex-col">
         {q.options.map((o, i) => (
@@ -174,9 +215,10 @@ function Question({ request, question }: { request: string; question: QuestionCa
             className={`${optionRow} ${chosen.includes(i) ? "bg-hover" : ""}`}
           >
             {q.multi ? <Check on={chosen.includes(i)} /> : <span className={keyMark}>{i + 1}</span>}
-            <span>
+            {/* One choice: the detail is a line under the label (`.opt .d`); pick any: a mono hint after it (`.opt .hint`). */}
+            <span className={q.multi ? "" : "flex flex-col"}>
               <OptionLabel label={o.label} recommended={o.recommended} />
-              {o.detail && <span className="ml-2 font-mono text-[11px] text-dim">{o.detail}</span>}
+              {o.detail && (q.multi ? <span className="ml-2 font-mono text-[11px] text-dim">{o.detail}</span> : <OptionDetail text={o.detail} />)}
             </span>
           </button>
         ))}
@@ -191,7 +233,11 @@ function Question({ request, question }: { request: string; question: QuestionCa
             placeholder="Or type an answer"
             disabled={off}
             value={other[at] ?? ""}
-            onChange={(e) => setOther(other.map((v, n) => (n === at ? e.target.value : v)))}
+            onChange={(e) => {
+              setOther(other.map((v, n) => (n === at ? e.target.value : v)));
+              // Own text replaces the first answer that was picked for the owner.
+              if (!q.multi && e.target.value) setPicks(picks.map((p, n) => (n === at ? [] : p)));
+            }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); next(); } }}
             className={ownField}
           />

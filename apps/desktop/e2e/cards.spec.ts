@@ -115,7 +115,7 @@ test("a multi-select question takes picks, then the next question's own answer",
   await app.close();
 });
 
-test("Enter with nothing picked and no own text does nothing; Next and Send are off until then", async () => {
+test("Enter on a pick-any question with nothing picked does nothing; a one-choice question starts with its first answer picked", async () => {
   test.setTimeout(60_000);
   const { app, page, answers } = await open("multi-question");
   const section = page.getByRole("region", { name: "Question" });
@@ -128,16 +128,16 @@ test("Enter with nothing picked and no own text does nothing; Next and Send are 
   await expect(section.getByRole("button", { name: "Next" })).toBeEnabled();
   await key(page, "Enter");
   await expect(section).toContainText("Branch · 2 of 2");
-  await expect(section.getByRole("button", { name: "Send" })).toBeDisabled();
-  await key(page, "Enter");
-  // Enter in an empty "Own answer" field does nothing too.
-  await section.getByRole("textbox", { name: "Own answer" }).press("Enter");
-  await page.waitForTimeout(500);
-  await expect(section).toContainText("Branch · 2 of 2");
-  await expect(section.getByRole("status")).toHaveCount(0);
-  expect(answers()).toEqual([]);
-  await section.getByRole("textbox", { name: "Own answer" }).fill("Later");
+  // The first answer is picked (screens.html `.opt.is-picked`): it has the hover fill, and Enter sends it.
+  await page.emulateMedia({ colorScheme: "dark" });
+  const yes = section.getByRole("button", { name: /^1\s*Yes/ });
+  await expect(yes).toHaveAttribute("aria-pressed", "true");
+  // `--hover` in dark, rgba(255,255,255,0.045): Chromium rounds the alpha to 8 bits.
+  await expect(yes).toHaveCSS("background-color", "rgba(255, 255, 255, 0.043)");
   await expect(section.getByRole("button", { name: "Send" })).toBeEnabled();
+  await key(page, "Enter");
+  await expect(section).toContainText("Answer sent. Waiting for the agent.");
+  expect(answers()).toEqual([{ cmd: "answer", terminal: "t7", request: "toolu_01Wm3Fq8Lz5Yt2Nd6Xc9Bv4s", answers: [{ picks: [0] }, { picks: [0] }] }]);
   await app.close();
 });
 
@@ -161,8 +161,9 @@ test("in a 900x600 window a card keeps 16 px of side space, as the chat rows do"
 // The one question card (#182): the reply box's fill and line (`--side`, `--input-line`), no shadow, a red glyph.
 test("permission, question and pick-any use the one card: fill, line, glyph, check boxes and keys line", async () => {
   test.setTimeout(90_000);
-  for (const [name, region, keys] of [["bash-permission", "Approval", "1-2 pick"], ["question", "Question", "1-2 pick  ⏎ send"], ["multi-question", "Question", "1-3 toggle  ⏎ next"]] as const) {
-    const { app, page } = await open(name);
+  for (const [name, region, keys] of [["bash-permission", "Approval", "1-2 pick  ⏎ send"], ["question", "Question", "1-2 pick  ⏎ send"], ["multi-question", "Question", "1-3 toggle  ⏎ next"]] as const) {
+    // The fake hc lists its agents, so the head can name the shown agent.
+    const { app, page } = await open(name, { FAKE_HC_AGENTS: "1" });
     const section = page.getByRole("region", { name: region });
     await expect(section).toBeVisible();
     for (const scheme of ["dark", "light"] as const) {
@@ -185,6 +186,16 @@ test("permission, question and pick-any use the one card: fill, line, glyph, che
     }
     await expect(section.getByRole("img", { name: "Needs you" })).toHaveCount(1);
     await expect(section).toContainText(keys);
+    // The head (chat-screen.html `.qh`): the shown agent's title and the card's age come before what the source says.
+    await expect(page.getByRole("navigation", { name: "Projects" })).toContainText("Chat panel usability audit");
+    await expect(section.locator("p").first()).toHaveText(/^orch-contr-desktopChat panel usability audit · <1m · /);
+    if (name === "question") {
+      // One choice: the detail is a 12/17 px line under the label (`.opt .d`).
+      const detail = section.getByText("Lost when the window closes");
+      await expect(detail).toHaveCSS("font-size", "12px");
+      await expect(detail).toHaveCSS("line-height", "17px");
+      await expect(detail).not.toHaveCSS("font-family", /mono/i);
+    }
     if (name === "multi-question") {
       // Pick-any shows check boxes, not key numbers; the keys still toggle.
       await expect(section.getByRole("button", { name: /Typecheck/ })).toHaveText("Typechecktsc --noEmit");
