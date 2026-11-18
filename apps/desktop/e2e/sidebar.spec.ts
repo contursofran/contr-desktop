@@ -40,7 +40,8 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(desktop.getByRole("button", { name: /Virtual list/ })).toHaveAccessibleDescription("b-50 · Virtual list");
   const notes = desktop.getByRole("button", { name: /Release notes draft/ });
   await expect(notes.locator("[data-age]")).toHaveText("<1m");
-  await expect(notes).toHaveCSS("font-weight", "600");
+  // #227: a done agent that is not shown is a plain row, as the mock's `.ag`.
+  await expect(notes).toHaveCSS("font-weight", "400");
   await expect(desktop.getByRole("button", { name: /Chat panel usability audit/ }).locator("[data-age]")).toHaveCount(0);
   const herdr = nav.getByRole("region", { name: "herdr-contr" });
   await expect(herdr.getByRole("listitem")).toHaveCount(1);
@@ -56,7 +57,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
 
   await herdr.getByRole("button", { name: "Install health check" }).click();
   await expect(herdr.getByRole("button", { name: "Install health check" })).toHaveAttribute("aria-current", "true");
-  await expect(notes).toHaveCSS("font-weight", "600");
+  await expect(notes).toHaveCSS("font-weight", "400");
   // #57: the tool lists a live b-30 under t12 with no hc terminal: no worker row and no worker count.
   await expect(herdr.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByLabel("Status")).toBeVisible();
@@ -87,6 +88,67 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await expect(desktop.getByRole("listitem")).toHaveCount(0);
   await desktop.getByRole("button", { name: "Open contr-desktop" }).click();
   await expect(desktop.getByRole("listitem")).toHaveCount(5);
+  await app.close();
+});
+
+test("the sidebar's glyphs, rows and project head are the mock's (#227)", async () => {
+  test.setTimeout(60_000);
+  // b-50 (t10) and "Install health check" (t12) are idle; "Release notes draft" (t11) is done.
+  const status = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "status.json");
+  writeFileSync(status, JSON.stringify({ t10: "idle", t12: "idle" }));
+  const app = await launchApp({
+    CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
+    FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
+    CONTR_TERMINAL: "t7",
+    CONTR_HC: path.join(e2e, "fake-hc.mjs"),
+    FAKE_HC_AGENTS: "1",
+    FAKE_HC_STATUS: status,
+    CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
+    CONTR_GIT: path.join(e2e, "fake-git.mjs"),
+    FAKE_GIT_BRANCH: "main",
+  });
+  const page = await app.firstWindow();
+  const nav = page.getByRole("navigation", { name: "Projects" });
+  const desktop = nav.getByRole("region", { name: "contr-desktop" });
+  const herdr = nav.getByRole("region", { name: "herdr-contr" });
+  // The color of a token, as Chromium computes it, to compare with an element's color.
+  const ink = (token: string) => page.evaluate((t) => {
+    const probe = document.createElement("span");
+    probe.style.color = `var(--${t})`;
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, token);
+  for (const scheme of ["dark", "light"] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    // An idle worker and an idle agent have ⠶ in ink-30; a working one ⠋; a done agent no glyph (#217).
+    const idle = desktop.getByRole("button", { name: /Virtual list/ }).locator('[data-state="idle"]');
+    await expect(idle).toHaveAttribute("aria-label", "Idle");
+    await expect(idle).toHaveCSS("color", await ink("ink-30"));
+    expect(await idle.evaluate((e) => getComputedStyle(e, "::before").content)).toBe('"⠶"');
+    await expect(herdr.getByRole("button", { name: /Install health check/ }).locator('[data-state="idle"]')).toHaveCount(1);
+    await expect(desktop.getByRole("button", { name: /Flow and sequence diagrams/ }).locator('[data-state="working"]')).toHaveCount(1);
+    const notes = desktop.getByRole("button", { name: /Release notes draft/ });
+    await expect(notes.locator("[data-state]")).toHaveCount(0);
+    // An agent row is ink-60, weight 400.
+    await expect(notes).toHaveCSS("color", await ink("ink-60"));
+    await expect(notes).toHaveCSS("font-weight", "400");
+    // Each project name is ink-85, the shown agent's project too.
+    await expect(desktop.locator("[data-name]")).toHaveCSS("color", await ink("ink-85"));
+    await expect(herdr.locator("[data-name]")).toHaveCSS("color", await ink("ink-85"));
+    // The chevron is the text "▼", 9 px, ink-35, 10 px wide.
+    const chev = desktop.getByRole("button", { name: "Shut contr-desktop" });
+    await expect(chev).toHaveText("▼");
+    await expect(chev).toHaveCSS("font-size", "9px");
+    await expect(chev).toHaveCSS("width", "10px");
+    await expect(chev).toHaveCSS("color", await ink("ink-35"));
+    // The Projects "+" is ink-50.
+    await expect(nav.getByRole("button", { name: "Add project" })).toHaveCSS("color", await ink("ink-50"));
+    await page.screenshot({ path: path.join(shots, `sidebar-mock-${scheme}.png`) });
+  }
+  await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
+  await expect(desktop.getByRole("button", { name: "Open contr-desktop" })).toHaveText("▶\uFE0E");
   await app.close();
 });
 
