@@ -9,16 +9,10 @@
   folder.
   - `apps/desktop/src/renderer/chat/markdown/`: `markdownGithubAlerts.ts`,
     `markdownListIndentation.ts`, `markdownOrderedListNumbers.ts`,
-    `markdownRenderer.ts`, `pipeline.ts` (part), `syntaxHighlighting.ts`,
-    `MarkdownCodeBlock.tsx` (part), `MarkdownTable.tsx` (part), `markdown.css`
-    (adapted).
+    `markdownRenderer.ts`, `pipeline.ts` (part), `MarkdownCodeBlock.tsx` (part),
+    `MarkdownTable.tsx` (part), `markdown.css` (adapted).
   - `apps/desktop/src/renderer/chat/refs/`: `pullRequestIcons.tsx` (adapted),
     `ContextChip.tsx` (part).
-
-## @pierre/diffs
-
-The code highlighter (npm `@pierre/diffs`, with `@pierre/highlights` WASM
-lexers) is a dependency, under the Apache License 2.0.
 
 ```text
 MIT License
