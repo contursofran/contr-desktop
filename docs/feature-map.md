@@ -102,7 +102,7 @@ When the code changes a feature, update its row in the same PR.
 | Context at 80% | Looks at the right of the foot | `replyInfo.context.percent = 80` | label "Context 80%" | The ring and 80% use ink-100 in dark and light | `StatusReply.browser.test.tsx` |
 | Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `Reply.browser.test.tsx` |
 | Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `Reply.browser.test.tsx` |
-| Focus | Opens a chat or comes back to the window | — | `textbox /^Reply to/` | The box takes the keyboard, but not from a chat selection, an open menu or a card that owns the keys | `Focus.browser.test.tsx` |
+| Focus | Starts the app, opens a chat or comes back to the window | — | `textbox /^Reply to/` | At startup the reply box takes focus only from the page body. A selected tab keeps keyboard focus. Opening a chat from the sidebar gives focus to the reply box when the card keys are free. | `Focus.browser.test.tsx`, `Topbar.browser.test.tsx` |
 | Tab order | Presses Tab | Tab | — | Top bar, card, reply box, then ↓ and the chat rows | `Keys.browser.test.tsx`, `Jump.browser.test.tsx` |
 
 ## Terminal

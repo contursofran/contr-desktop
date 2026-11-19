@@ -87,7 +87,9 @@ export function App() {
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
+  const [replyFocus, setReplyFocus] = useState<{ terminal: string; from: Element | null }>();
   const select = useCallback((terminal: string) => {
+    setReplyFocus({ terminal, from: document.activeElement });
     setInbox(false);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
@@ -112,8 +114,11 @@ export function App() {
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
-        {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />}
-        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} />}
+        {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={(next) => {
+          if (next === "chat") setReplyFocus({ terminal: sidebar.selected, from: document.activeElement });
+          setSide(next);
+        }} />}
+        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} focusFrom={replyFocus?.terminal === sidebar.selected ? replyFocus.from : null} />}
       </main>
     </div>
   );
@@ -144,11 +149,12 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
 }
 
 /** `title` is the tab's title (`tabLabel`): the reply box names the agent as the tab and the sidebar do, never by its hc name. */
-function Chat({ terminal, title, side, digestReads }: {
+function Chat({ terminal, title, side, digestReads, focusFrom }: {
   terminal: string;
   title: string;
   side: Side;
   digestReads: Map<string, Map<string, DigestRead>>;
+  focusFrom: Element | null;
 }) {
   const saveDigest = useCallback((id: string, read: DigestRead) => {
     const saved = digestReads.get(terminal) ?? new Map<string, DigestRead>();
@@ -192,7 +198,7 @@ function Chat({ terminal, title, side, digestReads }: {
         {/* A disabled fieldset turns off every control of the reply box; the draft stays. */}
         <fieldset disabled={down} className="min-w-0 disabled:opacity-50">
           {/* The box takes the keyboard once the first full answer tells whether a card owns the card keys. */}
-          <ReplyBox terminal={terminal} title={title} draft={draft} keyboard={feed.card === undefined ? undefined : !cardShows(feed.card) && owner.questions.length === 0} />
+          <ReplyBox terminal={terminal} title={title} draft={draft} focusFrom={focusFrom} keyboard={feed.card === undefined ? undefined : !cardShows(feed.card) && owner.questions.length === 0} />
         </fieldset>
       </div>
       {/* The chat list keeps at least 120 px: the cards block gives way first. */}
