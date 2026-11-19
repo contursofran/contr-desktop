@@ -1,10 +1,16 @@
 import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
+import type { ISearchResultChangeEvent } from "@xterm/addon-search";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useColorScheme } from "../chat/markdown/useColorScheme";
 import type { Sidebar } from "../../shared/api";
+import { wireTerminalClipboard } from "./clipboard";
+import { makeTermLinkHandler } from "./links";
 import { terminalProblem } from "./problem";
+import { terminalSearch } from "./search";
+import { TerminalFind } from "./TerminalFind";
 import { TerminalNotice } from "./TerminalNotice";
 import { terminalTheme } from "./theme";
 
@@ -21,6 +27,14 @@ export function TerminalView() {
   const scheme = useColorScheme();
   const first = useRef(scheme);
   const again = useRef<(focus?: boolean) => void>(() => undefined);
+  const search = useRef<ReturnType<typeof terminalSearch>>(null);
+  const findInput = useRef<HTMLInputElement>(null);
+  const [finding, setFinding] = useState(false);
+  const [result, setResult] = useState<ISearchResultChangeEvent>({ resultIndex: -1, resultCount: 0 });
+  const isMac = navigator.platform.startsWith("Mac");
+  const find = useCallback<Parameters<typeof TerminalFind>[0]["find"]>((query, direction) => {
+    if (host.current) void search.current?.find(query, direction, getComputedStyle(host.current));
+  }, []);
 
   useEffect(() => {
     const el = host.current!;
@@ -40,12 +54,16 @@ export function TerminalView() {
   }, []);
 
   function start(el: HTMLDivElement) {
+    // Electron's window-open guard checks the scheme and opens the link outside contr.
+    const activate = makeTermLinkHandler(isMac, (uri) => window.open(uri, "_blank", "noopener"));
     const term = new Terminal({
       fontFamily: MONO,
       fontSize: SIZE,
       lineHeight: lineHeight(),
       scrollback: 10000,
       macOptionIsMeta: true,
+      allowProposedApi: true, // SearchAddon uses xterm's decoration API.
+      linkHandler: { activate },
       theme: terminalTheme(first.current),
     });
     shown.current = term;
@@ -53,6 +71,10 @@ export function TerminalView() {
     term.loadAddon(fit);
     term.open(el);
     fit.fit();
+    term.loadAddon(new WebLinksAddon(activate));
+    wireTerminalClipboard(term, isMac);
+    const finder = terminalSearch(term, setResult);
+    search.current = finder;
     const api = window.contr.terminal;
     const offData = api.onData((b) => term.write(b));
     const offEnd = api.onEnd((r) => setNote(r));
@@ -74,6 +96,8 @@ export function TerminalView() {
       offData();
       offEnd();
       ro.disconnect();
+      finder.dispose();
+      search.current = null;
       term.dispose();
       shown.current = null;
     };
@@ -105,8 +129,20 @@ export function TerminalView() {
 
   return (
     // No frame: the terminal fills the area under the tab bar, with the design's inset.
-    <div className="relative min-h-0 flex-1 px-6 pt-4 pb-[18px]">
+    <div className="relative min-h-0 flex-1 px-6 pt-4 pb-[18px]" onKeyDownCapture={(event) => {
+      const modifier = isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+      if (event.code !== "KeyF" || !modifier || event.altKey || event.shiftKey || event.nativeEvent.isComposing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (findInput.current) findInput.current.focus();
+      else if (shown.current) setFinding(true);
+    }}>
       <div ref={host} data-testid="terminal" className="h-full" />
+      {finding && <TerminalFind input={findInput} result={result} find={find} close={() => {
+        find("", "incremental");
+        setFinding(false);
+        shown.current?.focus();
+      }} />}
       {note && <TerminalNotice problem={terminalProblem(note)} detail={note} onRetry={() => again.current()} />}
     </div>
   );

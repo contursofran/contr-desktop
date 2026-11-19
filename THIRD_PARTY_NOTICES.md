@@ -89,7 +89,9 @@ commit 564de0b, under the Apache License 2.0
 
 - Source: https://github.com/generalaction/emdash
 - Pinned commit: `9e2942b8281b17703c0e66845080a556ae262677`.
-- Adapted file: `apps/desktop/test/renderApp.tsx` (React root setup and cleanup).
+- Adapted files: `apps/desktop/test/renderApp.tsx` (React root setup and cleanup) and
+  `apps/desktop/src/renderer/terminal/clipboard-shortcuts.ts` (clipboard chords).
+  The wrapped-buffer behavior in `TerminalTools.browser.test.tsx` comes from Emdash's terminal search.
 - License: Apache-2.0.
 
 ```text
@@ -297,4 +299,76 @@ Copyright 2026 General Action, Inc.
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+```
+
+## Wave
+
+- Source: https://github.com/wavetermdev/waveterm
+- Pinned commit: `9f1c9670d407be3b93cf090319a63ef30bf54d0e`.
+- Adapted files in `apps/desktop/src/renderer`: `terminal/links.ts` (link activation). Apache-2.0 license text appears in the Emdash section above.
+
+Source NOTICE
+
+```text
+Copyright 2025, Command Line Inc.
+```
+
+## Paradev
+
+- Source: https://github.com/ParadevAI/Paradev
+- Pinned commit: `ff9b0c7eea1d9f9cda9150fa2d9193aceae4846d`.
+- Adapted files in `apps/desktop/src/renderer`: `terminal/clipboard-shortcuts.ts` and `terminal/clipboard-shortcuts.test.ts`.
+
+```text
+MIT License
+
+Copyright (c) 2025-2026 Superset Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Visual Studio Code
+
+- Source: https://github.com/microsoft/vscode
+- Pinned commit: `e82e774f0735d47ee7021d34a6055234229cc9b3`.
+- Adapted files in `apps/desktop/src/renderer`: `terminal/search.ts` (lazy search addon and match colors).
+
+```text
+MIT License
+
+Copyright (c) 2015 - present Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
