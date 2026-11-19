@@ -27,7 +27,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit", "Install health check"]);
   await expect(tabs.getByRole("tab", { name: "Install health check" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "New tab" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "New tab" })).toBeEnabled();
   // A third tab, then the second one shown again: three tabs, one shown.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
   await tabs.getByRole("tab", { name: "Install health check" }).click();

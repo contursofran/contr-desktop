@@ -335,7 +335,7 @@ THE SOFTWARE.
 
 - Source: https://github.com/ParadevAI/Paradev
 - Pinned commit: `ff9b0c7eea1d9f9cda9150fa2d9193aceae4846d`.
-- Adapted code in `apps/desktop/src/renderer/terminal/`: webgl.ts.
+- Adapted code: the renderer hotkey registry, new-tab menu, session launcher, and `apps/desktop/src/renderer/terminal/webgl.ts`.
 - License: MIT.
 
 ```text

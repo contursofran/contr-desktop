@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 // A fake hc for tests. `get --json <terminal>` gives FAKE_HC_TITLE (else the terminal's title below), its own name (else its address), its `agent` and FAKE_HC_CWD.
 // `machine ls --json` gives two machines when FAKE_HC_AGENTS=1, else none.
 // `ls --json` lists (with hc's `agent` kind) the agents below when FAKE_HC_AGENTS=1, else none. `events` ends at once: the app polls.
@@ -15,16 +16,35 @@ const agents = [
 // FAKE_HC_LIST: a JSON file { terminals: [...] } used in place of the list above, for `ls` and `get`. `get` gives an entry
 // as it is (with its `foreground`, whose `cwd` is the agent's session folder); `ls` gives it without `foreground` and `title`.
 const listed = process.env.FAKE_HC_LIST ? JSON.parse(readFileSync(process.env.FAKE_HC_LIST, "utf8")).terminals : null;
-const [cmd, , terminal] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const [cmd, , terminal] = args;
+const runTitles = { claude: "Claude Code", codex: "Codex", shell: "Shell" };
 // FAKE_HC_DOWN: a file path. While the file is there, each command fails as an hc with no core does.
 if (process.env.FAKE_HC_DOWN && existsSync(process.env.FAKE_HC_DOWN)) {
   process.stderr.write("fake hc: the core is not running\n");
   process.exit(1);
 }
 if (cmd === "connect" && ["1", "bad-hello"].includes(process.env.FAKE_HC_CONNECT)) connect();
+else if (cmd === "run") {
+  // FAKE_HC_RUN_ERROR: stderr from a failed run. FAKE_HC_RUN_LOG: JSON Lines with each run's full CLI args.
+  if (process.env.FAKE_HC_RUN_ERROR) {
+    process.stderr.write(`${process.env.FAKE_HC_RUN_ERROR}\n`);
+    process.exit(1);
+  }
+  const argvAt = args.indexOf("--");
+  const program = argvAt < 0 ? "shell" : args[argvAt + 1];
+  const address = `t-new-${program}-${randomUUID()}`;
+  if (process.env.FAKE_HC_RUN_LOG) appendFileSync(process.env.FAKE_HC_RUN_LOG, `${JSON.stringify({ address, args })}\n`);
+  process.stdout.write(`${JSON.stringify({ address })}\n`);
+}
 else if (cmd === "get") {
   // FAKE_HC_GONE: a comma list of addresses hc does not list; `get` fails for them.
   if ((process.env.FAKE_HC_GONE ?? "").split(",").includes(terminal)) process.exit(1);
+  const launched = /^t-new-(claude|codex|shell)-/.exec(terminal)?.[1];
+  if (launched) {
+    process.stdout.write(`${JSON.stringify({ address: terminal, title: runTitles[launched] })}\n`);
+    process.exit(0);
+  }
   const found = (listed ?? agents).find((t) => t.address === terminal);
   if (listed) {
     process.stdout.write(`${JSON.stringify(found ?? { address: terminal })}\n`);

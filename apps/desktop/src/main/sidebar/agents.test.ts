@@ -21,13 +21,13 @@ describe("buildProjects", () => {
         name: "app",
         agents: [
           {
-            terminal: "t1", title: "Audit", name: "orch", state: "working", kind: "claude-code", issue: null,
-            workers: [{ terminal: "t2", title: "Fix it", name: "b-2", state: "done", kind: null, issue: "12", workers: [{ terminal: "t3", title: "t3", name: null, state: "blocked", kind: null, issue: null, workers: [] }] }],
+            terminal: "t1", cwd: "/w/app", title: "Audit", name: "orch", state: "working", kind: "claude-code", issue: null,
+            workers: [{ terminal: "t2", cwd: "/w/app-wt/x", title: "Fix it", name: "b-2", state: "done", kind: null, issue: "12", workers: [{ terminal: "t3", cwd: "/w/app-wt/y", title: "t3", name: null, state: "blocked", kind: null, issue: null, workers: [] }] }],
           },
         ],
         cwd: "/w/app", branch: null, ahead: 0, behind: 0, favicon: null,
       },
-      { name: "lib", agents: [{ terminal: "t4", title: "t4", name: null, state: "idle", kind: null, issue: null, workers: [] }], cwd: "/w/lib", branch: null, ahead: 0, behind: 0, favicon: null },
+      { name: "lib", agents: [{ terminal: "t4", cwd: "/w/lib", title: "t4", name: null, state: "idle", kind: null, issue: null, workers: [] }], cwd: "/w/lib", branch: null, ahead: 0, behind: 0, favicon: null },
     ]);
   });
 
