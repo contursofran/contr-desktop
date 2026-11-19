@@ -12,6 +12,14 @@ import { StatusGlyph } from "../ui/StatusGlyph";
 
 const TINT: Record<string, string> = { working: "var(--color-working)", done: "var(--color-done)", blocked: "var(--color-blocked)" };
 
+/** Projects and their agents in sidebar order, with each worker after its parent. */
+export function adjacentAgent({ projects, selected }: SidebarData, step: -1 | 1): string | undefined {
+  const ordered = (agent: SidebarAgent): string[] => [agent.terminal, ...agent.workers.flatMap(ordered)];
+  const terminals = projects.flatMap((project) => project.agents.flatMap(ordered));
+  const index = terminals.indexOf(selected);
+  return index < 0 ? undefined : terminals[index + step];
+}
+
 /** The agent's icon: the program's picture (Claude's pet in `--claude`), dimmed when the agent rests; a one-color glyph takes its state's ink. */
 function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
   const rests = agent.state === "idle" || agent.state === "done";

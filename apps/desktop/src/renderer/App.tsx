@@ -1,9 +1,11 @@
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
+import { isEditableFocused } from "./hotkeys/editableFocus";
+import { resolveHotkey } from "./hotkeys/registry";
 import { blockedAgents } from "../shared/inbox";
 import { ChatList, ChatLoading } from "./chat/list/ChatList";
 import { Empty } from "./chat/Empty";
@@ -15,7 +17,7 @@ import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
-import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
+import { Sidebar, adjacentAgent, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
 import type { Sidebar as SidebarData, TerminalKind } from "../shared/api";
@@ -106,6 +108,36 @@ export function App() {
     // No tab left: main stops the feed and its per-second reads.
     else void window.contr.select("").then((selected) => setSidebar((s) => ({ ...s, selected })));
   };
+  const closeShownTab = useEffectEvent(() => {
+    if (tabs.includes(view.selected)) close(view.selected);
+  });
+  const onShortcut = useEffectEvent((event: KeyboardEvent) => {
+    const command = resolveHotkey(event, window.contr.platform);
+    if (command === "CLOSE_TAB") {
+      event.preventDefault();
+      closeShownTab();
+    } else if (command === "TOGGLE_CHAT_TERMINAL" && view.selected) {
+      event.preventDefault();
+      setSide((current) => current === "chat" ? "terminal" : "chat");
+    } else if (command === "PREVIOUS_AGENT" || command === "NEXT_AGENT") {
+      // xterm's keyboard input is a textarea. Editors and xterm keep the arrows.
+      if (isEditableFocused(event.target ?? document.activeElement)) return;
+      const next = adjacentAgent(view, command === "PREVIOUS_AGENT" ? -1 : 1);
+      if (next) {
+        event.preventDefault();
+        select(next);
+      }
+    }
+  });
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => onShortcut(event);
+    window.addEventListener("keydown", keydown);
+    const unsubscribe = window.contr.onCloseTab?.(() => closeShownTab());
+    return () => {
+      window.removeEventListener("keydown", keydown);
+      unsubscribe?.();
+    };
+  }, []);
   return (
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
