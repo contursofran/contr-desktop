@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, screen } from "electron";
 import path from "node:path";
 import { appChildren, stopChildrenOnQuit } from "./children";
 import { chatTerminal, setupHelper } from "./helper";
@@ -29,8 +29,16 @@ const e2e = process.env.CONTR_E2E === "1";
 if (app.isPackaged && !e2e) console.log(`contr: PATH=${syncShellPath()}`);
 
 function createWindow(): void {
+  let workArea;
+  if (!e2e) {
+    // Electron cannot read the pointer position on Wayland.
+    const display = process.platform === "linux" && process.env.XDG_SESSION_TYPE === "wayland"
+      ? screen.getPrimaryDisplay()
+      : screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    workArea = display.workArea;
+  }
   const win = new BrowserWindow(
-    windowOptions(process.platform, path.join(__dirname, "../preload/index.cjs"), e2e),
+    windowOptions(process.platform, path.join(__dirname, "../preload/index.cjs"), e2e, workArea),
   );
   // The title is the main process's: it carries the Inbox count, so the page's <title> does not replace it.
   win.setTitle(windowTitle(inboxBadge));

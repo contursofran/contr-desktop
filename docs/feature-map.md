@@ -143,7 +143,7 @@ When the code changes a feature, update its row in the same PR.
 | Update | Clicks Update | `CONTR_UPDATE_URL`, `CONTR_VERSION` | `button "Update"`, label "Update ready" | A dot in the foot; the .dmg downloads, or the .zip installs and shows "Restart to update"; failures show their message | `Update.browser.test.tsx`, `update`, `update-file` |
 | Core updates | Reads the Core part or clicks Check now or Update | `CONTR_CORE_HOME=<temp folder>` | `region "Core"`, label "Newest core version" | Current and newest stamps, the core folder, and check and update actions. Update restarts the feeds and shows what new sessions get. A shared root has a notice. | `CoreUpdate.browser.test.tsx`, `core-update`, `changelog` |
 | Change log | Reads the releases | `CONTR_RELEASES_URL` | `region "Change log"`, `button "Show older"`, `button "Retry"` | Newest first, with marks and dates; Loading, a failure text with Retry | `ChangeLog.browser.test.tsx`, `changelog`, `update-file` |
-| Window size | Makes the window small | — | — | The window is at least 640 × 480 | `restart` |
+| Window size | Opens or resizes the app | — | — | The window opens centered at 90% of the work area of the display nearest the pointer. On Wayland, sizing uses the primary display and the compositor places the window. The minimum is 640 × 480, capped by the work area at startup. Hidden e2e runs start at 1200 × 800. | `window-options.test.ts`, `restart` |
 | Restart | Quits and starts the app | — | — | The shown agent, the Chat or Terminal pick, each project’s tab order and closed tabs, and the sidebar state stay; with `FAKE_HC_DOWN=<a file that exists>` the saved tabs stay, and get their titles when hc is back | `restart`, `topbar`, `sidebar-head-foot`, `hc-outage` |
 
 ## Core
