@@ -68,7 +68,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     expect(await page.getByLabel("Status").getByRole("status").evaluate((e) => getComputedStyle(e).color)).toBe(t.working);
     await expect(page.getByText(/Worked 1m 0s/)).toHaveCSS("color", QUIET[scheme].dim);
     await expect(tabs.locator("[data-tab-close]").first()).toHaveCSS("color", QUIET[scheme].dim);
-    await expect(page.getByRole("button", { name: "New tab" })).toHaveCSS("color", QUIET[scheme].faint);
+    await expect(page.getByRole("button", { name: "New tab" })).toHaveCSS("color", QUIET[scheme].dim);
     await expect(page.locator("aside > header").getByRole("button", { name: "Search" })).toHaveCSS("color", QUIET[scheme].faint);
     await expect(page.locator("aside > footer").getByRole("button", { name: "Add machine" })).toHaveCSS("color", QUIET[scheme].faint);
     await expect(page.getByRole("listitem", { name: "Claude" }).getByText("Claude", { exact: true })).toHaveCSS("color", QUIET[scheme].dim);

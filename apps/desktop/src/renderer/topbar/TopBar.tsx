@@ -1,7 +1,8 @@
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@ui-sdk/react/menu";
 import { Tabs, TabsList, TabsTab } from "@ui-sdk/react/tabs";
 import { PanelLeft, Plus, Sparkle, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import type { Sidebar, SidebarAgent } from "../../shared/api";
+import type { Sidebar, SidebarAgent, TerminalKind } from "../../shared/api";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
 import { Tip } from "../ui/Tip";
 import { AgentIcon } from "../ui/AgentIcon";
@@ -53,7 +54,7 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
 
 /**
  * The tab bar (docs/design/redesign/chat-screen.html): the drag area of the hidden title bar, on the window fill.
- * Herdr's normal tab bar (its `tabs` mod): tabs from the left, then an inert + (new tab comes later).
+ * Herdr's normal tab bar (its `tabs` mod): tabs from the left, then + for a new terminal.
  * Drag a tab, or press Alt with Left, Right, Home or End on it, to move it (tab-order.ts).
  * The redesign (#180): an agent's tab has its program icon (ui/AgentIcon, Claude's pet in `--claude`),
  * then the title, then the status glyph while it works or needs the owner, or a 6 px dot in `done` while unread.
@@ -67,13 +68,15 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
  * With the sidebar hidden (`onShowSidebar`), the bar starts with the "Show sidebar" toggle, and on macOS it pads 76 px
  * at the left for the window buttons, as Herdr's bar and the sidebar head do.
  */
-export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onShowSidebar }: {
+export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onStart, starting, onShowSidebar }: {
   data: Sidebar;
   tabs: string[];
   titles: Record<string, string>;
   onSelect: (terminal: string) => void;
   onClose: (terminal: string) => void;
   onReorder: (tabs: string[]) => void;
+  onStart: (kind: TerminalKind) => void;
+  starting: boolean;
   onShowSidebar?: () => void;
 }) {
   const row = useRef<HTMLDivElement>(null);
@@ -140,14 +143,44 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
             );
           })}
         </TabOrderRoot>
-        <Tip label="New tab (not yet)">
-          <button type="button" aria-label="New tab" aria-disabled="true" className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-faint">
-            <Plus aria-hidden className="size-3.5" />
-          </button>
-        </Tip>
+        <NewTabMenu onStart={onStart} starting={starting} />
       </div>
       <div className="flex-1" />
     </Tabs>
+  );
+}
+
+const PROGRAMS = [["claude", "Claude Code"], ["codex", "Codex"], ["shell", "Shell"]] as const;
+
+function NewTabMenu({ onStart, starting }: { onStart: (kind: TerminalKind) => void; starting: boolean }) {
+  const first = useRef<HTMLDivElement>(null);
+  return (
+    <Menu onOpenChangeComplete={(open) => open && first.current?.focus()}>
+      <Tip label="New tab">
+        <MenuTrigger
+          aria-label="New tab"
+          shortcut="mod+t"
+          disabled={starting}
+          focusableWhenDisabled
+          className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-dim hover:bg-hover hover:text-muted focus-visible:ring-1 focus-visible:ring-foreground"
+        >
+          <Plus aria-hidden className="size-3.5" />
+        </MenuTrigger>
+      </Tip>
+      <MenuContent aria-label="New tab" side="bottom" align="start" sideOffset={4} className="m-0 min-w-32 rounded-xl border border-float-line bg-raised p-1 text-foreground shadow-[var(--shadow-float)] [-webkit-app-region:no-drag]">
+        {PROGRAMS.map(([kind, label], i) => (
+          <MenuItem
+            key={kind}
+            ref={i === 0 ? first : undefined}
+            value={kind}
+            onSelect={() => onStart(kind)}
+            className="flex h-8 cursor-default items-center whitespace-nowrap rounded-md px-2 text-[13px] outline-none data-highlighted:bg-hover focus:bg-hover"
+          >
+            {label}
+          </MenuItem>
+        ))}
+      </MenuContent>
+    </Menu>
   );
 }
 

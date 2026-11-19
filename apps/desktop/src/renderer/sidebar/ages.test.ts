@@ -3,6 +3,7 @@ import type { SidebarAgent } from "../../shared/api";
 import { duration, tip, track } from "./ages";
 
 const agent = (terminal: string, state: SidebarAgent["state"], more: Partial<SidebarAgent> = {}): SidebarAgent => ({
+  cwd: "",
   terminal, title: terminal, name: null, state, kind: null, issue: null, workers: [], ...more,
 });
 
