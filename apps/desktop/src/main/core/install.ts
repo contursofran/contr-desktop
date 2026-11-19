@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { appChildren } from "../children";
 
 /** The start install (rows 6 to 8 of rule R1) must end in this time. */
 export const CORE_INSTALL_TIMEOUT_MS = 60_000;
@@ -15,7 +15,7 @@ export type Run = (file: string, args: string[], options: { env: NodeJS.ProcessE
 /** Runs a program that answers in plain text (not JSON Lines), with its stdout and stderr in one text. */
 export const runText: Run = (file, args, { env, timeout }) =>
   new Promise((resolve) => {
-    execFile(file, args, { env, timeout, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+    appChildren.execFile(file, args, { env, timeout, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
       const code = err ? (typeof err.code === "number" ? err.code : null) : 0;
       resolve({ code, output: `${stdout ?? ""}\n${stderr ?? ""}`, error: err ? err.message : null });
     });

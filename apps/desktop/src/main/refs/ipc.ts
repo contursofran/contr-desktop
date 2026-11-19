@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { appChildren } from "../children";
 import { ipcMain } from "electron";
 import { BRANCH_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL } from "../../shared/api";
 import { openExternal } from "../links";
@@ -9,7 +9,7 @@ import { ghRefs, readCwd, RefCache } from "./gh";
 export function repoDir(terminal: string, hc = process.env.CONTR_HC ?? "hc"): Promise<string | null> {
   if (process.env.CONTR_REPO_DIR) return Promise.resolve(process.env.CONTR_REPO_DIR);
   return new Promise((resolve) => {
-    execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readCwd(String(stdout ?? ""))));
+    appChildren.execFile(hc, ["get", "--json", terminal], { timeout: 5000 }, (_error, stdout) => resolve(readCwd(String(stdout ?? ""))));
   });
 }
 

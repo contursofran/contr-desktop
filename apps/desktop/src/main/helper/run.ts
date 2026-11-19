@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { appChildren } from "../children";
 import { corePath } from "../core/current";
 
 export interface HelperLine {
@@ -18,7 +18,7 @@ export function helperPath(appRoot: string, env = process.env): string {
  */
 export function runHelper(helper: string, args: string[], options: { timeout?: number; env?: NodeJS.ProcessEnv } = {}): Promise<HelperLine[]> {
   return new Promise((resolve) => {
-    execFile(helper, args, { timeout: options.timeout ?? 30_000, env: options.env, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
+    appChildren.execFile(helper, args, { timeout: options.timeout ?? 30_000, env: options.env, maxBuffer: 8 * 1024 * 1024 }, (err, stdout) => {
       const lines = parseLines(stdout ?? "");
       if (lines[0]?.type !== "header" || lines.at(-1)?.type !== "end") {
         const message = err ? err.message : "the helper gave no header and end line";

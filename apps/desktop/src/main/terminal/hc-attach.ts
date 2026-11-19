@@ -1,5 +1,6 @@
 // One attach to an hc terminal through `hc connect`: `hello` with `framed`, then `terminal.attach`.
 // Keys, paste and size go to hc; the terminal's bytes come back. No polling: hc pushes the bytes.
+import { appChildren } from "../children";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { decodeAll, encode, KIND_CLOSE, KIND_DATA, KIND_RESIZE, resizePayload } from "./frames";
 
@@ -49,7 +50,7 @@ export class HcAttach {
   constructor(target: AttachTarget, cols: number, rows: number, private on: AttachEvents) {
     this.size = { cols, rows };
     const args = ["connect", ...(target.session ? ["--session", target.session] : [])];
-    this.proc = spawn(target.hc ?? "hc", args, { stdio: "pipe" });
+    this.proc = appChildren.track(spawn(target.hc ?? "hc", args, { stdio: "pipe" }));
     this.proc.on("error", (e) => this.finish(`hc: ${e.message}`));
     this.proc.stderr.on("data", (d: Buffer) => (this.stderr += d.toString()));
     // A write after hc closed its stdin (EPIPE) must not throw in the main process: the `close` event gives the reason.
