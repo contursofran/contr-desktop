@@ -5,25 +5,21 @@ name: Release
 # and the Linux AppImage, with the helper and herdr-contr-orch from contr-core's newest release.
 # Tag: build-<commit date>-<short sha>. App version: 0.1.<run number>. See docs/reference/releases.md.
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: release
-  cancel-in-progress: false
-
 env:
-  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  SHA: ${{ github.sha }}
 
 jobs:
+  tests:
+    uses: ./.github/workflows/ci.yml
+
   stamp:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.s.outputs.sha }}
@@ -35,9 +31,11 @@ jobs:
           ref: ${{ env.SHA }}
       - id: s
         run: |
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-          echo "tag=build-$(git log -1 --format=%cs)-${SHA::7}" >> "$GITHUB_OUTPUT"
-          echo "version=0.1.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          {
+            echo "sha=$SHA"
+            echo "tag=build-$(git log -1 --format=%cs)-${SHA::7}"
+            echo "version=0.1.$GITHUB_RUN_NUMBER"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: stamp
@@ -82,8 +80,33 @@ jobs:
           name: app-${{ runner.os }}
           path: dist/
 
+  publication-order:
+    needs: [tests, build]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Wait for earlier main releases
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          runs="repos/$GITHUB_REPOSITORY/actions/workflows/release.yml/runs?branch=main&per_page=100"
+          earlier=$(gh api --paginate "$runs" --jq ".workflow_runs[] | select(.run_number < $GITHUB_RUN_NUMBER and .status != \"completed\") | .id")
+          for id in $earlier; do
+            # GitHub has no job dependency across runs. Read the status every 15 seconds.
+            while true; do
+              status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id" --jq .status)
+              if [[ "$status" == completed ]]; then break; fi
+              sleep 15
+            done
+          done
+
   publish:
-    needs: [stamp, build]
+    needs: [stamp, publication-order]
+    concurrency:
+      group: publish-${{ github.ref }}
+      queue: max
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -93,6 +116,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
+          pattern: app-*
           path: dist
           merge-multiple: true
       # The notes: the version line, a "## Changes" part (the commits since the release before) and the lines
@@ -104,8 +128,42 @@ jobs:
           ref: ${{ needs.stamp.outputs.sha }}
           path: src
           sparse-checkout: scripts
+      - name: Check the release target
+        id: target
+        run: |
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            echo "tag=test-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # A retry can finish after a newer release. Only advance latest along main.
+          published=$(gh release list -R "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 1 --json tagName --jq length)
+          if [[ "$published" == 0 ]]; then
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          latest=$(gh release view -R "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          relation=$(gh api "repos/$GITHUB_REPOSITORY/compare/$latest...$SHA" --jq .status)
+          case "$relation" in
+            ahead) echo "tag=$TAG" >> "$GITHUB_OUTPUT" ;;
+            identical|behind) echo "Release already covered by $latest" ;;
+            *) echo "Release target diverged from $latest"; exit 1 ;;
+          esac
       - name: Notes
+        if: steps.target.outputs.tag
+        env:
+          TAG: ${{ steps.target.outputs.tag }}
         run: |
           zip_hash="$(sha256sum dist/contr-mac-universal.zip)"
           node src/scripts/release-notes.mjs --version "${{ needs.stamp.outputs.version }}" --sha "${{ needs.stamp.outputs.sha }}" --tag "$TAG" --repo "${{ github.repository }}" --json release.json --assets dist --sha256 "${zip_hash%% *}" > notes.md
-      - run: gh release create "$TAG" dist/* release.json -R "${{ github.repository }}" --target "${{ needs.stamp.outputs.sha }}" -t "$TAG" -F notes.md
+      - name: Publish the main release
+        if: github.ref == 'refs/heads/main' && steps.target.outputs.tag
+        run: gh release create "$TAG" dist/* release.json -R "$GITHUB_REPOSITORY" --target "$SHA" -t "$TAG" -F notes.md
+      - name: Verify a draft release on a manual branch run
+        if: github.ref != 'refs/heads/main'
+        env:
+          TAG: ${{ steps.target.outputs.tag }}
+        run: |
+          gh release create "$TAG" dist/* release.json -R "$GITHUB_REPOSITORY" --target "$SHA" -t "$TAG" -F notes.md --draft
+          trap 'gh release delete "$TAG" -R "$GITHUB_REPOSITORY" --yes' EXIT
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json isDraft,assets |
+            jq -e '.isDraft and ([.assets[].name] | sort == ["contr-linux-x86_64.AppImage","contr-mac-universal.dmg","contr-mac-universal.zip","release.json"])'

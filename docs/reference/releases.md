@@ -2,8 +2,10 @@
 
 ## How a release is made
 
-`.github/workflows/release.yml` runs when the `CI` workflow passes on a push
-to `main` (or by hand, `workflow_dispatch`). It:
+`.github/workflows/release.yml` starts on a push to `main` or a manual run.
+It runs the same CI workflow as a pull request. The browser and unit checks
+and two Electron shards run on separate runners. Packaging starts while
+these jobs test the same commit.
 
 1. Sets the tag `build-<commit date>-<short sha>` (as contr-core does) and the
    app version `0.1.<run number>`.
@@ -12,7 +14,11 @@ to `main` (or by hand, `workflow_dispatch`). It:
    build uses a macOS runner. The macOS job runs `scripts/check-bundle`, then
    unpacks the `.zip` with `ditto` and runs `codesign --verify --deep` on the
    app. When the check fails, the release fails.
-3. Publishes one GitHub release with the files and notes. The file
+3. After both builds and CI pass, waits for earlier main release runs to
+   finish. The publish job checks that the commit advances the latest
+   release before it publishes the files and notes. A manual run on a
+   branch other than main verifies the assets in a temporary draft release
+   and deletes the draft. The file
    names do not change between releases: `contr-mac-universal.dmg`,
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
    button finds the `.zip` and the `.dmg` of the newest release by these names.
