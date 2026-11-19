@@ -80,6 +80,7 @@ parts; when the design has no answer, ask.
   `pnpm test` (unit) and `pnpm e2e` (Playwright on the Electron app, with
   the fake helper). `pnpm dev` runs the app with hot reload. The e2e
   screenshots go to `tmp/shots/`.
+- `pnpm test:browser` runs renderer tests in headless Chromium.
 - To run, drive and look at the app, use the `verify` skill
   (`.claude/skills/verify/SKILL.md`), not a new launch script;
   `docs/feature-map.md` lists each feature with its keys, selector,

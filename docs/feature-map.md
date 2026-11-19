@@ -44,7 +44,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Messages | Reads the chat | — | `list "Chat"` | The owner's messages as right-aligned blocks with the selected fill; the agent's text as Markdown | `app` |
-| Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code and diffs in plain ink in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; long words wrap | `app`, `markdown` |
+| Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code and diffs in plain ink in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; long words wrap | `app` (Electron), `Markdown.browser.test.tsx` |
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
 | Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `tool-calls`, `keys`, `app` |
 | Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `colors`, `tool-calls` |
@@ -58,7 +58,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Diagrams | Reads `contr-flow` and `contr-seq` | `fixture=diagrams-session` | — | A flow left to right (the running box brightest, done boxes dim with ✓, back arrows dashed below); a sequence with a message to the owner in red; a block past a limit shows as code | `diagrams` |
 | Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | A title with its quieter part above each chart; grey bars, largest first, rows 20 px apart, with the value and note as text in a 120 px column; a line not wider than 666 px, with the latest point brightest and one outlier labelled with its note (`9.4 · #31`); an unknown kind stays code | `charts` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
-| Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture`, `markdown` |
+| Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture` (Electron), `Markdown.browser.test.tsx` |
 | Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
 | Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `column` |
 | Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `column` |
@@ -75,12 +75,12 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 |---|---|---|---|---|---|
 | Permission card | Allows or denies a tool | Keys 1, 2, …; Enter (Allow once is picked); click | `region "Approval" > button /Allow once/` | The answer goes to the helper (`FAKE_HELPER_ANSWER_LOG`); a changed prompt says so | `cards` |
 | Question card | Picks an answer | Keys 1, 2, …; arrows in the radio group; Space on check boxes; Enter | `region "Question" > radiogroup > radio` or `group > checkbox`, `button "Next"`, `button "Send"` | The pick goes; a one-choice question starts with its first answer picked (hover fill), so Enter sends it; multi-select takes picks, and Next is off until there is a pick or own text | `cards` |
-| One question card | Looks at a permission, a question or a pick-any question | `FAKE_HELPER_CARD` | `region "Approval"`, `region "Question"`, `region "Owner question"` | The reply box's fill and line (`--side`, `--input-line`), no shadow; a red glyph, then the shown agent's name and title and the card's age in the head; a one-choice answer's detail on a line under its label; check boxes for pick-any; "Or type an answer" and the keys line | `cards`, `owner` |
+| One question card | Looks at a permission, a question or a pick-any question | `FAKE_HELPER_CARD` | `region "Approval"`, `region "Question"`, `region "Owner question"` | The reply box's fill and line (`--side`, `--input-line`), no shadow; a red glyph, then the shown agent's name and title and the card's age in the head; a one-choice answer's detail on a line under its label; check boxes for pick-any; "Or type an answer" and the keys line | `Cards.browser.test.tsx`, `owner` (Electron) |
 | Own answer | Types an own answer | Type, Enter | `textbox "Own answer"` | A number typed there is text, not a pick | `cards`, `keys` |
 | Card keys | Presses a number | 1, 2, … | — | With focus in the reply box a 1 stays text; with focus on the page it answers | `keys`, `focus` |
 | Stacked cards | Has an agent card and owner items | `FAKE_HELPER_CARD`, `FAKE_ORCH_OWNER`, `size=640x480` | `region "Approval"`, `region "Owner question"`, `region "Owner to-do"` | The cards scroll inside; the reply box stays in the window; key 1 answers only the agent's card | `stacked-cards` |
 | Owner to-do in the chat | Looks at a coordinator's to-do | `FAKE_ORCH_OWNER` | `region "Owner to-do"`, `button "Show"`, `button "Done"` | One row: id, first paragraph on one line, "To do · from b-15 · 3 commands", Show and Done. Show opens the text with its copy rows in place; Done closes the item | `owner` |
-| Card width | Looks at a card in a small window | `size=900x600` | `region "Approval"` | The chat rows' side space: 56 px, 16 px under 768 px | `cards` |
+| Card width | Looks at a card in a small window | `size=900x600` | `region "Question"` | The card keeps at least 16 px of side space | `Cards.browser.test.tsx` |
 
 ## Reply box
 

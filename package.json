@@ -8,6 +8,7 @@
     "typecheck": "pnpm --filter desktop typecheck",
     "lint": "pnpm --filter desktop lint",
     "test": "pnpm --filter desktop test",
+    "test:browser": "pnpm --filter desktop test:browser",
     "e2e": "pnpm --filter desktop e2e",
     "dist": "pnpm --filter desktop dist",
     "dist:linux": "pnpm --filter desktop dist:linux"
