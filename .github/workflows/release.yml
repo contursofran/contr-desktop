@@ -97,7 +97,7 @@ jobs:
           merge-multiple: true
       # The notes: the version line, a "## Changes" part (the commits since the release before) and the lines
       # about the ad-hoc signature. scripts/release-notes.mjs reads them with the GitHub API (no git history).
-      # It also writes release.json (this release, its file names, the newest 10 change logs): the app's update
+      # It also writes release.json (this release, its file names, ZIP hash and newest 10 change logs): the app's update
       # check reads it from releases/latest/download/, which has no API rate limit (#128).
       - uses: actions/checkout@v4
         with:
@@ -105,5 +105,7 @@ jobs:
           path: src
           sparse-checkout: scripts
       - name: Notes
-        run: node src/scripts/release-notes.mjs --version "${{ needs.stamp.outputs.version }}" --sha "${{ needs.stamp.outputs.sha }}" --tag "$TAG" --repo "${{ github.repository }}" --json release.json --assets dist > notes.md
+        run: |
+          zip_hash="$(sha256sum dist/contr-mac-universal.zip)"
+          node src/scripts/release-notes.mjs --version "${{ needs.stamp.outputs.version }}" --sha "${{ needs.stamp.outputs.sha }}" --tag "$TAG" --repo "${{ github.repository }}" --json release.json --assets dist --sha256 "${zip_hash%% *}" > notes.md
       - run: gh release create "$TAG" dist/* release.json -R "${{ github.repository }}" --target "${{ needs.stamp.outputs.sha }}" -t "$TAG" -F notes.md

@@ -23,6 +23,7 @@ export interface Release {
   version: string;
   dmgUrl: string | null;
   zipUrl: string | null;
+  sha256: string | null;
 }
 
 /**
@@ -37,7 +38,7 @@ export function parseRelease(json: unknown): Release {
     const a = (Array.isArray(r.assets) ? r.assets : []).find((x) => x.name === name);
     return typeof a?.browser_download_url === "string" ? a.browser_download_url : null;
   };
-  return { version, dmgUrl: url(DMG), zipUrl: url(ZIP) };
+  return { version, dmgUrl: url(DMG), zipUrl: url(ZIP), sha256: null };
 }
 
 /** The version of a GitHub release JSON: from the notes, "contr 0.1.<run> from <sha>.", else from the name. */
@@ -107,7 +108,7 @@ export async function readReleaseFile(url: string, get: typeof fetch = fetch): P
  * next to the file's releases/latest/download/. Throws when the file is not schema 1.
  */
 export function parseReleaseFile(json: unknown, url: string): ReleaseFile {
-  const f = json as { schema?: unknown; version?: unknown; tag?: unknown; assets?: unknown; releases?: unknown } | null;
+  const f = json as { schema?: unknown; version?: unknown; tag?: unknown; assets?: unknown; sha256?: unknown; releases?: unknown } | null;
   const text = (v: unknown) => typeof v === "string";
   if (f?.schema !== 1 || !text(f.version) || !/^\d+\.\d+\.\d+$/.test(f.version as string) || !text(f.tag) || !Array.isArray(f.assets) || !Array.isArray(f.releases)) throw new Error("Not a release file.");
   const tag = f.tag as string;
@@ -118,5 +119,6 @@ export function parseReleaseFile(json: unknown, url: string): ReleaseFile {
     .filter((r) => r && text(r.version) && text(r.tag) && text(r.date) && Array.isArray(r.changes))
     .slice(0, CHANGELOG_COUNT)
     .map((r) => ({ version: r.version as string, tag: r.tag as string, date: r.date as string, changes: (r.changes as unknown[]).filter(text) as string[] }));
-  return { release: { version: f.version as string, dmgUrl: asset(DMG), zipUrl: asset(ZIP) }, releases };
+  const sha256 = typeof f.sha256 === "string" && /^[a-f0-9]{64}$/i.test(f.sha256) ? f.sha256.toLowerCase() : null;
+  return { release: { version: f.version as string, dmgUrl: asset(DMG), zipUrl: asset(ZIP), sha256 }, releases };
 }
