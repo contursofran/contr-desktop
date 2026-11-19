@@ -21,6 +21,32 @@ function launch(sendLog: string, env: Record<string, string> = {}) {
 
 const sent = (log: string) => !existsSync(log) ? [] : readFileSync(log, "utf8").trim().split("\n").map((l) => JSON.parse(l).text as string);
 
+test("the focused reply field has no ring in either theme", async () => {
+  const app = await launch(test.info().outputPath("send.jsonl"));
+  try {
+    const page = await app.firstWindow();
+    // Paint the caret without focusing the hidden window at the OS level.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+    const reply = page.getByRole("form", { name: "Reply" });
+    const field = reply.getByRole("textbox", { name: "Reply to Chat panel usability audit" });
+    for (const scheme of ["dark", "light"] as const) {
+      await page.emulateMedia({ colorScheme: scheme });
+      await field.click();
+      await expect(field).toBeFocused();
+      await expect(field).toHaveCSS("outline-style", "none");
+      await expect(field).toHaveCSS("box-shadow", "none");
+      await reply.screenshot({
+        path: path.resolve(e2e, "../../../tmp/shots", `reply-focus-${scheme}.png`),
+        caret: "initial",
+        style: "textarea { caret-animation: manual; }",
+      });
+    }
+  } finally {
+    await app.close();
+  }
+});
+
 test("the tier menu sends the helper arguments and reads back its acknowledgement", async () => {
   const log = test.info().outputPath("send.jsonl");
   const calls = test.info().outputPath("calls.jsonl");

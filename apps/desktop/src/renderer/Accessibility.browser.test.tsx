@@ -15,12 +15,16 @@ async function checkFocusRing(control: Locator) {
   expect(getComputedStyle(element).boxShadow).not.toBe(before);
 }
 
-test("the reply, both own answers and context have a visible keyboard focus ring", async () => {
+test("the reply has no focus ring and both own answers and context keep their rings", async () => {
   await renderCards(questionCard, { ...ownerFake().api, replyInfo: async () => replyInfo() });
   await userEvent.keyboard("{Tab}");
   const reply = page.getByRole("form", { name: "Reply" });
   const context = reply.getByRole("img", { name: "Context 37%" });
-  await checkFocusRing(reply.getByRole("textbox", { name: /^Reply to / }));
+  const field = reply.getByRole("textbox", { name: /^Reply to / });
+  (field.element() as HTMLElement).focus();
+  await expect.element(field).toHaveFocus();
+  expect(getComputedStyle(field.element()).outlineStyle).toBe("none");
+  expect(getComputedStyle(field.element()).boxShadow).toBe("none");
   await shoot("148-reply-focus");
   await checkFocusRing(context);
   for (const name of ["Question", "Owner question"]) {
