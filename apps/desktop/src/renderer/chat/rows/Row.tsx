@@ -22,7 +22,7 @@ export function Row({ row }: { row: FeedRow }) {
         </div>
       );
     case "assistant":
-      return <ChatMarkdown text={row.text ?? ""} answer />;
+      return <ChatMarkdown text={row.text ?? ""} answer rowId={row.id} />;
     case "footer":
       // The helper's text: the answer's time, how long it worked, the tool count ("19:24 · Worked 1m 18s · 8 tools").
       return <p className="font-mono text-[11px] text-dim">{row.text}</p>;
