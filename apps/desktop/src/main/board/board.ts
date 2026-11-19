@@ -1,6 +1,8 @@
 import { appChildren } from "../children";
 import { corePath } from "../core/current";
-import { run } from "../sidebar/agents";
+import { readHcList, run } from "../sidebar/agents";
+import { codexThreadId } from "../../shared/codex";
+import { codexCoordinatorName } from "../codex/coordinator";
 import { countLiveWorkers } from "../workers/live";
 import type { PrChecks, WorkerState } from "../../shared/api";
 
@@ -65,7 +67,12 @@ export function readRoles(json: string, parent?: string): Record<string, string>
 /** One read-only run of the tool and of hc: the board's worker states and roles, and the agent's live worker count (the sidebar's rule). */
 export async function orchBoard(orch: string, hc: string, parent: string): Promise<{ workers: Record<string, WorkerState>; roles: Record<string, string>; orchestrating: number }> {
   const [json, hcJson] = await Promise.all([run(orch, ["agents", "ls", "--all", "--json"]), run(hc, ["ls", "--json"])]);
-  return { workers: readWorkers(json, parent), roles: readRoles(json, parent), orchestrating: countLiveWorkers(hcJson, json, parent) };
+  const threadId = codexThreadId(parent);
+  const coordinator = threadId
+    ? readHcList(hcJson, null).terms.find((t) => t.state === "live" && t.name === codexCoordinatorName(threadId))?.address
+    : parent;
+  const address = typeof coordinator === "string" ? coordinator : parent;
+  return { workers: readWorkers(json, address), roles: readRoles(json, address), orchestrating: countLiveWorkers(hcJson, json, address) };
 }
 
 /** Runs the tool read-only: `agents ls --all --json`. A missing or failed tool gives no workers. */

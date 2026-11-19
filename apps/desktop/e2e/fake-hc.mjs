@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 // A fake hc for tests. `get --json <terminal>` gives FAKE_HC_TITLE (else the terminal's title below), its own name (else its address), its `agent` and FAKE_HC_CWD.
 // `machine ls --json` gives two machines when FAKE_HC_AGENTS=1, else none.
 // `ls --json` lists (with hc's `agent` kind) the agents below when FAKE_HC_AGENTS=1, else none. `events` ends at once: the app polls.
@@ -78,6 +78,11 @@ function connect() {
       if (nl < 0) return;
       const request = JSON.parse(buf.subarray(0, nl).toString());
       buf = buf.subarray(nl + 1);
+      if (process.env.FAKE_CODEX_ORCHESTRATION && request.method === "terminal.list") {
+        const matches = (listed ?? []).filter((t) => t.thread === request.params.labels?.["contr.codex.thread"]);
+        process.stdout.write(JSON.stringify({ id: request.id, result: { terminals: matches } }) + "\n");
+        return;
+      }
       if (request.method === "terminal.run") {
         const { id, params } = request;
         const error = process.env.FAKE_HC_RUN_ERROR;
@@ -87,6 +92,14 @@ function connect() {
         }
         const address = `t-new-${params.argv[0] ?? "shell"}-${randomUUID()}`;
         if (process.env.FAKE_HC_RUN_LOG) appendFileSync(process.env.FAKE_HC_RUN_LOG, `${JSON.stringify({ address, params })}\n`);
+        const thread = params.labels?.["contr.codex.thread"];
+        if (process.env.FAKE_CODEX_ORCHESTRATION && thread) {
+          const target = params.argv[2];
+          writeFileSync(process.env.FAKE_HC_LIST, JSON.stringify({
+            terminals: [...listed, { address, thread, target, name: params.name, cwd: params.cwd, state: "live" }],
+          }));
+          writeFileSync(target + "/ready", address);
+        }
         process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, result: { address } })}\n`);
         return;
       }

@@ -3,10 +3,9 @@
 import { ipcMain, nativeTheme, type WebContents } from "electron";
 import { homedir } from "node:os";
 import { isAbsolute } from "node:path";
-import { createInterface } from "node:readline";
 import type { TerminalStart } from "../../shared/api";
 import { terminalDisplay } from "../../shared/terminal-display";
-import { appChildren } from "../children";
+import { runHcTerminal } from "./hc-command";
 import { chatTerminal } from "../helper";
 import { codexThreadId } from "../../shared/codex";
 import { newCodexChat } from "../codex/session";
@@ -50,30 +49,10 @@ async function startTab(kind: unknown, cwd: unknown): Promise<TerminalStart> {
   return runTerminal(kind === "shell" ? [] : [kind], folder);
 }
 
-function runTerminal(argv: string[], cwd: string): Promise<TerminalStart> {
-  const session = process.env.CONTR_HC_SESSION;
-  const args = session ? ["connect", "--session", session] : ["connect"];
-  // Codex queries the terminal's colors at startup, which can finish before the view attaches.
-  const request = {
-    jsonrpc: "2.0", id: 1, method: "terminal.run",
-    params: { argv, cwd, no_parent: true, display: appDisplay() },
-  };
-  return new Promise((resolve) => {
-    const child = appChildren.execFile(process.env.CONTR_HC ?? "hc", args, { encoding: "utf8", timeout: 10_000 }, (error, out, stderr) => {
-      if (error) return resolve({ error: error.killed ? "no answer in 10 s" : stderr.trim() || error.message });
-      try {
-        const reply = JSON.parse(out) as { result?: { address?: unknown }; error?: { message?: string } } | null;
-        if (reply?.error?.message) return resolve({ error: reply.error.message });
-        const address = reply?.result?.address;
-        resolve(typeof address === "string" && address ? { terminal: address } : { error: "hc gave no terminal address" });
-      } catch {
-        resolve({ error: "hc gave no JSON" });
-      }
-    });
-    if (!child?.stdin || !child.stdout) return;
-    child.stdin.on("error", () => undefined);
-    // Keep the connection open until hc answers, then let it exit.
-    createInterface({ input: child.stdout }).once("line", () => child.stdin?.end());
-    child.stdin.write(`${JSON.stringify(request)}\n`);
-  });
+async function runTerminal(argv: string[], cwd: string): Promise<TerminalStart> {
+  try {
+    return { terminal: await runHcTerminal({ argv, cwd, no_parent: true, display: appDisplay() }) };
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
 }

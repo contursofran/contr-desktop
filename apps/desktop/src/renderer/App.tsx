@@ -154,11 +154,12 @@ export function App() {
           : !sidebar.selected && sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />}
         {openTab(tabs, view.selected).map((terminal) => {
           const shown = terminal === view.selected;
+          const agent = shown ? findAgent(sidebar, terminal) : undefined;
           return (
             <div key={terminal} role="tabpanel" id={panelId(terminal)} aria-labelledby={tabId(terminal)} hidden={!shown} className={shown ? "flex min-h-0 flex-1 flex-col" : undefined}>
               {shown && (
-                <ChipNavigation value={{ workers: findAgent(sidebar, terminal)?.workers, select, openInbox }}>
-                  <Chat terminal={terminal} title={tabLabel(sidebar, terminal, titles)} side={chatOnly ? "chat" : side} digestReads={digestReads} focusFrom={replyFocus?.terminal === terminal ? replyFocus.from : null} />
+                <ChipNavigation value={{ workers: agent?.workers, select, openInbox }}>
+                  <Chat terminal={terminal} title={tabLabel(sidebar, terminal, titles)} side={chatOnly ? "chat" : side} workerCount={agent?.workers.length ?? 0} digestReads={digestReads} focusFrom={replyFocus?.terminal === terminal ? replyFocus.from : null} />
                 </ChipNavigation>
               )}
             </div>
@@ -194,10 +195,11 @@ function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): Re
 }
 
 /** `title` is the tab's title (`tabLabel`): the reply box names the agent as the tab and the sidebar do, never by its hc name. */
-function Chat({ terminal, title, side, digestReads, focusFrom }: {
+function Chat({ terminal, title, side, workerCount, digestReads, focusFrom }: {
   terminal: string;
   title: string;
   side: Side;
+  workerCount: number;
   digestReads: Map<string, Map<string, DigestRead>>;
   focusFrom: Element | null;
 }) {
@@ -217,7 +219,8 @@ function Chat({ terminal, title, side, digestReads, focusFrom }: {
   // While the helper is down, the chat cannot send and shows no orchestrator text.
   const down = feed.error !== null;
   const board = useBoard(NO_ISSUES);
-  const workers = board?.orchestrating ?? 0;
+  const nativeCodex = Boolean(codexThreadId(terminal));
+  const workers = nativeCodex ? workerCount : board?.orchestrating ?? 0;
   const owner = useOwnerItems(terminal);
   const [draft, setDraft] = useState<Draft>();
   const orchestrate = () => setDraft((d) => ({ text: ORCHESTRATE_COMMAND, id: (d?.id ?? 0) + 1 }));
@@ -238,7 +241,7 @@ function Chat({ terminal, title, side, digestReads, focusFrom }: {
         <StatusLine
           working={feed.working}
           right={down ? undefined : orchestratingText(workers)}
-          onOrchestrate={!down && board && showsOrchestrate(feed.agent, workers) ? orchestrate : undefined}
+          onOrchestrate={!down && (nativeCodex || board) && showsOrchestrate(feed.agent, workers, nativeCodex) ? orchestrate : undefined}
         />
         {/* A disabled fieldset turns off every control of the reply box; the draft stays. */}
         <fieldset disabled={down} className="min-w-0 disabled:opacity-50">

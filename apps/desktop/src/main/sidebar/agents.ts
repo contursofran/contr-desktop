@@ -1,5 +1,7 @@
 import { appChildren } from "../children";
 import path from "node:path";
+import { codexThreadId } from "../../shared/codex";
+import { codexCoordinatorName } from "../codex/coordinator";
 import { isLiveAgent, liveWorkerParents } from "../workers/live";
 import type { SidebarAgent, SidebarProject, WorkerState } from "../../shared/api";
 
@@ -62,7 +64,13 @@ export interface ListInput {
  */
 export function buildProjects({ hc, orch, titles, folders, projectOf, codex = [] }: ListInput): SidebarProject[] {
   const parents = liveWorkerParents(hc, orch);
-  const terms = parseList<HcTerminal>(hc, "terminals").filter((t) => isLiveAgent(t) || parents.has(t.address as string));
+  const allTerms = parseList<HcTerminal>(hc, "terminals");
+  const terms = allTerms.filter((t) => isLiveAgent(t) || parents.has(t.address as string));
+  const coordinatorChats = new Map(codex.map((chat) => [codexCoordinatorName(codexThreadId(chat.terminal) ?? ""), chat.terminal]));
+  const aliases = new Map(allTerms.flatMap((t) => {
+    const chat = typeof t.name === "string" ? coordinatorChats.get(t.name) : undefined;
+    return t.state === "live" && chat && typeof t.address === "string" ? [[t.address, chat] as const] : [];
+  }));
   const named = new Map<string, OrchAgent>();
   for (const a of parseList<OrchAgent>(orch)) if (str(a.address)) named.set(a.address as string, a);
   const agents = new Map<string, SidebarAgent & { parent: string | null; agent: boolean; cwd: string }>();
@@ -85,12 +93,12 @@ export function buildProjects({ hc, orch, titles, folders, projectOf, codex = []
     });
   }
   for (const chat of codex) {
-    agents.set(chat.terminal, { ...chat, parent: null, agent: true, cwd: chat.cwd ?? "" });
+    agents.set(chat.terminal, { ...chat, parent: null, agent: true, cwd: chat.cwd ?? "", workers: [] });
   }
   const projects = new Map<string, SidebarAgent[]>();
   const cwds = new Map<string, string>();
   for (const a of agents.values()) {
-    const parent = a.parent ? agents.get(a.parent) : undefined;
+    const parent = a.parent ? agents.get(aliases.get(a.parent) ?? a.parent) : undefined;
     if (parent) parent.workers.push(a);
     else if (a.agent) {
       const p = a.cwd ? projectOf(a.cwd) : "Other";
