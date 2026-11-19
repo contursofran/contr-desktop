@@ -254,6 +254,8 @@ export type TerminalStart = { terminal: string } | { error: string };
 
 /** The Terminal side: the agent's hc terminal. */
 export interface TerminalApi {
+  /** False in hidden Electron tests, which read the DOM rows. */
+  webgl?: boolean;
   /** Starts a terminal in hc, with no parent. null uses the home folder. */
   start?(kind: TerminalKind, cwd: string | null): Promise<TerminalStart>;
   /** Attaches at this size. Returns the terminal, or an error to show. */
