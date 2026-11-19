@@ -129,3 +129,25 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .status-glyph::before { animation: none !important; }
 }
+
+
+.sidebar-program-icon [data-icon="claude-code"] path {
+  fill: var(--color-claude);
+}
+
+[data-tab-row]::-webkit-scrollbar-thumb {
+  background-color: var(--color-muted);
+}
+
+/* The close button sits over its slot, but follows the tablist in the DOM. */
+[data-tab-close-anchor] {
+  anchor-name: --active-tab-close;
+}
+
+[data-tab-close] {
+  position: absolute;
+  top: anchor(top);
+  left: anchor(left);
+  position-anchor: --active-tab-close;
+  position-visibility: anchors-visible;
+}

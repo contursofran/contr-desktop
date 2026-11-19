@@ -41,7 +41,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
 
   // × closes the shown tab and shows the next one.
-  await tabs.getByRole("button", { name: "Close Chat panel usability audit" }).click();
+  await page.getByRole("button", { name: "Close Chat panel usability audit" }).click();
   await expect(tabs.getByRole("tab")).toHaveText(["Install health check", "Release notes draft"]);
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await app.close();

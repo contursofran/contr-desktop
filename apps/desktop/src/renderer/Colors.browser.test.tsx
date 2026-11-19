@@ -85,7 +85,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     await paint(() => page.getByLabelText("Status").getByRole("status").query(), "color").toBe(t.working);
     const quiet = QUIET[scheme];
     await paint(() => page.getByText(/Worked 1m 0s/).query(), "color").toBe(quiet.dim);
-    await paint(() => tabs.query()?.querySelector("[data-tab-close]"), "color").toBe(quiet.dim);
+    await paint(() => page.getByRole("button", { name: "Close Chat panel usability audit" }).query(), "color").toBe(quiet.dim);
     await paint(() => page.getByRole("button", { name: "New tab" }).query(), "color").toBe(quiet.dim);
     await paint(() => page.getByRole("button", { name: "Search" }).query(), "color").toBe(quiet.faint);
     await paint(() => page.getByRole("button", { name: "Add machine" }).query(), "color").toBe(quiet.faint);

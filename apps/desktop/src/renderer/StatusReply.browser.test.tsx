@@ -18,7 +18,7 @@ test("the status line, the model button and the switch are as the mock", async (
   await expect.element(model).toHaveTextContent("Opus 5.5medium");
   expect(model.element().querySelectorAll("svg")).toHaveLength(1);
   expect(model.element().querySelectorAll("[data-icon]")).toHaveLength(1);
-  await expect.element(page.getByLabelText("Branch")).toHaveTextContent("main");
+  await expect.element(page.getByRole("img", { name: /^Branch: / })).toHaveTextContent("main");
 
   await expect.element(status).toHaveStyle({ fontSize: "12px", columnGap: "10px", paddingLeft: "4px", paddingRight: "4px" });
   await expect.element(detail).toHaveStyle({ fontSize: "11px" });

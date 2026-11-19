@@ -24,7 +24,7 @@ test("the transcript opens at the end and renders messages, tools and working st
   });
 
   await rowInViewport("a6");
-  await expect.element(page.getByRole("button", { name: /Running a command/ }).getByRole("status")).toBeVisible();
+  await expect.element(page.getByRole("button", { name: /Running a command/ }).getByRole("img", { name: "running" })).toBeVisible();
   await text(await row("u1")).toContain("The login form loses the email");
   await expect.element((await row("a1-t1")).getByRole("button")).toHaveTextContent("▶Searched 2 patterns, read 1 file");
   await text(await row("a3")).toContain("Opened PR #14");

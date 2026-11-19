@@ -1,7 +1,7 @@
 /** An agent's state as the contr design system shows it: a braille glyph, not a color. */
 export type GlyphState = "working" | "waiting" | "idle" | "blocked" | "done";
 
-const LABELS: Record<GlyphState, string> = {
+export const GLYPH_LABELS: Record<GlyphState, string> = {
   working: "Working",
   waiting: "Waiting",
   idle: "Idle",
@@ -27,7 +27,7 @@ export function StatusGlyph({ state, small = false, className = "" }: { state: G
   return (
     <span
       role="img"
-      aria-label={LABELS[state]}
+      aria-label={GLYPH_LABELS[state]}
       data-state={state}
       className={`status-glyph inline-block shrink-0 text-center font-mono leading-4 ${small ? "w-2.5 text-[12px]" : "w-3.5 text-[15px]"} ${INK[state]} ${className}`}
     />

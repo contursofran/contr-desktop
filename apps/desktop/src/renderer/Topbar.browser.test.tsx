@@ -40,8 +40,8 @@ test("opened tabs use the topbar layout and show full titles on hover", async ()
   await expect.element(page.getByRole("tooltip")).toHaveTextContent(names[0]);
   await tab(names[0]).unhover();
 
-  expect(tabs.element().querySelectorAll("[data-tab-close]")).toHaveLength(1);
-  await expect.element(tabs.getByRole("button", { name: `Close ${names[1]}` })).toBeVisible();
+  expect(tabs.element().querySelectorAll("[data-tab-close]")).toHaveLength(0);
+  await expect.element(page.getByRole("button", { name: `Close ${names[1]}` })).toBeVisible();
   const [first, second] = names.map((name) => item(name).getBoundingClientRect());
   expect(first.height).toBe(28);
   expect(first.x - tabs.element().parentElement!.parentElement!.getBoundingClientRect().x).toBe(10);
@@ -51,7 +51,7 @@ test("opened tabs use the topbar layout and show full titles on hover", async ()
   expect(getComputedStyle(item(names[1])).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
   const { width, height } = plus.element().getBoundingClientRect();
   expect([width, height]).toEqual([26, 26]);
-  await shoot("282-topbar", bar());
+  await shoot("148-tabs-after", bar());
 });
 
 test("the scroll row is the named tab list and the new-tab button is outside it", async () => {
@@ -205,7 +205,7 @@ test("in a narrow window the shown tab scrolls into view above a thin scrollbar"
   await page.viewport(700, 600);
   expect(window.innerWidth).toBe(700);
   await expect.poll(inView).toBe(true);
-  await tabs.getByRole("button", { name: "Close Virtual list" }).click();
+  await page.getByRole("button", { name: "Close Virtual list" }).click();
   await expect.poll(() => titles().length).toBe(5);
   await expect.poll(inView).toBe(true);
 });

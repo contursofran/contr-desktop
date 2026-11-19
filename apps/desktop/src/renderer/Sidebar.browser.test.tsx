@@ -62,7 +62,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   expect(send).toHaveBeenCalledWith("hello");
 
   // The closed project row shows its agents’ marks.
-  await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
+  await desktop.getByRole("button", { name: "Collapse contr-desktop" }).click();
   await expect.poll(() => desktop.getByRole("listitem").elements().length).toBe(0);
   await expect.poll(() => count("[data-state]", desktop)).toBe(2);
   const name = css("[data-name]", desktop);
@@ -75,7 +75,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await shot("project-shut-dark");
   await commands.colorScheme("light");
   await shot("project-shut-light");
-  await desktop.getByRole("button", { name: "Open contr-desktop" }).click();
+  await desktop.getByRole("button", { name: "Expand contr-desktop" }).click();
   await expect.poll(() => desktop.getByRole("listitem").elements().length).toBe(5);
 });
 
@@ -112,7 +112,7 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
     expect(getComputedStyle(css("[data-name]", desktop)).color).toBe(color("--ink-85"));
     expect(getComputedStyle(css("[data-name]", herdr)).color).toBe(color("--ink-85"));
     // The chevron is the text "▼", 9 px, ink-35, 10 px wide.
-    const chev = desktop.getByRole("button", { name: "Shut contr-desktop" });
+    const chev = desktop.getByRole("button", { name: "Collapse contr-desktop" });
     await expect.element(chev).toHaveTextContent("▼");
     await expect.element(chev).toHaveStyle({ fontSize: "9px" });
     await expect.element(chev).toHaveStyle({ "width": "10px" });
@@ -129,8 +129,8 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
   await notes.click();
   await expect.element(notes).toHaveAttribute("aria-current", "true");
   await expect.poll(() => dot.elements().length).toBe(0);
-  await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
-  await expect.element(desktop.getByRole("button", { name: "Open contr-desktop" })).toHaveTextContent("▶\uFE0E");
+  await desktop.getByRole("button", { name: "Collapse contr-desktop" }).click();
+  await expect.element(desktop.getByRole("button", { name: "Expand contr-desktop" })).toHaveTextContent("▶\uFE0E");
 });
 
 test("a worker's chat: the reply box names it as its tab does, and the chat, model, context and status line are its own (#90)", async () => {

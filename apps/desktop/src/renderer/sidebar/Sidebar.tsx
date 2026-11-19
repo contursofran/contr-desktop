@@ -12,11 +12,10 @@ import { StatusGlyph } from "../ui/StatusGlyph";
 
 const TINT: Record<string, string> = { working: "var(--color-working)", done: "var(--color-done)", blocked: "var(--color-blocked)" };
 
-/** The agent's icon: the program's picture (Claude's pet in `--claude`), dimmed when the agent rests; a one-color glyph takes its state's ink. */
+/** The program picture or a one-color glyph in the agent state's ink. */
 function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
-  const rests = agent.state === "idle" || agent.state === "done";
   return (
-    <span className={`flex shrink-0 ${rests ? "opacity-45" : ""}`}>
+    <span className="sidebar-program-icon flex shrink-0">
       <ProgramIcon kind={agent.kind} size={size} color={TINT[agent.state] ?? "var(--color-muted)"} />
     </span>
   );
@@ -120,7 +119,7 @@ function loadClosed(): Set<string> {
 function ProjectRow({ project, closed }: { project: SidebarProject; closed: boolean }) {
   return (
     <div className="mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px]">
-      <CollapsibleTrigger aria-label={`${closed ? "Open" : "Shut"} ${project.name}`} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-35 hover:text-muted">
+      <CollapsibleTrigger aria-label={`${closed ? "Expand" : "Collapse"} ${project.name}`} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-35 hover:text-muted">
         {/* The mock's text chevron. U+FE0E keeps ▶ a text glyph, not an emoji. */}
         <span aria-hidden>{closed ? "▶\uFE0E" : "▼"}</span>
       </CollapsibleTrigger>

@@ -62,7 +62,7 @@ test("the first chat row clears the switch and fades out when scrolled under it"
   list.scrollTo({ top: 0 });
   await chatSettled(list);
   await expect.element(model.getByText("Opus 5.5", { exact: true })).toBeVisible();
-  await expect.element(reply.getByLabelText("Branch")).toHaveTextContent("main");
+  await expect.element(reply.getByRole("img", { name: /^Branch: / })).toHaveTextContent("main");
   await document.fonts.ready;
   await shoot("297-chat-layout");
 });
@@ -74,7 +74,7 @@ test("the reply footer fits main at the minimum window width in both themes", as
   });
   await page.viewport(640, 480);
   await model.getByText("claude-opus-5-5", { exact: true }).findElement();
-  const branch = await reply.getByLabelText("Branch").findElement() as HTMLElement;
+  const branch = await reply.getByRole("img", { name: /^Branch: / }).findElement() as HTMLElement;
   const send = await reply.getByRole("button", { name: "Send", exact: true }).findElement();
   await document.fonts.ready;
   for (const scheme of ["dark", "light"] as const) {

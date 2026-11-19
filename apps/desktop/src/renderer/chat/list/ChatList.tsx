@@ -17,7 +17,7 @@ const SETTLE_STABLE_FRAMES = 4;
 export function ChatLoading() {
   return (
     <div role="status" aria-label="Reading the chat" className="absolute inset-0 flex items-center justify-center gap-2 px-8 text-[12.5px] text-muted">
-      <Spinner size={13} />
+      <span aria-hidden className="flex"><Spinner size={13} /></span>
       Reading the chat…
     </div>
   );

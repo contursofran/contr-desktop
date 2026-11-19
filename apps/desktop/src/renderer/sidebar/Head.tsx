@@ -53,7 +53,7 @@ export function Head({ onHide }: { onHide: () => void }) {
           </MenuContent>
         </Menu>
         <span className="flex-1" />
-        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" className={inert}><Search aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
+        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" tabIndex={-1} className={inert}><Search aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
         <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" onClick={onHide} className={icon}><PanelLeft aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
       </div>
     </header>

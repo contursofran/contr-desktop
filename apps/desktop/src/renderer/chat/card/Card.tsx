@@ -51,7 +51,7 @@ export const cardBox = "mx-auto mb-2 flex w-full max-w-read flex-col gap-0.5 rou
 const optionRow = "flex w-full items-start gap-3 rounded-[9px] px-3 py-2 text-left hover:bg-hover disabled:opacity-50";
 const keyMark = "mt-0.5 shrink-0 font-mono text-[11px] text-dim";
 export const primaryButton = "flex h-7 shrink-0 items-center rounded-lg bg-selected px-3 text-[12.5px] text-ink-100 shadow-[inset_0_0_0_1px_var(--input-line)] disabled:opacity-50";
-export const ownField = "h-[30px] min-w-0 flex-1 rounded-lg border border-input-line bg-transparent px-2.5 text-[12.5px] text-foreground outline-none placeholder:text-dim";
+export const ownField = "h-[30px] min-w-0 flex-1 rounded-lg border border-input-line bg-transparent px-2.5 text-[12.5px] text-foreground placeholder:text-dim outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus";
 
 /** The head: the red glyph (the card needs the owner), then what asks. */
 export function CardHead({ children }: { children: ReactNode }) {

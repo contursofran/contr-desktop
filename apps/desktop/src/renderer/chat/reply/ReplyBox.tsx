@@ -1,3 +1,5 @@
+// Inset focus ring adapted from t3code apps/web/src/components/chat/ChatHeader.tsx
+// (b5554ac8114f2ce7ce8b5973690ccb8cbb248efd, MIT). Use the contr focus token.
 import { Plus } from "lucide-react";
 import type { SpeedTier } from "../../../shared/api";
 import { Tip } from "../../ui/Tip";
@@ -142,7 +144,7 @@ export function ReplyBox({ terminal, title, draft, keyboard, focusFrom }: {
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
         onPaste={(event) => void onPaste(event)}
-        className="w-full resize-none bg-transparent text-[13px] leading-[18px] text-foreground outline-none placeholder:text-faint"
+        className="w-full resize-none bg-transparent text-[13px] leading-[18px] rounded-sm text-foreground placeholder:text-faint outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
       />
       {error && (
         <p role="alert" className="-mt-2 text-xs text-error">
