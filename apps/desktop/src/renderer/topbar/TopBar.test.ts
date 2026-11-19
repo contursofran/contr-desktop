@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Sidebar } from "../../shared/api";
-import { findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel, scrollToShow } from "./TopBar";
+import { findAgent, nextAfterClose, openTab, tabLabel, scrollToShow } from "./TopBar";
 
 const agent = (terminal: string, title: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, title, name: null, kind: null, issue: null, state: "idle" as const, workers });
 
@@ -26,32 +26,6 @@ describe("top bar tabs", () => {
     expect(tabLabel(data, "t7", { t7: "Other" })).toBe("Orch");
     expect(tabLabel(data, "t9", { t9: "Claude Code" })).toBe("Claude Code");
     expect(tabLabel(data, "t9", {})).toBe("");
-  });
-});
-
-describe("saved tab order", () => {
-  afterEach(() => vi.unstubAllGlobals());
-  const store = (value: string | null) => {
-    const m = new Map<string, string>(value === null ? [] : [["tabs.open", value]]);
-    vi.stubGlobal("localStorage", { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => m.set(k, v) });
-    return m;
-  };
-
-  it("reads back the order it saved", () => {
-    store(null);
-    saveTabs(["t2", "t7"]);
-    expect(readTabs()).toEqual(["t2", "t7"]);
-  });
-
-  it("reads none when nothing or something broken is saved", () => {
-    store(null);
-    expect(readTabs()).toEqual([]);
-    store("{not json");
-    expect(readTabs()).toEqual([]);
-    store('{"a":1}');
-    expect(readTabs()).toEqual([]);
-    store('["t1", 3]');
-    expect(readTabs()).toEqual(["t1"]);
   });
 });
 
