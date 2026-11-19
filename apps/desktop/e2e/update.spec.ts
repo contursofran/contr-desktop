@@ -135,7 +135,7 @@ test("Update downloads the .dmg for a newer release", async () => {
   await view.getByRole("button", { name: "Update" }).click();
   const file = path.join(downloads, "contr-mac-universal-9.1.42.dmg");
   // The file name, not its folder: no local path in a text.
-  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal-9.1.42.dmg. Drag contr to Applications.");
+  await expect(view.getByRole("region", { name: "Updates" }).getByRole("status")).toHaveText("Opened contr-mac-universal-9.1.42.dmg. Drag contr to Applications.");
   expect(readFileSync(file).equals(DMG)).toBe(true);
   await page.emulateMedia({ colorScheme: "light" });
   await page.screenshot({ path: path.join(shots, "update-done-light.png") });
@@ -216,7 +216,7 @@ test("a read-only app folder or a release with no .zip falls back to the .dmg", 
     const app = await launchApp({ ...base, ...source, CONTR_INSTALL_DIR: dir, CONTR_DOWNLOADS: downloads });
     const view = await openSettings(await app.firstWindow());
     await view.getByRole("button", { name: "Update" }).click();
-    await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal-9.1.42.dmg. Drag contr to Applications.");
+    await expect(view.getByRole("region", { name: "Updates" }).getByRole("status")).toHaveText("Opened contr-mac-universal-9.1.42.dmg. Drag contr to Applications.");
     expect(readFileSync(path.join(downloads, "contr-mac-universal-9.1.42.dmg")).equals(DMG)).toBe(true);
     await app.close();
   }
@@ -237,14 +237,15 @@ test("Check now and the app menu's Check for Updates… show a new release with 
   await expect(view.getByLabel("Newest version")).toHaveText("9.1.42");
 
   await view.getByRole("button", { name: "Update" }).click();
-  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal-9.1.42.dmg. Drag contr to Applications.");
+  const status = view.getByRole("region", { name: "Updates" }).getByRole("status");
+  await expect(status).toHaveText("Opened contr-mac-universal-9.1.42.dmg. Drag contr to Applications.");
   expect(readFileSync(path.join(downloads, "contr-mac-universal-9.1.42.dmg")).equals(DMG)).toBe(true);
   live.version = "9.1.43";
   await view.getByRole("button", { name: "Check now" }).click();
   await expect(view.getByLabel("Newest version")).toHaveText("9.1.43");
-  await expect(view.getByRole("status")).toHaveCount(0);
+  await expect(status).toHaveCount(0);
   await view.getByRole("button", { name: "Update" }).click();
-  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal-9.1.43.dmg. Drag contr to Applications.");
+  await expect(status).toHaveText("Opened contr-mac-universal-9.1.43.dmg. Drag contr to Applications.");
   expect(readFileSync(path.join(downloads, "contr-mac-universal-9.1.43.dmg")).equals(DMG)).toBe(true);
   expect(readFileSync(path.join(downloads, "contr-mac-universal-9.1.42.dmg")).equals(DMG)).toBe(true);
 
