@@ -51,7 +51,7 @@ export function HealthView() {
           <button type="button" className={buttonClass()} disabled={!report} onClick={() => report && copy(reportText(report))}>{copied ? "Copied" : "Copy report"}</button>
         </>
       }>
-        {error && <Row><span role="alert" className="text-error">The health check failed to run.</span></Row>}
+        {error && <Row><span role="alert" className="text-blocked">The health check failed to run.</span></Row>}
         {report && <>
           <Row><span role="status" className="font-mono text-[11.5px] text-ink-85">{count("ok")} of {checks.length} pass · {warnings} {warnings === 1 ? "warning" : "warnings"} · {count("fail")} failed</span></Row>
           {report.machines.map(({ name, checks }) => (
@@ -72,7 +72,7 @@ function CheckRow({ check }: { check: HealthCheck }) {
   const body = <>
     <span className="mr-auto shrink-0">{label}</span>
     <span className="min-w-0 text-right font-mono text-[11.5px] break-words text-muted">{check.message}</span>
-    <span className={`min-w-14 text-right text-[11px] ${check.state === "fail" ? "text-error" : "text-dim"}`}>{states[check.state]}</span>
+    <span className={`min-w-14 text-right text-[11px] ${check.state === "fail" ? "text-blocked" : "text-dim"}`}>{states[check.state]}</span>
     {check.fix ? <ChevronDown aria-hidden className="size-3 shrink-0 text-dim group-open:rotate-180" /> : <span aria-hidden className="size-3 shrink-0" />}
   </>;
   if (!check.fix) return <Row>{body}</Row>;

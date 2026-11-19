@@ -61,7 +61,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
         <button type="button" aria-pressed={settingsShown} onClick={onSettings} className={`flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] hover:bg-hover ${settingsShown ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-muted"}`}>
           <Settings aria-hidden strokeWidth={1.6} className="size-[15px]" />
           Settings
-          {healthFailed ? <span aria-label="Health check failed" className="ml-auto size-1.5 rounded-full bg-error" /> : ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
+          {healthFailed ? <span aria-label="Health check failed" className="ml-auto size-1.5 rounded-full bg-blocked" /> : ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
         </button>
         {/* Add machine does nothing yet: inert as the top bar's +. */}
         <Tip label="Add machine (not yet)" side="top">
