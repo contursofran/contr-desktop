@@ -17,13 +17,13 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | A worker's own chat | Clicks a worker row | Click | `button /Cards for prompts and questions/` | The reply box, model, context and status line are the worker's | `sidebar` |
 | Fold a project | Clicks the chevron of a project | Click | `button "Shut contr-desktop"`, then `button "Open contr-desktop"` | The chevron "▼" turns to "▶"; its agents hide, then show again | `sidebar` |
 | Inbox row | Looks at, then clicks, the row above Projects | Click | `button /^Inbox/` | "Inbox · N" with open items, "Inbox" with none; a click opens the Inbox | `inbox` |
-| Machine switch | Opens the machine menu | Click, or Enter on the button | `button "Machine, This computer"`, `menuitemradio "This computer"` | On the head row with "contr", cut to "This comp…", tooltip "This computer"; "This computer" is checked; aerum-pc, vps and tmp-1 are inert with "(not yet)"; "Add machine…" is inert; focus comes back to the button | `popups`, `small-texts`, `sidebar-head-foot` |
-| Search | Hovers or focuses the search icon | — | `button "Search"` | Inert, tooltip "Search (not yet)" | `popups`, `sidebar-head-foot` |
+| Machine switch | Opens the machine menu | Click, or Enter on the button | `button "Machine, This computer"`, `menuitemradio "This computer"` | On the head row with "contr", cut to "This comp…", tooltip "This computer"; "This computer" is checked; aerum-pc, vps and tmp-1 are inert with "(not yet)"; "Add machine…" is inert; focus comes back to the button | `Popups.browser.test.tsx`, `small-texts`, `sidebar-head-foot` |
+| Search | Hovers or focuses the search icon | — | `button "Search"` | Inert, tooltip "Search (not yet)" | `Popups.browser.test.tsx`, `sidebar-head-foot` |
 | Hide and show the sidebar | Clicks the panel icon | Click | `button "Hide sidebar"`, then `button "Show sidebar"` in the top bar | The sidebar hides; the top bar's button shows it again, clear of the window buttons; the state stays over a restart | `sidebar-head-foot` |
-| Plan usage | Looks at the foot | — | `list "Plan usage" > listitem "Claude"`, `meter "Claude usage"` | Claude "64% wk · 4d", Codex "21% 5h · 3h"; the tooltip says when the data was read; `FAKE_HELPER_USAGE=stale`: "—" and an empty meter | `usage`, `sidebar-head-foot` |
+| Plan usage | Looks at the foot | — | `list "Plan usage" > listitem "Claude"`, `meter "Claude usage"` | Claude "64% wk · 4d", Codex "21% 5h · 3h"; the tooltip says when the data was read; `FAKE_HELPER_USAGE=stale`: "—" and an empty meter | `Usage.browser.test.tsx`, `sidebar-head-foot` |
 | Settings | Clicks Settings in the foot | Click | `button "Settings"` | The Settings view opens | `settings` |
 | Add machine (foot +) | Hovers the + | — | `button "Add machine"` | Inert, tooltip "Add machine (not yet)" | `sidebar-head-foot` |
-| Tooltips | Hovers or focuses a row or an icon | Hover, Tab; Escape hides | the row's `button` | The tooltip shows the full title; Escape or leaving hides it | `popups` |
+| Tooltips | Hovers or focuses a row or an icon | Hover, Tab; Escape hides | the row's `button` | The tooltip shows the full title; Escape or leaving hides it | `Popups.browser.test.tsx` |
 | No agents | Starts with no agents | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | text "No agents" | The sidebar says "No agents" | `states` |
 
 ## Top bar
@@ -35,7 +35,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
-| New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `popups` |
+| New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `Popups.browser.test.tsx` |
 | Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `radiogroup "Chat or Terminal" > radio "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
 | Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `states` |
 
@@ -47,7 +47,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code and diffs in plain ink in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; long words wrap | `app` (Electron), `Markdown.browser.test.tsx` |
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
 | Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `tool-calls`, `keys`, `app` |
-| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `colors`, `tool-calls` |
+| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `Colors.browser.test.tsx`, `tool-calls` |
 | Compaction line | Reads a compaction | — | text "Context compacted" | A thin centered line on hairlines | `tool-calls` |
 | PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged, 6 of 6 checks passed"` | A chip with gh's state: the GitHub icon and a faint outline in the `pr-*` or `issue-*` token, the number in ink (dim when closed without a result; a closed PR is grey); a PR with checks adds ✓ 6/6, the working glyph and 4/6, or ✕ 1 (not in a copied selection); an unknown number stays text | `chips` |
 | Links | Clicks a link | Click | `link "Electron docs"` | The browser opens it (in e2e: a line in `open.log`); the app does not navigate | `links` |
