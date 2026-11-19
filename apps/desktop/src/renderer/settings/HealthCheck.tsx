@@ -33,11 +33,11 @@ export function HealthCheck() {
     <section aria-label="Health check">
       <Group title="Health check" aside={
         <button type="button" onClick={() => void check()} disabled={report === "checking"} className={buttonClass()}>
-          {report === undefined ? "Check now" : "Check again"}
+          {report === undefined ? "Run check" : "Run again"}
         </button>
       }>
         <Row label="Codex orchestration">
-          <span role="status" className={`min-w-0 text-right text-xs ${failed ? "text-error" : "text-muted"}`}>{message}</span>
+          <span aria-live="polite" className={`min-w-0 text-right text-xs ${failed ? "text-error" : "text-muted"}`}>{message}</span>
         </Row>
         {result && (
           <Row label="Instructions">
