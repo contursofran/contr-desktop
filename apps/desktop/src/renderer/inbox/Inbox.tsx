@@ -81,11 +81,11 @@ function DoneEnd({ id, onSaved }: { id: string; onSaved: (n: string) => void }) 
  * A blocked agent's row opens the agent's chat with its card.
  * While the last read of the owner items failed, a line says why; the items are the last good read.
  */
-export function Inbox({ items, blocked, name, onOpen }: { items: OwnerItems; blocked: SidebarAgent[]; name: (coordinator: string) => string; onOpen: (terminal: string) => void }) {
+export function Inbox({ items, blocked, name, onOpen, initialItem }: { items: OwnerItems; blocked: SidebarAgent[]; name: (coordinator: string) => string; onOpen: (terminal: string) => void; initialItem: string | null }) {
   const [note, setNote] = useSavedNote();
   const error = useOwnerError();
   const list = inboxItems(items);
-  const [want, setWant] = useState<string | null>(null);
+  const [want, setWant] = useState(initialItem);
   const open = openId(list, want);
   useMoveKeys(list, open, setWant);
   useEffect(() => {
