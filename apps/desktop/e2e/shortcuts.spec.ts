@@ -18,7 +18,7 @@ test("File > Close Tab sends the close command to the shown tab", async () => {
     await closeTab();
     await expect(tabs.getByRole("tab")).toHaveCount(0);
     await closeTab();
-    await expect(tabs.getByRole("button", { name: "New tab" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "New tab", exact: true })).toBeVisible();
     expect(app.windows()).toHaveLength(1);
   } finally {
     await app.close();
