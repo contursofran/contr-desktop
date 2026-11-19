@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { appChildren } from "../children";
 import { corePath } from "../core/current";
 import { run } from "../sidebar/agents";
 import { countLiveWorkers } from "../workers/live";
@@ -71,7 +71,7 @@ export async function orchBoard(orch: string, hc: string, parent: string): Promi
 /** Runs the tool read-only: `agents ls --all --json`. A missing or failed tool gives no workers. */
 export function orchWorkers(orch: string): Promise<Record<string, WorkerState>> {
   return new Promise((resolve) => {
-    execFile(orch, ["agents", "ls", "--all", "--json"], { timeout: 10_000 }, (_error, stdout) => resolve(readWorkers(String(stdout ?? ""))));
+    appChildren.execFile(orch, ["agents", "ls", "--all", "--json"], { timeout: 10_000 }, (_error, stdout) => resolve(readWorkers(String(stdout ?? ""))));
   });
 }
 
@@ -118,6 +118,6 @@ export function readChecks(json: string, issues: number[]): Map<number, PrChecks
 export function ghChecks(cwd: string, issues: number[], gh = process.env.CONTR_GH ?? "gh"): Promise<Map<number, PrChecks | null>> {
   const args = ["api", "graphql", "-f", `query=${checksQuery(issues)}`, "-F", "owner={owner}", "-F", "repo={repo}"];
   return new Promise((resolve) => {
-    execFile(gh, args, { cwd, timeout: 15_000 }, (_error, stdout) => resolve(readChecks(String(stdout ?? ""), issues)));
+    appChildren.execFile(gh, args, { cwd, timeout: 15_000 }, (_error, stdout) => resolve(readChecks(String(stdout ?? ""), issues)));
   });
 }

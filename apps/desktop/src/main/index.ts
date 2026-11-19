@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
+import { appChildren, stopChildrenOnQuit } from "./children";
 import { chatTerminal, setupHelper } from "./helper";
 import { registerCoreIpc } from "./core/ipc";
 import { startCore } from "./core/start";
@@ -15,6 +16,7 @@ import { windowTitle } from "./owner/owner";
 import { registerSettingsIpc } from "./settings/ipc";
 import { registerUpdateIpc } from "./update/ipc";
 import { setAppMenu } from "./menu";
+import { armNativeQuitDeadline } from "./native-quit";
 import { registerTerminalIpc } from "./terminal/ipc";
 import { windowOptions } from "./window-options";
 import { syncShellPath } from "./shell/path";
@@ -39,6 +41,8 @@ function createWindow(): void {
   else void win.loadFile(path.join(__dirname, "../renderer/index.html"));
 }
 
+stopChildrenOnQuit(app, appChildren);
+if (process.platform === "darwin") app.once("quit", armNativeQuitDeadline);
 registerImageScheme();
 // Each window: no new window and no navigation away from the app's page; web and mail links go to the system.
 app.on("web-contents-created", (_event, contents) => guardLinks(contents, openExternal));
@@ -48,6 +52,7 @@ void app.whenReady().then(async () => {
   if (e2e && process.platform === "darwin") app.setActivationPolicy("accessory");
   // The core's root and copy (home or bundle) come before any helper or tool call.
   const core = await startCore(app.getAppPath(), app.isPackaged);
+  if (appChildren.stopping) return;
   setupHelper(app.getAppPath());
   registerTerminalIpc();
   registerRefsIpc(chatTerminal);
@@ -62,7 +67,7 @@ void app.whenReady().then(async () => {
   registerPrCardIpc(app.getAppPath(), chatTerminal);
   createWindow();
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (!appChildren.stopping && BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 

@@ -1,3 +1,4 @@
+import { appChildren } from "../children";
 import { spawn } from "node:child_process";
 import { BrowserWindow, ipcMain } from "electron";
 import { SELECT_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, type Sidebar } from "../../shared/api";
@@ -34,7 +35,7 @@ export function registerSidebarIpc(appRoot: string): void {
     MAX_WAIT_MS,
   );
   const follow = () => {
-    const events = spawn(hc, ["events", "--json"], { stdio: ["ignore", "pipe", "ignore"] });
+    const events = appChildren.track(spawn(hc, ["events", "--json"], { stdio: ["ignore", "pipe", "ignore"] }));
     const lines = lineSplitter((line) => reader.event(line));
     events.stdout.on("data", (d: Buffer) => {
       lines(d);

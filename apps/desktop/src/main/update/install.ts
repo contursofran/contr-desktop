@@ -1,12 +1,19 @@
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { accessSync, constants, createReadStream, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
+import { appChildren } from "../children";
 import { ZIP } from "./release";
 
-const run = promisify(execFile);
+function run(file: string, args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    appChildren.execFile(file, args, {}, (error, stdout) => {
+      if (error) reject(error);
+      else resolve(stdout);
+    });
+  });
+}
 
 /** The .app bundle that holds the executable, or null when the executable is not in a bundle. */
 export function bundleOf(exe: string): string | null {
@@ -41,7 +48,7 @@ export async function unpack(zip: string, version: string, sha256: string | null
     const name = readdirSync(dir).find((f) => f.endsWith(".app"));
     if (!name) throw new Error("The .zip has no app.");
     const app = path.join(dir, name);
-    const { stdout } = await run("plutil", ["-extract", "CFBundleShortVersionString", "raw", path.join(app, "Contents/Info.plist")]);
+    const stdout = await run("plutil", ["-extract", "CFBundleShortVersionString", "raw", path.join(app, "Contents/Info.plist")]);
     if (stdout.trim() !== version) throw new Error(`The app in the .zip is ${stdout.trim()}, not ${version}.`);
     try {
       await run("codesign", ["--verify", "--deep", app]);
