@@ -27,7 +27,7 @@ export function TerminalView() {
   const [note, setNote] = useState<string | null>(null);
   const shown = useRef<Terminal>(null);
   const scheme = useColorScheme();
-  const first = useRef(scheme);
+  const currentScheme = useRef(scheme);
   const again = useRef<(focus?: boolean) => void>(() => undefined);
   const search = useRef<ReturnType<typeof terminalSearch>>(null);
   const findInput = useRef<HTMLInputElement>(null);
@@ -66,7 +66,7 @@ export function TerminalView() {
       macOptionIsMeta: true,
       allowProposedApi: true, // SearchAddon uses xterm's decoration API.
       linkHandler: { activate },
-      theme: terminalTheme(first.current),
+      theme: terminalTheme(currentScheme.current),
     });
     shown.current = term;
     const fit = new FitAddon();
@@ -130,6 +130,7 @@ export function TerminalView() {
 
   // The colors follow the system appearance, as the theme tokens do.
   useEffect(() => {
+    currentScheme.current = scheme;
     if (shown.current) shown.current.options.theme = terminalTheme(scheme);
   }, [scheme]);
 

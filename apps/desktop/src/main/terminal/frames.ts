@@ -6,6 +6,7 @@ export const MAX_PAYLOAD = 16 << 20;
 export const KIND_DATA = 0;
 export const KIND_CLOSE = 2;
 export const KIND_RESIZE = 3;
+export const KIND_FACTS = 5;
 
 export interface Frame {
   channel: number;

@@ -111,6 +111,7 @@ When the code changes a feature, update its row in the same PR.
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Terminal view | Clicks Terminal | Click | `radio "Terminal"` | The agent's hc terminal (xterm.js) with no frame, in JetBrains Mono 13/20; keys go to it | `terminal`, `fake-terminal`, `TerminalError.browser.test.tsx`, `terminal-error` |
+| Terminal appearance | Starts a terminal or changes the app theme | New tab, Settings > Appearance | `data-testid="terminal"` | hc reports contr's terminal colors to programs from startup and after a theme change. Programs that only read colors at startup, such as Codex CLI 0.170, need a restart after a theme change. | `new-tab`, `hc-attach.test.ts` |
 | Terminal links | Opens a URL or OSC 8 link | Cmd+click on macOS, Ctrl+click elsewhere | Terminal link | An HTTP or HTTPS link opens outside contr | `TerminalTools.browser.test.tsx` |
 | Terminal clipboard | Copies a selection or pastes text | Cmd+C / Cmd+V on macOS, Ctrl+C with selection / Ctrl+Shift+V on Linux | Terminal | Copy uses the selected text. Paste follows the terminal's bracketed paste mode | `TerminalTools.browser.test.tsx` |
 | Terminal find | Searches the terminal buffer | Cmd+F on macOS, Ctrl+F elsewhere. Enter, Shift+Enter, Esc | Search `Find in terminal` | Finds matches across wrapped lines, shows the match count, and returns focus to the terminal on close | `TerminalTools.browser.test.tsx` |

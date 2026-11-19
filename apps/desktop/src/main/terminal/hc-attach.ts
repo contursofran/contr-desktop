@@ -2,7 +2,8 @@
 // Keys, paste and size go to hc; the terminal's bytes come back. No polling: hc pushes the bytes.
 import { appChildren } from "../children";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { decodeAll, encode, KIND_CLOSE, KIND_DATA, KIND_RESIZE, resizePayload } from "./frames";
+import type { TerminalDisplay } from "../../shared/terminal-display";
+import { decodeAll, encode, KIND_CLOSE, KIND_DATA, KIND_FACTS, KIND_RESIZE, resizePayload } from "./frames";
 
 export interface AttachTarget {
   /** The terminal address or name, like `t1`. */
@@ -44,10 +45,11 @@ export class HcAttach {
   private size: { cols: number; rows: number };
   /** Latest size while terminal.attach is still opening. */
   private pendingSize?: { cols: number; rows: number };
+  private sentDisplay?: TerminalDisplay;
   /** hc's own words when it exits with an error. */
   private stderr = "";
 
-  constructor(target: AttachTarget, cols: number, rows: number, private on: AttachEvents) {
+  constructor(target: AttachTarget, cols: number, rows: number, private display: TerminalDisplay, private on: AttachEvents) {
     this.size = { cols, rows };
     const args = ["connect", ...(target.session ? ["--session", target.session] : [])];
     this.proc = appChildren.track(spawn(target.hc ?? "hc", args, { stdio: "pipe" }));
@@ -59,6 +61,18 @@ export class HcAttach {
     this.proc.on("close", () => this.finish(this.stderr.trim() ? `hc closed the connection: ${this.stderr.trim()}` : "hc closed the connection"));
     this.proc.stdout.on("data", (d: Buffer) => this.read(d, target.terminal));
     this.rpc(0, "hello", { generation: 1, framed: true }, true);
+  }
+
+  setDisplay(display: TerminalDisplay): void {
+    if (this.ended) return;
+    this.display = display;
+    this.sendDisplay();
+  }
+
+  private sendDisplay(): void {
+    if (!this.channel || this.display === this.sentDisplay) return;
+    this.sentDisplay = this.display;
+    this.proc.stdin.write(encode(this.channel, KIND_FACTS, Buffer.from(JSON.stringify(this.display))));
   }
 
   input(text: string): void {
@@ -103,7 +117,8 @@ export class HcAttach {
       if (hello.error) return this.finish(hello.error.message);
       this.framed = true;
       // history: the scrollback that is shown first, so the owner can scroll back at once.
-      this.rpc(1, "terminal.attach", { terminal, ...this.size, history: 1000 });
+      this.sentDisplay = this.display;
+      this.rpc(1, "terminal.attach", { terminal, ...this.size, history: 1000, display: this.display });
     }
     const { frames, rest } = decodeAll(this.buf);
     this.buf = rest;
@@ -114,6 +129,7 @@ export class HcAttach {
         if (m.id !== 1) continue;
         if (m.error || !m.result) return this.finish(m.error?.message ?? "attach failed");
         this.channel = m.result.channel;
+        this.sendDisplay();
         const size = this.pendingSize;
         this.pendingSize = undefined;
         if (size) this.resize(size.cols, size.rows);
