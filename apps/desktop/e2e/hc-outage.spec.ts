@@ -41,12 +41,11 @@ test("a restart while hc is down keeps the saved tabs; when hc is back they have
   let app = await launchApp(env, data);
   let page = await app.firstWindow();
   let tabs = page.getByRole("tablist", { name: "Tabs" }).getByRole("tab");
-  await expect(tabs).toHaveText(["Chat panel usability audit"]);
+  await expect(tabs).toHaveText(["Chat panel usability audit", "Release notes draft"]);
   await projects(page).getByRole("button", { name: "Install health check" }).click();
   await projects(page).getByRole("button", { name: "Release notes draft" }).click();
-  await expect(tabs).toHaveText(["Chat panel usability audit", "Install health check", "Release notes draft"]);
-  // The app saves the tab list in an effect after the click: wait for it, so it does not write over the list below.
-  await expect.poll(() => page.evaluate(() => localStorage.getItem("tabs.open"))).toBe('["t7","t12","t11"]');
+  await expect(tabs).toHaveText(["Chat panel usability audit", "Release notes draft"]);
+  await expect(page.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
   // A fourth saved tab of a terminal that hc will not list (FAKE_HC_GONE: `get` fails, and `ls` does not name it).
   await page.evaluate(() => localStorage.setItem("tabs.open", JSON.stringify(["t7", "t12", "t11", "t99"])));
   await app.close();
@@ -64,8 +63,14 @@ test("a restart while hc is down keeps the saved tabs; when hc is back they have
   rmSync(down);
   await readAgain(page);
   await expect(projects(page).getByRole("region", { name: "contr-desktop" })).toBeVisible();
-  await expect(tabs).toHaveText(["Chat panel usability audit", "Install health check", "Release notes draft"]);
-  await expect.poll(() => page.evaluate(() => localStorage.getItem("tabs.open"))).toBe('["t7","t12","t11"]');
+  await expect(tabs).toHaveText(["Chat panel usability audit", "Release notes draft"]);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("tabs.open") ?? "null"))).toEqual({
+    projects: {
+      "project:contr-desktop": { order: ["t7", "t11"], closed: [] },
+      "project:herdr-contr": { order: ["t12"], closed: [] },
+    },
+    legacy: [],
+  });
   await shoot(page, "hc-outage-tabs-back");
   await app.close();
 });

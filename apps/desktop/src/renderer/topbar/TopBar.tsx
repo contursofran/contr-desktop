@@ -166,19 +166,3 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSta
     </Tabs>
   );
 }
-
-const TABS_KEY = "tabs.open";
-
-/** The open tabs in their order, kept in localStorage `tabs.open` over restarts. */
-export function readTabs(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(TABS_KEY) ?? "[]") as unknown;
-    return Array.isArray(v) ? v.filter((t): t is string => typeof t === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveTabs(tabs: string[]): void {
-  localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
-}

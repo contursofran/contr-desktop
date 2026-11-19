@@ -1,7 +1,7 @@
 import { codexThreadId } from "../shared/codex";
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useShortcut } from "@ui-sdk/react/shortcuts";
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
@@ -21,27 +21,53 @@ import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
 import { Sidebar, adjacentAgent, readHidden, saveHidden } from "./sidebar/Sidebar";
-import { TopBar, findAgent, nextAfterClose, openTab, panelId, readTabs, saveTabs, tabId, tabLabel } from "./topbar/TopBar";
+import { TopBar, findAgent, nextAfterClose, openTab, panelId, tabId, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
+import { editProject, forgetTab, migrateTabs, projectKey, readTabs, savedTerminals, saveTabs, tabMembers, tabProject, visibleTabs } from "./state/projectTabs";
 import type { Sidebar as SidebarData, TabDetails, TerminalKind } from "../shared/api";
 
 const NO_ISSUES: number[] = [];
+const EMPTY_SIDEBAR: SidebarData = { projects: [], selected: "" };
 
 /** The sidebar, the top bar and the selected agent's chat. A switch mounts the chat again: feed, title, reply box and terminal follow. */
 export function App() {
   const [digestReads] = useState(() => new Map<string, Map<string, DigestRead>>());
-  const [sidebar, setSidebar] = useState<SidebarData>({ projects: [], selected: "" });
+  const [sidebar, setSidebar] = useState(EMPTY_SIDEBAR);
+  const [saved, setSaved] = useState(readTabs);
+  const [restore] = useState(() => savedTerminals(saved));
+  const lastSaved = useRef(saved);
   useEffect(() => {
-    void window.contr.sidebar(readTabs()).then(setSidebar);
-    return window.contr.onSidebar(setSidebar);
-  }, []);
-  // The open tabs. Selecting an agent anywhere opens its tab.
-  const [tabs, setTabs] = useState<string[]>(readTabs);
-  // While hc fails, the tab list is not saved: a restart in an hc outage keeps the saved tabs.
+    let received = false;
+    const off = window.contr.onSidebar((data) => {
+      received = true;
+      setSidebar(data);
+    });
+    void window.contr.sidebar(restore).then((data) => {
+      if (!received) setSidebar(data);
+    });
+    return () => {
+      received = true;
+      off();
+    };
+  }, [restore]);
+  const members = useMemo(() => tabMembers(sidebar.projects), [sidebar.projects]);
   const hcDown = sidebar.hcError !== undefined;
+  const migrated = useMemo(() => hcDown ? saved : migrateTabs(saved, members), [saved, members, hcDown]);
   useEffect(() => {
-    if (!hcDown) saveTabs(tabs);
-  }, [tabs, hcDown]);
+    if (migrated !== saved) setSaved((current) => migrateTabs(current, members));
+  }, [migrated, saved, members]);
+  useEffect(() => {
+    if (!hcDown && saved !== lastSaved.current) {
+      saveTabs(saved);
+      lastSaved.current = saved;
+    }
+  }, [saved, hcDown]);
+  const [projectWithoutSelection, setProjectWithoutSelection] = useState<string>();
+  const firstProject = sidebar.projects[0];
+  const project = sidebar.selected
+    ? tabProject(migrated, members, sidebar.selected) ?? ""
+    : projectWithoutSelection ?? (firstProject ? projectKey(firstProject) : "");
+  const tabs = useMemo(() => visibleTabs(migrated, members, project, sidebar.selected), [migrated, members, project, sidebar.selected]);
   // The Chat / Terminal pick is one for the window: it stays when another agent shows and over a restart.
   const [side, setSide] = useState<Side>(readSide);
   useEffect(() => saveSide(side), [side]);
@@ -49,32 +75,52 @@ export function App() {
   const started = useRef(false);
   useEffect(() => {
     if (!started.current) {
-      if (sidebar.projects.length === 0 && !codexThreadId(readShown())) return;
+      if (sidebar === EMPTY_SIDEBAR || hcDown) return;
+      const stored = readShown();
+      const storedProject = tabProject(migrated, members, stored);
+      if (!firstProject && storedProject === undefined && !codexThreadId(stored)) return;
       started.current = true;
-      const start = startAgent(sidebar, readShown());
+      const available = {
+        ...sidebar,
+        selected: migrated.projects[project]?.closed.includes(sidebar.selected) ? "" : sidebar.selected,
+        projects: sidebar.projects.map((p) => ({
+          ...p,
+          agents: p.agents.filter((agent) => !migrated.projects[projectKey(p)]?.closed.includes(agent.terminal)),
+        })),
+      };
+      const start = storedProject !== undefined ? stored : startAgent(available, stored);
       if (start !== sidebar.selected) {
         void window.contr.select(start).then((selected) => setSidebar((s) => ({ ...s, selected })));
         return;
       }
     }
     saveShown(sidebar.selected);
-  }, [sidebar]);
-  useEffect(() => setTabs((t) => openTab(t, sidebar.selected)), [sidebar.selected]);
+  }, [sidebar, migrated, members, firstProject, hcDown, project]);
   // Titles from hc for tabs with no sidebar entry, read once per terminal. While hc fails, no title is read and no tab closes.
   const [titles, setTitles] = useState<Record<string, TabDetails>>({});
   useEffect(() => {
     if (hcDown) return;
-    for (const t of tabs) {
+    // Until the sidebar lists any projects, leave old tabs unassigned. Codex
+    // can also publish restored chats after the first sidebar response.
+    const previous = tabProject(migrated, members, readShown());
+    const legacyProject = previous || (firstProject ? projectKey(firstProject) : "");
+    if (legacyProject) {
+      const resolved = migrated.legacy.filter((id) => titles[id]?.title && !members.has(id));
+      if (resolved.length) {
+        setSaved((current) => migrateTabs(current, new Map(resolved.map((id) => [id, { project: legacyProject, worker: false }]))));
+      }
+    }
+    for (const t of openTab(savedTerminals(migrated), sidebar.selected)) {
       if (codexThreadId(t) || findAgent(sidebar, t) || t in titles) continue;
       setTitles((m) => ({ ...m, [t]: { title: "" } }));
       void window.contr.tabTitle(t).then((r) => {
         // hc runs and does not list the terminal: a saved tab of a gone agent closes.
-        if ("gone" in r) setTabs((open) => open.filter((x) => x !== t));
+        if ("gone" in r) setSaved((current) => forgetTab(current, t));
         else if ("title" in r) setTitles((m) => ({ ...m, [t]: r }));
         // hc failed: the tab stays, and its title is read again after the next hc outage (below), not in a loop.
       });
     }
-  }, [tabs, sidebar, titles, hcDown]);
+  }, [migrated, sidebar, titles, hcDown, members, firstProject]);
   // An hc outage starts: the titles not read yet are read again when it ends.
   useEffect(() => {
     if (hcDown) setTitles((m) => Object.fromEntries(Object.entries(m).filter(([, details]) => details.title !== "")));
@@ -89,6 +135,7 @@ export function App() {
   useEffect(() => saveHidden(hidden), [hidden]);
   // With the Inbox or Settings shown, no agent row and no tab looks selected.
   const view = inbox || settings ? { ...sidebar, selected: "" } : sidebar;
+  const shownTabs = view.selected === sidebar.selected ? tabs : tabs.filter((id) => !members.get(id)?.worker);
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
@@ -98,16 +145,27 @@ export function App() {
     setSettings(false);
   };
   const select = useCallback((terminal: string) => {
+    const key = tabProject(migrated, members, terminal);
+    if (key !== undefined) {
+      setSaved((current) => editProject(current, key, (tab) => tab.closed.includes(terminal)
+        ? { ...tab, closed: tab.closed.filter((id) => id !== terminal) }
+        : tab));
+    }
     setReplyFocus({ terminal, from: document.activeElement });
     setInbox(null);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
-  }, []);
-  const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
+  }, [migrated, members]);
+  const launchProject = project || (firstProject ? projectKey(firstProject) : "");
+  const cwd = findAgent(view, view.selected)?.cwd || sidebar.projects.find((p) => projectKey(p) === launchProject)?.cwd || firstProject?.cwd || null;
   const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
     if (kind === "shell") setSide("terminal");
+    setSaved((current) => editProject(current, launchProject, (tab) => ({
+      ...tab,
+      order: openTab(visibleTabs(current, members, launchProject, ""), terminalId),
+    })));
     select(terminalId);
-  }, [select]);
+  }, [select, launchProject, members]);
   const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
   const tabState = useRef({ tabs, selected: sidebar.selected });
   useLayoutEffect(() => { tabState.current = { tabs, selected: sidebar.selected }; }, [tabs, sidebar.selected]);
@@ -131,8 +189,12 @@ export function App() {
         if (next) setReplyFocus({ terminal: next, from: document.activeElement });
         const selected = await window.contr.select(next);
         setSidebar((s) => ({ ...s, selected }));
+        if (!selected) setProjectWithoutSelection(project);
       }
-      setTabs((t) => t.filter((x) => x !== terminal));
+      setSaved((saved) => editProject(forgetTab(saved, terminal), project, (tab) => ({
+        ...tab,
+        closed: openTab(tab.closed, terminal),
+      })));
     } catch (error) {
       setCloseError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -169,14 +231,14 @@ export function App() {
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox !== null && !settings} onInbox={() => openInbox()} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={(terminal) => void close(terminal)} onReorder={setTabs} onStart={start} starting={starting} closing={closing} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        <TopBar data={view} tabs={shownTabs} titles={titles} onSelect={select} onClose={(terminal) => void close(terminal)} onReorder={(order) => setSaved((current) => editProject(current, project, (tab) => ({ ...tab, order })))} onStart={start} starting={starting} closing={closing} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
         {closeError && <p role="alert" aria-label="Close tab error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot close the tab. {closeError}</p>}
         {!inbox && !settings && sidebar.selected && !chatOnly && <Switch side={side} onSide={showSide} />}
         {settings ? <SettingsView />
           : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />
           : !sidebar.selected && sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />}
-        {openTab(tabs, view.selected).map((terminal) => {
+        {shownTabs.map((terminal) => {
           const shown = terminal === view.selected;
           const agent = shown ? findAgent(sidebar, terminal) : undefined;
           return (

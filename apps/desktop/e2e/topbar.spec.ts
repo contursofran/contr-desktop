@@ -6,7 +6,7 @@ import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
 
-test("the top bar has one tab per opened agent, and a tab click switches the chat", async () => {
+test("tab navigation and close stay in the shown agent’s project", async () => {
   test.setTimeout(60_000);
   const app = await launchApp({
     CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
@@ -20,11 +20,11 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   });
   const page = await app.firstWindow();
   const tabs = page.getByRole("tablist", { name: "Tabs" });
-  await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit"]);
+  await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit", "Release notes draft"]);
 
-  // A sidebar click opens a second tab and selects it.
+  // Selecting a different project replaces the tab row.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Install health check" }).click();
-  await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit", "Install health check"]);
+  await expect(tabs.getByRole("tab")).toHaveText(["Install health check"]);
   await expect(tabs.getByRole("tab", { name: "Install health check" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
@@ -35,7 +35,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await page.keyboard.press("Control+Shift+Tab");
   await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
   await page.keyboard.press(process.platform === "darwin" ? "Meta+2" : "Control+2");
-  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Install health check");
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
 
   // A tab click switches the chat as a sidebar click does.
   await tabs.getByRole("tab", { name: "Chat panel usability audit" }).click();
@@ -49,8 +49,8 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(page.locator(".xterm-rows").getByText(/fake terminal t7/)).toBeVisible();
   await page.locator(".xterm-helper-textarea").focus();
   await page.keyboard.press("Control+Tab");
-  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Install health check");
-  await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
+  await expect(page.locator(".xterm-rows").getByText(/fake terminal t11/)).toBeVisible();
   await page.keyboard.press("Control+Shift+Tab");
   await expect(sw.getByRole("radio", { name: "Terminal" })).toBeChecked();
   await sw.getByRole("radio", { name: "Chat" }).click();
@@ -58,8 +58,8 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
 
   // × closes the shown tab and shows the next one.
   await page.getByRole("button", { name: "Close Chat panel usability audit" }).click();
-  await expect(tabs.getByRole("tab")).toHaveText(["Install health check", "Release notes draft"]);
-  await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
+  await expect(tabs.getByRole("tab")).toHaveText(["Release notes draft"]);
+  await expect(page.getByRole("textbox", { name: "Reply to Release notes draft" })).toBeVisible();
   await app.close();
 });
 
@@ -96,7 +96,7 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
     CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
     CONTR_GIT: path.join(e2e, "fake-git.mjs"),
   };
-  const [a, b] = ["Chat panel usability audit", "Install health check"];
+  const [a, b] = ["Chat panel usability audit", "Release notes draft"];
   let app = await launchApp(env, dataDir);
   let page = await app.firstWindow();
   let tabs = page.getByRole("tablist", { name: "Tabs" });
@@ -137,13 +137,14 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   await app.close();
 
   // A saved tab whose terminal hc no longer lists does not open again.
-  app = await launchApp({ ...env, FAKE_HC_AGENTS: "0", FAKE_HC_GONE: "t12" }, dataDir);
+  app = await launchApp({ ...env, FAKE_HC_AGENTS: "0", FAKE_HC_GONE: "t11" }, dataDir);
   page = await app.firstWindow();
   tabs = page.getByRole("tablist", { name: "Tabs" });
   await expect(tabs.getByRole("tab")).toHaveText([a]);
   await app.close();
   app = await launchApp(env, dataDir);
   page = await app.firstWindow();
-  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText([a]);
+  // When hc lists b again, it returns at its default sidebar position.
+  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText([a, b]);
   await app.close();
 });
