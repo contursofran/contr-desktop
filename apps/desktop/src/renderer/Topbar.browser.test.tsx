@@ -65,16 +65,18 @@ test("the scroll row is the named tab list and the new-tab button is outside it"
 
 test("arrows, Home and End move tab focus, and Enter and Space select the focused tab", async () => {
   const selection = selectable(sidebar);
-  let deliverCard: (() => void) | undefined;
+  let deliverFirst: (() => void) | undefined;
   const feedRows = rows(transcript);
   await renderApp(transcript, null, {
     ...selection.overrides,
     onFeed(listener) {
-      listener({ type: "splice", at: 0, rows: feedRows, agent: "claude" });
-      const noCard = () => listener({ type: "card", card: null });
-      if (selection.selected() === "t12") deliverCard = noCard;
-      else noCard();
-      return () => { if (deliverCard === noCard) deliverCard = undefined; };
+      const first = () => {
+        listener({ type: "splice", at: 0, rows: feedRows, agent: "claude" });
+        listener({ type: "card", card: null });
+      };
+      if (selection.selected() === "t12") deliverFirst = first;
+      else first();
+      return () => { if (deliverFirst === first) deliverFirst = undefined; };
     },
   });
   await open(names[1]);
@@ -99,17 +101,18 @@ test("arrows, Home and End move tab focus, and Enter and Space select the focuse
   const secondReply = reply(names[1]);
   await expect.element(secondReply).toBeVisible();
 
-  // The reply is visible before the card response. That response transfers focus (#292).
+  // The first response leaves focus on the tab so the arrow keys still work.
+  const loading = page.getByRole("status", { name: "Reading the chat" });
+  await expect.element(loading).toBeVisible();
   await expect.element(second).toHaveFocus();
-  await expect.poll(() => deliverCard).toBeTypeOf("function");
-  deliverCard!();
-  await expect.element(secondReply).toHaveFocus();
-  await userEvent.keyboard("{ArrowLeft} ");
-  await expect.element(secondReply).toHaveValue(" ");
+  await expect.poll(() => deliverFirst).toBeTypeOf("function");
+  deliverFirst!();
+  await expect.element(loading).not.toBeInTheDocument();
+  await expect.element(second).toHaveFocus();
+  await shoot("303-keyboard-tab-focus", bar());
+  await expect.element(secondReply).toHaveValue("");
   await expect.element(selected).toHaveTextContent(names[1]);
-  await userEvent.keyboard("{Backspace}");
 
-  (second.element() as HTMLElement).focus();
   await userEvent.keyboard("{ArrowLeft}");
   await expect.element(first).toHaveFocus();
   await userEvent.keyboard(" ");
