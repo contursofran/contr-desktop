@@ -5,9 +5,9 @@ screenshot check. Start the app with the `verify` skill (`.claude/skills/verify/
 the data in the "Expected" column. Data that needs a switch names it.
 
 A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLabel` and `text "…"` as `getByText`;
-`a > b` is `b` inside `a`. The skill's `click`, `text` and `roles` take the same words. "Spec" names the test in
-`apps/desktop/e2e/` or, for `*.browser.test.tsx`, in `apps/desktop/src/renderer/`. When the code changes a feature,
-update its row in the same PR.
+`a > b` is `b` inside `a`. The skill's `click`, `text` and `roles` take the same words. "Spec" names the test.
+Electron specs are in `apps/desktop/e2e/`. Files ending in `.browser.test.tsx` are in `apps/desktop/src/renderer/`.
+When the code changes a feature, update its row in the same PR.
 
 ## Sidebar
 
@@ -18,13 +18,13 @@ update its row in the same PR.
 | A worker's own chat | Clicks a worker row | Click | `button /Cards for prompts and questions/` | The reply box, model, context and status line are the worker's | `sidebar` |
 | Fold a project | Clicks the chevron of a project | Click | `button "Shut contr-desktop"`, then `button "Open contr-desktop"` | The chevron "▼" turns to "▶"; its agents hide, then show again | `sidebar` |
 | Inbox row | Looks at, then clicks, the row above Projects | Click | `button /^Inbox/` | "Inbox · N" with open items, "Inbox" with none; a click opens the Inbox | `inbox` |
-| Machine switch | Opens the machine menu | Click, or Enter on the button | `button "Machine, This computer"`, `menuitemradio "This computer"` | On the head row with "contr", cut to "This comp…", tooltip "This computer"; "This computer" is checked; aerum-pc, vps and tmp-1 are inert with "(not yet)"; "Add machine…" is inert; focus comes back to the button | `popups`, `small-texts`, `sidebar-head-foot` |
-| Search | Hovers or focuses the search icon | — | `button "Search"` | Inert, tooltip "Search (not yet)" | `popups`, `sidebar-head-foot` |
+| Machine switch | Opens the machine menu | Click, or Enter on the button | `button "Machine, This computer"`, `menuitemradio "This computer"` | On the head row with "contr", cut to "This comp…", tooltip "This computer"; "This computer" is checked; aerum-pc, vps and tmp-1 are inert with "(not yet)"; "Add machine…" is inert; focus comes back to the button | `Popups.browser.test.tsx`, `small-texts`, `sidebar-head-foot` |
+| Search | Hovers or focuses the search icon | — | `button "Search"` | Inert, tooltip "Search (not yet)" | `Popups.browser.test.tsx`, `sidebar-head-foot` |
 | Hide and show the sidebar | Clicks the panel icon | Click | `button "Hide sidebar"`, then `button "Show sidebar"` in the top bar | The sidebar hides; the top bar's button shows it again, clear of the window buttons; the state stays over a restart | `sidebar-head-foot` |
-| Plan usage | Looks at the foot | — | `list "Plan usage" > listitem "Claude"`, `meter "Claude usage"` | Claude "64% wk · 4d", Codex "21% 5h · 3h"; the tooltip says when the data was read; `FAKE_HELPER_USAGE=stale`: "—" and an empty meter | `usage`, `sidebar-head-foot` |
+| Plan usage | Looks at the foot | — | `list "Plan usage" > listitem "Claude"`, `meter "Claude usage"` | Claude "64% wk · 4d", Codex "21% 5h · 3h"; the tooltip says when the data was read; `FAKE_HELPER_USAGE=stale`: "—" and an empty meter | `Usage.browser.test.tsx`, `sidebar-head-foot` |
 | Settings | Clicks Settings in the foot | Click | `button "Settings"` | The Settings view opens | `settings` |
 | Add machine (foot +) | Hovers the + | — | `button "Add machine"` | Inert, tooltip "Add machine (not yet)" | `sidebar-head-foot` |
-| Tooltips | Hovers or focuses a row or an icon | Hover, Tab; Escape hides | the row's `button` | The tooltip shows the full title; Escape or leaving hides it | `popups` |
+| Tooltips | Hovers or focuses a row or an icon | Hover, Tab; Escape hides | the row's `button` | The tooltip shows the full title; Escape or leaving hides it | `Popups.browser.test.tsx` |
 | No agents | Starts with no agents | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | text "No agents" | The sidebar says "No agents" | `states` |
 
 ## Top bar
@@ -36,7 +36,7 @@ update its row in the same PR.
 | Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
-| New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `popups` |
+| New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `Popups.browser.test.tsx` |
 | Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `radiogroup "Chat or Terminal" > radio "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
 | Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `states` |
 
@@ -48,7 +48,7 @@ update its row in the same PR.
 | Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code and diffs in plain ink in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; long words wrap | `app` (Electron), `Markdown.browser.test.tsx` |
 | Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
 | Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `ToolCalls.browser.test.tsx`, `keys`, `app` |
-| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `colors`, `ToolCalls.browser.test.tsx` |
+| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `Colors.browser.test.tsx`, `ToolCalls.browser.test.tsx` |
 | Compaction line | Reads a compaction | — | text "Context compacted" | A thin centered line on hairlines | `ToolCalls.browser.test.tsx` |
 | PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged, 6 of 6 checks passed"` | A chip with gh's state: the GitHub icon and a faint outline in the `pr-*` or `issue-*` token, the number in ink (dim when closed without a result; a closed PR is grey); a PR with checks adds ✓ 6/6, the working glyph and 4/6, or ✕ 1 (not in a copied selection); an unknown number stays text | `chips` |
 | Worker, owner item, decision and file chips | Reads a chip | — | `[data-slot=context-chip]` | The chip shows its name, ID or path. Owner items that need a reply have a red outline. | `ChipParts.browser.test.tsx` |
@@ -61,11 +61,11 @@ update its row in the same PR.
 | Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | A title with its quieter part above each chart; grey bars, largest first, rows 20 px apart, with the value and note as text in a 120 px column; a line not wider than 666 px, with the latest point brightest and one outlier labelled with its note (`9.4 · #31`); an unknown kind stays code | `Charts.browser.test.tsx` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `Tasklist.browser.test.tsx` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture` (Electron), `Markdown.browser.test.tsx` |
-| Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
-| Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `column` |
-| Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `column` |
-| Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `scroll` |
-| Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `jump` |
+| Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `Rtl.browser.test.tsx` |
+| Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `Column.browser.test.tsx` |
+| Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `Column.browser.test.tsx` |
+| Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `Scroll.browser.test.tsx` |
+| Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `Jump.browser.test.tsx` |
 | Loading | Opens a chat before the first feed answer | `FAKE_HELPER_SLOW_FEED=3000` | `status "Reading the chat"` | The loader and "Reading the chat…" | `reply-send` |
 | Helper error | Opens a chat when the helper fails | `FAKE_HELPER_ERROR=<code>` | `alert "Helper error"`, `button "Retry"` | Plain words, the error, the helper path with Copy, Retry; the reply box is off | `states`, `app`, `small-texts` |
 | No agent | Starts with no agent | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | `status "No agent"` | "No agents yet": the main area says how an agent shows | `states` |
@@ -103,7 +103,7 @@ update its row in the same PR.
 | Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `reply` |
 | Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `reply` |
 | Focus | Opens a chat or comes back to the window | — | `textbox /^Reply to/` | The box takes the keyboard, but not from a chat selection, an open menu or a card that owns the keys | `focus` |
-| Tab order | Presses Tab | Tab | — | Top bar, card, reply box, then ↓ and the chat rows | `keys`, `jump` |
+| Tab order | Presses Tab | Tab | — | Top bar, card, reply box, then ↓ and the chat rows | `keys`, `Jump.browser.test.tsx` |
 
 ## Terminal
 
