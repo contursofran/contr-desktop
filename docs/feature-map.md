@@ -133,6 +133,7 @@ When the code changes a feature, update its row in the same PR.
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Theme | Picks System, Light or Dark | Click; Left and Right arrows | `region "Settings" > radiogroup "Theme"` | The theme changes and stays over a restart; one Tab stop | `settings`, `theme`, `Settings.browser.test.tsx` |
+| Check setup by computer | Opens Settings, then uses Run again in Health check | Click | `region "Health check"` | The local and remote reports show pass, warning or failure. An unreachable computer shows a connection failure. Copy report copies all results. | `health` |
 | Helper path | Reads the helper path | — | label "Helper path", `button "Copy path"` | The path in mono, cut from the left so the file name shows; the whole path in a tooltip; Copy says "Copied" | `Settings.browser.test.tsx`, `SmallTexts.browser.test.tsx`, `settings`, `small-texts` |
 | Version | Reads the version part | — | label "Newest version" | "Development build" with no release URL, and no Update button | `update` |
 | Check for updates | Clicks Check now, or the app menu's Check for Updates… | Click | `button "Check now"` | In the group head: "Checking…", then the last check; the newest version in its row | `Update.browser.test.tsx`, `update` (Electron) |

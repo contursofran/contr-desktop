@@ -93,6 +93,14 @@ if (failing) {
     for (const r of rows.slice(seen)) out({ ...JSON.parse(r.replaceAll("$FIXTURES", fixtures)), type: "row" });
   }
   end(true);
+} else if (cmd === "health") {
+  const machine = arg("machine");
+  out({ type: "check", id: "helper", state: "ok", message: machine ? `Helper answers on ${machine}.` : "Build fake · protocol 1", fix: "" });
+  if (!machine) {
+    out({ type: "check", id: "hc", state: "ok", message: "Core answers · 6 terminals", fix: "" });
+    out({ type: "check", id: "gh", state: "warn", message: "Could not verify GitHub sign-in.", fix: "Run gh auth status." });
+  }
+  end(true);
 } else if (cmd === "update" && rest[0] === "check") {
   const fail = process.env.FAKE_CORE_FAIL?.startsWith("check:") && process.env.FAKE_CORE_FAIL.slice("check:".length);
   if (fail) {

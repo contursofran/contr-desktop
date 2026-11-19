@@ -48,12 +48,17 @@ export function usageRows(lines: HelperLine[], now: number): UsageRow[] {
 
 /** hc's machines (`hc machine ls --json`), without temporary ones. Broken output: none. */
 export function parseMachines(out: string): Machine[] {
+  return readMachines(out) ?? [];
+}
+
+export function readMachines(out: string): Machine[] | null {
   try {
-    const list = (JSON.parse(out) as { machines?: { name?: unknown; state?: unknown; temporary?: unknown }[] }).machines ?? [];
+    const list = (JSON.parse(out) as { machines?: { name?: unknown; state?: unknown; temporary?: unknown }[] }).machines;
+    if (!Array.isArray(list)) return null;
     return list
-      .filter((m) => typeof m.name === "string" && !m.temporary)
+      .filter((m) => typeof m?.name === "string" && !m.temporary)
       .map((m) => ({ name: m.name as string, state: typeof m.state === "string" ? m.state : "connected" }));
   } catch {
-    return [];
+    return null;
   }
 }

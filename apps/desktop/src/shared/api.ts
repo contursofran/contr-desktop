@@ -99,6 +99,9 @@ export interface ContrApi {
   ownerDone(id: string): Promise<OwnerResult>;
   /** The Settings view's data. */
   settings(): Promise<Settings>;
+  health(): Promise<HealthReport | null>;
+  checkHealth(): Promise<HealthReport>;
+  onHealth(listener: (report: HealthReport) => void): () => void;
   /** Saves the theme choice and shows it at once. */
   setTheme(theme: ThemeChoice): Promise<ThemeChoice>;
   /** The update state now. */
@@ -185,6 +188,18 @@ export interface UsageRow {
 export interface Machine {
   name: string;
   state: string;
+}
+
+export interface HealthCheck {
+  id: string;
+  state: "ok" | "warn" | "fail";
+  message: string;
+  fix: string;
+}
+
+export interface HealthReport {
+  checked: number;
+  machines: { name: string; checks: HealthCheck[] }[];
 }
 
 /** A worker's mark: the loader, a check, a dot or an empty ring. */
@@ -290,6 +305,9 @@ export const SELECT_CHANNEL = "contr:select";
 export const USAGE_CHANNEL = "contr:usage";
 export const USAGE_EVENT = "contr:usage-event";
 export const MACHINES_CHANNEL = "contr:machines";
+export const HEALTH_CHANNEL = "contr:health";
+export const HEALTH_CHECK_CHANNEL = "contr:health-check";
+export const HEALTH_EVENT = "contr:health-event";
 
 export const OWNER_CHANNEL = "contr:owner";
 export const OWNER_EVENT = "contr:owner-event";

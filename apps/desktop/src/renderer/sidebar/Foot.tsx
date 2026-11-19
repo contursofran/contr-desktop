@@ -1,5 +1,6 @@
 import { Plus, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { HealthReport } from "../../shared/api";
 import { subscribeUsage, type UsageSnapshot } from "../state/usage";
 import { Tip } from "../ui/Tip";
 import { usageTip } from "./usageTip";
@@ -13,6 +14,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
   const [{ rows, now }, setUsage] = useState<UsageSnapshot>(() => ({ rows: [], now: Date.now() }));
   const [appReady, setAppReady] = useState(false);
   const [coreReady, setCoreReady] = useState(false);
+  const [healthFailed, setHealthFailed] = useState(false);
   useEffect(() => {
     void window.contr.update().then((u) => setAppReady(u.available));
     return window.contr.onUpdate((u) => setAppReady(u.available));
@@ -22,6 +24,11 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
     return window.contr.onCore((c) => setCoreReady(c.available));
   }, []);
   const ready = appReady || coreReady;
+  useEffect(() => {
+    const mark = (health: HealthReport | null) => setHealthFailed(health?.machines.some((machine) => machine.checks.some((check) => check.state === "fail")) ?? false);
+    void window.contr.health().then(mark);
+    return window.contr.onHealth(mark);
+  }, []);
   useEffect(() => subscribeUsage(window.contr, setUsage), []);
   // "Read 2h ago" draws again each 30 s, as the sidebar's ages do.
   useEffect(() => {
@@ -54,7 +61,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
         <button type="button" aria-pressed={settingsShown} onClick={onSettings} className={`flex h-[30px] flex-1 items-center gap-2 rounded-lg px-2.5 text-[13px] hover:bg-hover ${settingsShown ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-muted"}`}>
           <Settings aria-hidden strokeWidth={1.6} className="size-[15px]" />
           Settings
-          {ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
+          {healthFailed ? <span aria-label="Health check failed" className="ml-auto size-1.5 rounded-full bg-blocked" /> : ready && <span aria-label="Update ready" className="ml-auto size-1.5 rounded-full bg-working" />}
         </button>
         {/* Add machine does nothing yet: inert as the top bar's +. */}
         <Tip label="Add machine (not yet)" side="top">
