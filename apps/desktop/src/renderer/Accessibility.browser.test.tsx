@@ -73,6 +73,10 @@ test("inert controls stay out of the tab order and tabs name their panels", asyn
   await expect.element(close).toHaveFocus();
   await userEvent.keyboard("{Tab}");
   await expect.element(page.getByRole("button", { name: "New tab" })).toHaveFocus();
+  await userEvent.keyboard("{Shift>}{Tab}{/Shift}");
+  await expect.element(close).toHaveFocus();
+  await userEvent.keyboard("{Enter}");
+  await expect.element(tab).not.toBeInTheDocument();
 });
 
 function luminance(rgb: Uint8ClampedArray) {
@@ -136,8 +140,13 @@ test.each(["dark", "light"] as const)("sidebar marks and the tab scrollbar reach
       pulse.currentTime = Number(pulse.effect?.getTiming().duration) / 2;
     }
     const paint = getComputedStyle(glyph.element(), "::before");
+    if (state === "Needs you") expect(Number(paint.opacity)).toBeCloseTo(0.8);
     if (shape) expect(paint.content).toBe(`"${shape}"`);
     expect.soft(contrast(background(row), paint.color, Number(paint.opacity)), state).toBeGreaterThanOrEqual(3);
+  }
+  for (const name of ["Search", "Add machine", "Add project", "Collapse contr-desktop"]) {
+    const control = page.getByRole("button", { name, exact: true });
+    expect.soft(contrast([side], getComputedStyle(control.element()).color), name).toBeGreaterThanOrEqual(3);
   }
   const unread = agent("Release notes draft").getByRole("img", { name: "unread" });
   expect(contrast([side], getComputedStyle(unread.element().firstElementChild!).backgroundColor)).toBeGreaterThanOrEqual(3);

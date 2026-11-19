@@ -133,6 +133,7 @@ body {
 /* Keep status marks visible even at the low point of the pulse on a selected row. */
 aside { --status-pulse-floor: 0.8; }
 aside .status-glyph[data-state="idle"] { color: var(--color-ink-42); }
+aside [data-state-mark][data-state="idle"] > span { border-color: var(--color-ink-42); }
 
 .sidebar-program-icon [data-icon="claude-code"] path {
   fill: var(--color-claude);
