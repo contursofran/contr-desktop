@@ -112,6 +112,16 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Put the keyboard ring on the padded tab so it clears the title and the row's scroll edge. */
+[data-tab-row] > :has(> [role="tab"]:focus-visible) {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+[data-tab-row] > * > [role="tab"]:focus-visible {
+  outline: none;
+}
+
 /* The status glyph (ui/StatusGlyph.tsx): working turns, waiting and blocked pulse. */
 @keyframes status-braille {
   0% { content: "⠋"; } 10% { content: "⠙"; } 20% { content: "⠹"; } 30% { content: "⠸"; } 40% { content: "⠼"; }
@@ -119,7 +129,7 @@ body {
 }
 @keyframes status-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
+  50% { opacity: var(--status-pulse-floor, 0.25); }
 }
 .status-glyph[data-state="working"]::before { content: "⠋"; animation: status-braille 0.9s steps(1, end) infinite; }
 .status-glyph[data-state="waiting"]::before,
@@ -128,4 +138,30 @@ body {
 .status-glyph[data-state="done"]::before { content: "⠿"; }
 @media (prefers-reduced-motion: reduce) {
   .status-glyph::before { animation: none !important; }
+}
+
+/* Keep status marks visible even at the low point of the pulse on a selected row. */
+aside { --status-pulse-floor: 0.8; }
+aside .status-glyph[data-state="idle"] { color: var(--color-ink-42); }
+aside [data-state-mark][data-state="idle"] > span { border-color: var(--color-ink-42); }
+
+.sidebar-program-icon [data-icon="claude-code"] path {
+  fill: var(--color-claude);
+}
+
+[data-tab-row]::-webkit-scrollbar-thumb {
+  background-color: var(--color-muted);
+}
+
+/* The close button sits over its slot, but follows the tablist in the DOM. */
+[data-tab-close-anchor] {
+  anchor-name: --active-tab-close;
+}
+
+[data-tab-close] {
+  position: absolute;
+  top: anchor(top);
+  left: anchor(left);
+  position-anchor: --active-tab-close;
+  position-visibility: anchors-visible;
 }

@@ -20,7 +20,7 @@ import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
 import { Sidebar, adjacentAgent, readHidden, saveHidden } from "./sidebar/Sidebar";
-import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
+import { TopBar, findAgent, nextAfterClose, openTab, panelId, readTabs, saveTabs, tabId, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
 import type { Sidebar as SidebarData, TerminalKind } from "../shared/api";
 
@@ -149,12 +149,19 @@ export function App() {
         {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={showSide} />}
         {settings ? <SettingsView />
           : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />
-          : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />
-          : (
-            <ChipNavigation value={{ workers: findAgent(sidebar, sidebar.selected)?.workers, select, openInbox }}>
-              <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} focusFrom={replyFocus?.terminal === sidebar.selected ? replyFocus.from : null} />
-            </ChipNavigation>
-          )}
+          : !sidebar.selected && sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />}
+        {openTab(tabs, view.selected).map((terminal) => {
+          const shown = terminal === view.selected;
+          return (
+            <div key={terminal} role="tabpanel" id={panelId(terminal)} aria-labelledby={tabId(terminal)} hidden={!shown} className={shown ? "flex min-h-0 flex-1 flex-col" : undefined}>
+              {shown && (
+                <ChipNavigation value={{ workers: findAgent(sidebar, terminal)?.workers, select, openInbox }}>
+                  <Chat terminal={terminal} title={tabLabel(sidebar, terminal, titles)} side={side} digestReads={digestReads} focusFrom={replyFocus?.terminal === terminal ? replyFocus.from : null} />
+                </ChipNavigation>
+              )}
+            </div>
+          );
+        })}
       </main>
     </div>
   );

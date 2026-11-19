@@ -4,6 +4,7 @@ import transcript from "../../e2e/fixtures/claude-session.jsonl?raw";
 import workerTranscript from "../../e2e/fixtures/workers/b-40.jsonl?raw";
 import workerCard from "../../e2e/fixtures/workers/b-40-card.json";
 import { sidebar } from "../../test/275-sidebar";
+import { color } from "../../test/281-shell";
 import { renderApp } from "../../test/renderApp";
 import type { FeedRow } from "../shared/api";
 
@@ -12,10 +13,10 @@ const THEME = {
   dark: { chrome: "rgb(17, 18, 20)", canvas: "rgb(20, 21, 24)", foreground: "rgb(233, 233, 234)", working: "rgb(244, 244, 245)", done: "rgba(255, 255, 255, 0.62)", blocked: "rgb(240, 113, 120)" },
   light: { chrome: "rgb(247, 248, 249)", canvas: "rgb(239, 240, 242)", foreground: "rgb(30, 30, 30)", working: "rgb(20, 20, 20)", done: "rgba(0, 0, 0, 0.68)", blocked: "rgb(199, 57, 71)" },
 };
-// Chromium keeps alpha in 8 bits, so 0.586 reads 0.584. Text in `muted` (ink-62) and `dim` (ink-50), marks and inert controls in `faint` (ink-30). In light both texts reach 4.5:1.
+// Chromium keeps alpha in 8 bits, so 0.586 reads 0.584. Text in `muted` (ink-62) and `dim` (ink-50), In light both text tokens reach 4.5:1.
 const QUIET = {
-  dark: { muted: "rgba(255, 255, 255, 0.62)", dim: "rgba(255, 255, 255, 0.5)", faint: "rgba(255, 255, 255, 0.3)" },
-  light: { muted: "rgba(0, 0, 0, 0.68)", dim: "rgba(0, 0, 0, 0.584)", faint: "rgba(0, 0, 0, 0.39)" },
+  dark: { muted: "rgba(255, 255, 255, 0.62)", dim: "rgba(255, 255, 255, 0.5)" },
+  light: { muted: "rgba(0, 0, 0, 0.68)", dim: "rgba(0, 0, 0, 0.584)" },
 };
 
 const paint = (element: () => Element | null | undefined, property: string) =>
@@ -85,10 +86,10 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     await paint(() => page.getByLabelText("Status").getByRole("status").query(), "color").toBe(t.working);
     const quiet = QUIET[scheme];
     await paint(() => page.getByText(/Worked 1m 0s/).query(), "color").toBe(quiet.dim);
-    await paint(() => tabs.query()?.querySelector("[data-tab-close]"), "color").toBe(quiet.dim);
+    await paint(() => page.getByRole("button", { name: "Close Chat panel usability audit" }).query(), "color").toBe(quiet.dim);
     await paint(() => page.getByRole("button", { name: "New tab" }).query(), "color").toBe(quiet.dim);
-    await paint(() => page.getByRole("button", { name: "Search" }).query(), "color").toBe(quiet.faint);
-    await paint(() => page.getByRole("button", { name: "Add machine" }).query(), "color").toBe(quiet.faint);
+    await paint(() => page.getByRole("button", { name: "Search" }).query(), "color").toBe(color("--color-ink-42"));
+    await paint(() => page.getByRole("button", { name: "Add machine" }).query(), "color").toBe(color("--color-ink-42"));
     const claude = page.getByRole("listitem", { name: "Claude" }).getByText("Claude", { exact: true });
     await paint(() => claude.query(), "color").toBe(quiet.dim);
     const send = page.getByRole("form", { name: "Reply" }).getByRole("button", { name: "Send" });

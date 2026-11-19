@@ -58,7 +58,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
         </button>
         {/* Add machine does nothing yet: inert as the top bar's +. */}
         <Tip label="Add machine (not yet)" side="top">
-          <button type="button" aria-label="Add machine" aria-disabled="true" className="flex size-[26px] items-center justify-center self-center rounded-lg text-faint">
+          <button type="button" aria-label="Add machine" aria-disabled="true" tabIndex={-1} className="flex size-[26px] items-center justify-center self-center rounded-lg text-ink-42">
             <Plus aria-hidden strokeWidth={1.6} className="size-3.5" />
           </button>
         </Tip>
