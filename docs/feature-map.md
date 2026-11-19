@@ -13,19 +13,19 @@ When the code changes a feature, update its row in the same PR.
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Projects and agents | Looks at the sidebar | — | `navigation "Projects"`, `region "contr-desktop"` | One row per project (folder icon, name, branch `main`); its agents under it; "Chat panel usability audit" has "Orchestrating · 3 workers" and its workers b-30, b-40, b-50 under it. Glyphs: working ⠋, idle ⠶ in ink-30, blocked ⠿ in red. A done agent or worker outside the shown chat has an ink-100 dot with the label "unread". Open its chat to clear the dot; with `FAKE_HC_STATUS` `{"t10":"idle"}` b-50 shows ⠶ | `sidebar`, `sidebar-projects`, `sidebar-mock` |
-| Open an agent's chat | Clicks an agent or worker row | Click | `navigation "Projects" > button "Install health check"` | The chat, the tab and the reply box ("Reply to Install health check") switch to that agent | `sidebar`, `topbar` |
-| A worker's own chat | Clicks a worker row | Click | `button /Cards for prompts and questions/` | The reply box, model, context and status line are the worker's | `sidebar` |
-| Fold a project | Clicks the chevron of a project | Click | `button "Shut contr-desktop"`, then `button "Open contr-desktop"` | The chevron "▼" turns to "▶"; its agents hide, then show again | `sidebar` |
+| Projects and agents | Looks at the sidebar | — | `navigation "Projects"`, `region "contr-desktop"` | One row per project (folder icon, name, branch `main`); its agents under it; "Chat panel usability audit" has "Orchestrating · 3 workers" and its workers b-30, b-40, b-50 under it. Glyphs: working ⠋, idle ⠶ in ink-30, blocked ⠿ in red. A done agent or worker outside the shown chat has an ink-100 dot with the label "unread". Open its chat to clear the dot; with `FAKE_HC_STATUS` `{"t10":"idle"}` b-50 shows ⠶ | `sidebar`, `sidebar-projects`, `Sidebar.browser.test.tsx`, `SidebarProjects.browser.test.tsx` |
+| Open an agent's chat | Clicks an agent or worker row | Click | `navigation "Projects" > button "Install health check"` | The chat, the tab and the reply box ("Reply to Install health check") switch to that agent | `Sidebar.browser.test.tsx`, `sidebar`, `topbar` |
+| A worker's own chat | Clicks a worker row | Click | `button /Cards for prompts and questions/` | The reply box, model, context and status line are the worker's | `Sidebar.browser.test.tsx`, `sidebar` |
+| Fold a project | Clicks the chevron of a project | Click | `button "Shut contr-desktop"`, then `button "Open contr-desktop"` | The chevron "▼" turns to "▶"; its agents hide, then show again | `Sidebar.browser.test.tsx`, `sidebar` |
 | Inbox row | Looks at, then clicks, the row above Projects | Click | `button /^Inbox/` | "Inbox · N" with open items, "Inbox" with none; a click opens the Inbox | `inbox` |
-| Machine switch | Opens the machine menu | Click, or Enter on the button | `button "Machine, This computer"`, `menuitemradio "This computer"` | On the head row with "contr", cut to "This comp…", tooltip "This computer"; "This computer" is checked; aerum-pc, vps and tmp-1 are inert with "(not yet)"; "Add machine…" is inert; focus comes back to the button | `Popups.browser.test.tsx`, `small-texts`, `sidebar-head-foot` |
-| Search | Hovers or focuses the search icon | — | `button "Search"` | Inert, tooltip "Search (not yet)" | `Popups.browser.test.tsx`, `sidebar-head-foot` |
-| Hide and show the sidebar | Clicks the panel icon | Click | `button "Hide sidebar"`, then `button "Show sidebar"` in the top bar | The sidebar hides; the top bar's button shows it again, clear of the window buttons; the state stays over a restart | `sidebar-head-foot` |
-| Plan usage | Looks at the foot | — | `list "Plan usage" > listitem "Claude"`, `meter "Claude usage"` | Claude "64% wk · 4d", Codex "21% 5h · 3h"; the tooltip says when the data was read; `FAKE_HELPER_USAGE=stale`: "—" and an empty meter | `Usage.browser.test.tsx`, `sidebar-head-foot` |
-| Settings | Clicks Settings in the foot | Click | `button "Settings"` | The Settings view opens | `settings` |
-| Add machine (foot +) | Hovers the + | — | `button "Add machine"` | Inert, tooltip "Add machine (not yet)" | `sidebar-head-foot` |
+| Machine switch | Opens the machine menu | Click, or Enter on the button | `button "Machine, This computer"`, `menuitemradio "This computer"` | On the head row with "contr", cut to "This comp…", tooltip "This computer"; "This computer" is checked; aerum-pc, vps and tmp-1 are inert with "(not yet)"; "Add machine…" is inert; focus comes back to the button | `Popups.browser.test.tsx`, `SmallTexts.browser.test.tsx`, `SidebarHeadFoot.browser.test.tsx` |
+| Search | Hovers or focuses the search icon | — | `button "Search"` | Inert, tooltip "Search (not yet)" | `Popups.browser.test.tsx`, `SidebarHeadFoot.browser.test.tsx` |
+| Hide and show the sidebar | Clicks the panel icon | Click | `button "Hide sidebar"`, then `button "Show sidebar"` in the top bar | The sidebar hides; the top bar's button shows it again, clear of the window buttons; the state stays over a restart | `SidebarHeadFoot.browser.test.tsx`, `sidebar-head-foot` |
+| Plan usage | Looks at the foot | — | `list "Plan usage" > listitem "Claude"`, `meter "Claude usage"` | Claude "64% wk · 4d", Codex "21% 5h · 3h"; the tooltip says when the data was read; `FAKE_HELPER_USAGE=stale`: "—" and an empty meter | `Usage.browser.test.tsx`, `SidebarHeadFoot.browser.test.tsx`, `sidebar-head-foot` |
+| Settings | Clicks Settings in the foot | Click | `button "Settings"` | The Settings view opens | `Settings.browser.test.tsx`, `settings` |
+| Add machine (foot +) | Hovers the + | — | `button "Add machine"` | Inert, tooltip "Add machine (not yet)" | `SidebarHeadFoot.browser.test.tsx`, `Popups.browser.test.tsx` |
 | Tooltips | Hovers or focuses a row or an icon | Hover, Tab; Escape hides | the row's `button` | The tooltip shows the full title; Escape or leaving hides it | `Popups.browser.test.tsx` |
-| No agents | Starts with no agents | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | text "No agents" | The sidebar says "No agents" | `states` |
+| No agents | Starts with no agents | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | text "No agents" | The sidebar says "No agents" | `States.browser.test.tsx` |
 
 ## Top bar
 
@@ -38,7 +38,7 @@ When the code changes a feature, update its row in the same PR.
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
 | New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `Popups.browser.test.tsx` |
 | Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `radiogroup "Chat or Terminal" > radio "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
-| Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `states` |
+| Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `States.browser.test.tsx` |
 
 ## Chat
 
@@ -46,9 +46,9 @@ When the code changes a feature, update its row in the same PR.
 |---|---|---|---|---|---|
 | Messages | Reads the chat | — | `list "Chat"` | The owner's messages as right-aligned blocks with the selected fill; the agent's text as Markdown | `Startup.browser.test.tsx`, `app` (Electron) |
 | Markdown | Reads lists, tables, code, diffs | — | `list "Chat"` | Code and diffs in plain ink in a hairline frame with a language label and Copy; tables with hairlines; links in the brightest ink, underlined; long words wrap | `Startup.browser.test.tsx`, `Markdown.browser.test.tsx`, `app` (native clipboard) |
-| Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `app`, `uisdk-settings` |
-| Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `ToolCalls.browser.test.tsx`, `keys`, `app` |
-| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `app`, `Colors.browser.test.tsx`, `ToolCalls.browser.test.tsx` |
+| Copy code | Clicks Copy on a code block | Click | `button "Copy code"` | The code is on the clipboard; the button says "Copied" | `Startup.browser.test.tsx`, `app`, `Settings.browser.test.tsx` |
+| Tool calls | Opens an answer's tool line | Click, or Enter on the line | `button "Searched 2 patterns, read 1 file"` | One line of the helper's chip labels; it opens to one line per call: the command or path, ✕ when it failed, the first line of its result (`aria-expanded`) | `ToolCalls.browser.test.tsx`, `Startup.browser.test.tsx`, `keys` |
+| Turn foot | Reads the end of a turn | — | text /Worked/ | "14:06 · Worked 1m 0s · 6 tools", the helper's text, in mono | `Startup.browser.test.tsx`, `Colors.browser.test.tsx`, `ToolCalls.browser.test.tsx` |
 | Compaction line | Reads a compaction | — | text "Context compacted" | A thin centered line on hairlines | `ToolCalls.browser.test.tsx` |
 | PR and issue chips | Reads `#12` in a message | `CONTR_REPO_DIR=<a folder in tmp/>` | `link "PR #12, Merged, 6 of 6 checks passed"` | A chip with gh's state: the GitHub icon and a faint outline in the `pr-*` or `issue-*` token, the number in ink (dim when closed without a result; a closed PR is grey); a PR with checks adds ✓ 6/6, the working glyph and 4/6, or ✕ 1 (not in a copied selection); an unknown number stays text | `chips` |
 | Worker, owner item, decision and file chips | Reads a chip | — | `[data-slot=context-chip]` | The chip shows its name, ID or path. Owner items that need a reply have a red outline. | `ChipParts.browser.test.tsx` |
@@ -67,9 +67,9 @@ When the code changes a feature, update its row in the same PR.
 | Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `Scroll.browser.test.tsx` |
 | Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `Jump.browser.test.tsx` |
 | Loading | Opens a chat before the first feed answer | Hold the first feed event | `status "Reading the chat"` | The loader and "Reading the chat…" | `ReplySend.browser.test.tsx` |
-| Helper error | Opens a chat when the helper fails | `FAKE_HELPER_ERROR=<code>` | `alert "Helper error"`, `button "Retry"` | Plain words, the error, the helper path with Copy, Retry; the reply box is off | `Startup.browser.test.tsx`, `states`, `app`, `small-texts` |
-| No agent | Starts with no agent | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | `status "No agent"` | "No agents yet": the main area says how an agent shows | `states` |
-| hc not reachable | Starts when hc cannot run | `FAKE_HC_DOWN=<a file that exists>` | `alert "hc error"`, `button "Retry"` | "hc is not reachable" with the error; Retry reads again | `states`, `terminal-error` |
+| Helper error | Opens a chat when the helper fails | `FAKE_HELPER_ERROR=<code>` | `alert "Helper error"`, `button "Retry"` | Plain words, the error, the helper path with Copy, Retry; the reply box is off | `Startup.browser.test.tsx`, `States.browser.test.tsx`, `SmallTexts.browser.test.tsx`, `states`, `app`, `small-texts` |
+| No agent | Starts with no agent | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | `status "No agent"` | "No agents yet": the main area says how an agent shows | `States.browser.test.tsx` |
+| hc not reachable | Starts when hc cannot run | `FAKE_HC_DOWN=<a file that exists>` | `alert "hc error"`, `button "Retry"` | "hc is not reachable" with the error; Retry reads again | `states`, `TerminalError.browser.test.tsx`, `terminal-error` |
 
 ## Cards
 
@@ -98,7 +98,7 @@ When the code changes a feature, update its row in the same PR.
 | Model and effort | Opens the model menu | Click; arrows, Enter, Escape | `button "Model"`, `menu "Model" > menuitemradio "Sonnet 5"` | The button has the agent icon (the Claude pet), model and effort; the menu sends `/model` and `/effort`; focus comes back to the button | `Reply.browser.test.tsx`, `reply` |
 | Speed tier | Opens the menu for a model with speed choices | `FAKE_HELPER_TIERS=fast,ultrafast FAKE_HELPER_TIER=fast` | `menu "Model" > menuitemradio "Ultrafast"` | Speed follows Effort. The accelerated tier shows after effort. A choice calls `tier` and shows until the helper confirms it or 15 seconds pass | `Reply.browser.test.tsx`, `reply` |
 | Output speed | Looks at the reply foot | `replyInfo.speed = "58 tok/s"` | `form "Reply"` > text "58 tok/s" | The output speed shows after context when the helper has a measurement | `Reply.browser.test.tsx` |
-| Context and branch | Looks at the right of the foot | — | label "Context 37%", label "Branch" | The ring with 37% in mono and its tooltip; the branch `main` in mono | `Reply.browser.test.tsx`, `StatusReply.browser.test.tsx`, `uisdk-settings` |
+| Context and branch | Looks at the right of the foot | — | label "Context 37%", label "Branch" | The ring with 37% in mono and its tooltip; the branch `main` in mono | `Reply.browser.test.tsx`, `StatusReply.browser.test.tsx`, `Settings.browser.test.tsx`, `SmallTexts.browser.test.tsx` |
 | Context at 80% | Looks at the right of the foot | `replyInfo.context.percent = 80` | label "Context 80%" | The ring and 80% use ink-100 in dark and light | `StatusReply.browser.test.tsx` |
 | Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `Reply.browser.test.tsx` |
 | Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `Reply.browser.test.tsx` |
@@ -109,8 +109,8 @@ When the code changes a feature, update its row in the same PR.
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Terminal view | Clicks Terminal | Click | `radio "Terminal"` | The agent's hc terminal (xterm.js) with no frame, in JetBrains Mono 13/20; keys go to it | `terminal`, `fake-terminal`, `terminal-error` |
-| Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | One centered note with no box: "The connection to hc ended.", hc's words in mono, Retry; Retry attaches when the file is gone; when the sidebar's "hc is not reachable" clears, the terminal attaches again with no Retry; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `terminal-error`, `hc-outage` |
+| Terminal view | Clicks Terminal | Click | `radio "Terminal"` | The agent's hc terminal (xterm.js) with no frame, in JetBrains Mono 13/20; keys go to it | `terminal`, `fake-terminal`, `TerminalError.browser.test.tsx`, `terminal-error` |
+| Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | One centered note with no box: "The connection to hc ended.", hc's words in mono, Retry; Retry attaches when the file is gone; when the sidebar's "hc is not reachable" clears, the terminal attaches again with no Retry; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `TerminalError.browser.test.tsx`, `terminal-error`, `hc-outage` |
 
 ## Inbox
 
@@ -128,8 +128,8 @@ When the code changes a feature, update its row in the same PR.
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Theme | Picks System, Light or Dark | Click; Left and Right arrows | `region "Settings" > radiogroup "Theme"` | The theme changes and stays over a restart; one Tab stop | `settings`, `theme`, `uisdk-settings` |
-| Helper path | Reads the helper path | — | label "Helper path", `button "Copy path"` | The path in mono, cut from the left so the file name shows; the whole path in a tooltip; Copy says "Copied" | `settings`, `small-texts` |
+| Theme | Picks System, Light or Dark | Click; Left and Right arrows | `region "Settings" > radiogroup "Theme"` | The theme changes and stays over a restart; one Tab stop | `settings`, `theme`, `Settings.browser.test.tsx` |
+| Helper path | Reads the helper path | — | label "Helper path", `button "Copy path"` | The path in mono, cut from the left so the file name shows; the whole path in a tooltip; Copy says "Copied" | `Settings.browser.test.tsx`, `SmallTexts.browser.test.tsx`, `settings`, `small-texts` |
 | Version | Reads the version part | — | label "Newest version" | "Development build" with no release URL, and no Update button | `update` |
 | Check for updates | Clicks Check now, or the app menu's Check for Updates… | Click | `button "Check now"` | In the group head: "Checking…", then the last check; the newest version in its row | `Update.browser.test.tsx`, `update` (Electron) |
 | Update | Clicks Update | `CONTR_UPDATE_URL`, `CONTR_VERSION` | `button "Update"`, label "Update ready" | A dot in the foot; the .dmg downloads, or the .zip installs and shows "Restart to update"; failures show their message | `Update.browser.test.tsx`, `update`, `update-file` |

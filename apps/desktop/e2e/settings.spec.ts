@@ -1,11 +1,10 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { mkdtempSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
-const shots = path.resolve(e2e, "../../../tmp/shots");
 const env = {
   CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
   FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
@@ -15,62 +14,29 @@ const env = {
   CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
   CONTR_GIT: path.join(e2e, "fake-git.mjs"),
 };
-const canvas = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-test("Settings opens from the foot, sets the theme from the tokens, and keeps it", async () => {
+test("Settings reads the helper path and saves the native theme over a restart", async () => {
   test.setTimeout(90_000);
   const data = mkdtempSync(path.join(os.tmpdir(), "contr-e2e-data-"));
   let app = await launchApp(env, data);
-  let page = await app.firstWindow();
-  // Playwright emulates no color scheme here: the page follows nativeTheme.
-  await page.emulateMedia({ colorScheme: null });
-  await expect(page.getByRole("region", { name: "contr-desktop" })).toBeVisible();
-  await page.screenshot({ path: path.join(shots, "settings-chat-system.png") });
-
+  const page = await app.firstWindow();
   const button = page.locator("aside > footer").getByRole("button", { name: "Settings" });
   await button.click();
-  await expect(button).toHaveAttribute("aria-pressed", "true");
   const view = page.getByRole("region", { name: "Settings" });
   const theme = view.getByRole("radiogroup", { name: "Theme" });
-  await expect(theme.getByRole("radio")).toHaveText(["System", "Dark", "Light"]);
-  await expect(theme.getByRole("radio", { name: "System" })).toHaveAttribute("aria-checked", "true");
   await expect(view.getByLabel("Helper path")).toHaveText(env.CONTR_HELPER);
-  // #187: a long path is cut from the left: the file name shows, the start of the path does not.
-  const cut = await view.getByLabel("Helper path").evaluate((el) => {
-    const box = el.getBoundingClientRect();
-    const text = el.firstElementChild!.getBoundingClientRect();
-    return { width: box.width, start: text.left < box.left, end: Math.abs(text.right - box.right) < 1 };
-  });
-  expect(cut).toEqual({ width: expect.any(Number), start: true, end: true });
-  expect(cut.width).toBeLessThanOrEqual(420);
-
   await theme.getByRole("radio", { name: "Dark" }).click();
   await expect(theme.getByRole("radio", { name: "Dark" })).toHaveAttribute("aria-checked", "true");
-  await expect.poll(() => canvas(page)).toBe("rgb(20, 21, 24)");
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("dark");
-  await page.screenshot({ path: path.join(shots, "settings-dark.png") });
 
   await theme.getByRole("radio", { name: "Light" }).click();
-  await expect.poll(() => canvas(page)).toBe("rgb(239, 240, 242)");
-  expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
-  await page.screenshot({ path: path.join(shots, "settings-light.png") });
+  await expect.poll(() => app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
   await app.close();
 
   // The choice is kept: a new launch starts light.
   app = await launchApp(env, data);
-  page = await app.firstWindow();
-  await page.emulateMedia({ colorScheme: null });
-  await expect(page.getByRole("region", { name: "contr-desktop" })).toBeVisible();
+  const restarted = await app.firstWindow();
+  await expect(restarted.getByRole("region", { name: "contr-desktop" })).toBeVisible();
   expect(await app.evaluate(({ nativeTheme }) => nativeTheme.themeSource)).toBe("light");
-  await expect.poll(() => canvas(page)).toBe("rgb(239, 240, 242)");
-  await expect(page.getByText("Run it with:")).toBeVisible();
-  await page.screenshot({ path: path.join(shots, "settings-chat-light.png") });
-  await page.locator("aside > footer").getByRole("button", { name: "Settings" }).click();
-  await page.getByRole("radio", { name: "Dark" }).click();
-  await expect.poll(() => canvas(page)).toBe("rgb(20, 21, 24)");
-  await page.getByRole("region", { name: "contr-desktop" }).getByRole("button", { name: /Chat panel usability audit/ }).click();
-  await expect(page.getByRole("region", { name: "Settings" })).toHaveCount(0);
-  await expect(page.getByText("Run it with:")).toBeVisible();
-  await page.screenshot({ path: path.join(shots, "settings-chat-dark.png") });
   await app.close();
 });
