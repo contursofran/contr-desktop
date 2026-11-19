@@ -6,6 +6,7 @@ export const terminalApi: TerminalApi = {
   // Hidden Electron tests read terminal output from DOM rows.
   webgl: process.env.CONTR_E2E !== "1",
   start: (kind, cwd) => ipcRenderer.invoke("terminal:start", kind, cwd),
+  close: (terminal) => ipcRenderer.invoke("terminal:close", terminal),
   attach: (cols, rows) => ipcRenderer.invoke("terminal:attach", cols, rows),
   input: (text) => ipcRenderer.send("terminal:input", text),
   resize: (cols, rows) => ipcRenderer.send("terminal:resize", cols, rows),

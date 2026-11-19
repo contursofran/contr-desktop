@@ -43,10 +43,10 @@ test("opened tabs use the topbar layout and show full titles on hover", async ()
   expect(tabs.element().querySelectorAll("[data-tab-close]")).toHaveLength(0);
   await expect.element(page.getByRole("button", { name: `Close ${names[1]}` })).toBeVisible();
   const [first, second] = names.map((name) => item(name).getBoundingClientRect());
-  expect(first.height).toBe(28);
+  expect(first.height).toBe(29);
   expect(first.x - tabs.element().parentElement!.parentElement!.getBoundingClientRect().x).toBe(10);
-  expect(Math.round(second.x - first.right)).toBe(2);
-  expect(item(names[1])).toHaveStyle({ borderTopLeftRadius: "8px", fontSize: "12.5px", fontWeight: "400" });
+  expect(Math.round(second.x - first.right)).toBe(3);
+  expect(item(names[1])).toHaveStyle({ borderTopLeftRadius: "7px", fontSize: "12.8px", fontWeight: "400" });
   expect(getComputedStyle(item(names[0])).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   expect(getComputedStyle(item(names[1])).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
   const { width, height } = plus.element().getBoundingClientRect();

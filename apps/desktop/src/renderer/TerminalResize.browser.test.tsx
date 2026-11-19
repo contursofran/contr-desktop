@@ -10,6 +10,7 @@ function terminalFake() {
   let data: Parameters<TerminalApi["onData"]>[0] | undefined;
   const write = (text: string) => data?.(new TextEncoder().encode(text));
   const api = {
+    close: async () => ({ ok: true as const }),
     attach: vi.fn(async () => {
       write("fake terminal t7 attached\r\n");
       return { terminal: "t7" };

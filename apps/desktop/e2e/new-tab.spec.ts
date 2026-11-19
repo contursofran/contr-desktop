@@ -29,6 +29,8 @@ test("the new-tab menu starts an agent in the selected worker's folder and keeps
     await expect(tabs.getByRole("tab", { name: worker })).toHaveAttribute("aria-selected", "true");
 
     await page.getByRole("button", { name: "New tab" }).click();
+    await expect(page.getByRole("menuitem", { name: "Terminal" })).toBeFocused();
+    await page.screenshot({ path: path.join(shots, "332-herdr-launcher.png") });
     await page.getByRole("menuitem", { name: "Claude Code" }).click();
     await expect(tabs.getByRole("tab").last()).toHaveText("Claude Code");
     await expect(tabs.getByRole("tab").last()).toHaveAttribute("aria-selected", "true");
@@ -103,18 +105,20 @@ test("Codex stays in Chat and shows its title under the project", async () => {
   }
 });
 
-test("Shell starts in the home folder without a project and shows the terminal", async () => {
+test("Terminal starts in the home folder and closing its tab ends it in hc", async () => {
   const log = test.info().outputPath("hc-run.jsonl");
+  const kills = test.info().outputPath("hc-kill.log");
   mkdirSync(path.dirname(log), { recursive: true });
-  const app = await launchApp({ CONTR_TERMINAL: "", FAKE_HC_RUN_LOG: log, FAKE_HC_CONNECT: "1" });
+  const app = await launchApp({ CONTR_TERMINAL: "", FAKE_HC_RUN_LOG: log, FAKE_HC_KILL_LOG: kills, FAKE_HC_CONNECT: "1" });
   try {
     const page = await app.firstWindow();
     const newTab = page.getByRole("button", { name: "New tab" });
     await newTab.waitFor();
     await page.evaluate(() => window.contr.setTheme("dark"));
     await newTab.click();
-    await page.getByRole("menuitem", { name: "Shell" }).click();
-    await expect(page.getByRole("tab", { name: "Shell", selected: true })).toBeVisible();
+    await page.getByRole("menuitem", { name: "Terminal" }).press("Enter");
+    const tab = page.getByRole("tab", { name: "Terminal", selected: true });
+    await expect(tab.locator('[data-icon="shell"]')).toBeVisible();
     await expect(page.getByRole("radio", { name: "Terminal" })).toBeChecked();
     expect(launches(log).map((launch) => launch.params)).toEqual([{
       cwd: homedir(), argv: [], no_parent: true,
@@ -122,6 +126,9 @@ test("Shell starts in the home folder without a project and shows the terminal",
     }]);
     await expect(page.locator(".xterm-rows").getByText(/fake terminal t-new-shell-/)).toBeVisible();
     await page.screenshot({ path: path.join(shots, "262-new-tab-shell.png") });
+    await page.getByRole("button", { name: "Close Terminal" }).click();
+    await expect(page.getByRole("tab")).toHaveCount(0);
+    expect(readFileSync(kills, "utf8")).toBe(launches(log)[0].address + "\n");
   } finally {
     await app.close();
   }
