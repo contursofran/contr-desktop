@@ -83,7 +83,8 @@ test("release.json has this release first, then the newest 9 published releases 
     ...Array.from({ length: 12 }, (_, i) => ({ tag_name: `build-2026-10-${10 + i}-eeeeeee`, published_at: `2026-10-${10 + i}T00:00:00Z`, body: notes(`0.0.${i}`) })),
   ];
   const { api } = fakeApi(releases, [commit("New change (#6)")]);
-  const argv = ["--version", "0.1.30", "--sha", "ccc", "--tag", "build-2026-11-17-ccccccc", "--repo", "o/r"];
+  const sha256 = "a3".repeat(32);
+  const argv = ["--version", "0.1.30", "--sha", "ccc", "--tag", "build-2026-11-17-ccccccc", "--repo", "o/r", "--sha256", sha256];
   const { file } = release(argv, {}, api, new Date("2026-11-17T09:30:00Z"), ["contr-mac-universal.dmg", "contr-mac-universal.zip"]);
   assert.deepEqual({ ...file, releases: file.releases.slice(0, 3) }, {
     schema: 1,
@@ -92,6 +93,7 @@ test("release.json has this release first, then the newest 9 published releases 
     sha: "ccc",
     date: "2026-11-17T09:30:00.000Z",
     assets: ["contr-mac-universal.dmg", "contr-mac-universal.zip"],
+    sha256,
     releases: [
       { version: "0.1.30", tag: "build-2026-11-17-ccccccc", date: "2026-11-17", changes: ["New change (#6)"] },
       { version: "0.1.28", tag: "build-2026-11-16-aaaaaaa", date: "2026-11-16", changes: ["Old change (#5)"] },
@@ -100,6 +102,14 @@ test("release.json has this release first, then the newest 9 published releases 
   });
   assert.equal(file.releases.length, 10);
   assert.equal(file.releases[9].version, "0.0.5");
+});
+
+test("a release with a ZIP requires a valid SHA-256", () => {
+  const { api } = fakeApi([], []);
+  const argv = ["--version", "0.1.30", "--sha", "ccc", "--repo", "o/r"];
+  for (const args of [argv, [...argv, "--sha256", "bad"]]) {
+    assert.throws(() => release(args, {}, api, new Date(), ["contr-mac-universal.zip"]), /Pass the ZIP's SHA-256/);
+  }
 });
 
 test("a dry run gives release.json with no assets and only this release when there is no release before", () => {
