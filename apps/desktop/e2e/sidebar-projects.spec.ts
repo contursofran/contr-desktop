@@ -3,7 +3,6 @@ import path from "node:path";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
-const shots = path.resolve(e2e, "../../../tmp/shots");
 const fixtures = path.join(e2e, "fixtures/sidebar-projects");
 
 // #136: an agent shows under the project of its session folder (hc `get` `foreground.cwd`), not the folder it ran `cd` into,
@@ -44,10 +43,5 @@ test("agents show under their session's project, each coordinator with its live 
   await expect(nav.getByRole("region")).toHaveCount(3);
   await expect(page.getByLabel("Status")).toContainText("Orchestrating · 3 workers");
 
-  const sidebar = page.locator("aside").first();
-  await page.emulateMedia({ colorScheme: "dark" });
-  await sidebar.screenshot({ path: path.join(shots, "sidebar-projects-dark.png") });
-  await page.emulateMedia({ colorScheme: "light" });
-  await sidebar.screenshot({ path: path.join(shots, "sidebar-projects-light.png") });
   await app.close();
 });
