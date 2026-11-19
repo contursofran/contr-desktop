@@ -21,6 +21,8 @@
     `markdownListIndentation.ts`, `markdownOrderedListNumbers.ts`,
     `markdownRenderer.ts`, `pipeline.ts` (part), `MarkdownCodeBlock.tsx` (part),
     `MarkdownTable.tsx` (part), `markdown.css` (adapted).
+  - `apps/desktop/src/renderer/chat/`: `Empty.tsx` (note role),
+    `reply/ReplyBox.tsx` (inset focus ring).
   - `apps/desktop/src/renderer/chat/refs/`: `pullRequestIcons.tsx` (adapted),
     `ContextChip.tsx` (part).
 

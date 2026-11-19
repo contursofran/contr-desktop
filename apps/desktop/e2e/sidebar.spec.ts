@@ -40,11 +40,11 @@ test("git counts reach the sidebar, sends go to the selected agent and a project
   expect(JSON.parse(readFileSync(log, "utf8"))).toEqual({ terminal: "t12", text: "hello" });
 
   // #45: the chevron shuts a project; its agents' marks show on its row, and a reload keeps it shut.
-  await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
+  await desktop.getByRole("button", { name: "Collapse contr-desktop" }).click();
   await page.reload();
-  await expect(desktop.getByRole("button", { name: "Open contr-desktop" })).toHaveAttribute("aria-expanded", "false");
+  await expect(desktop.getByRole("button", { name: "Expand contr-desktop" })).toHaveAttribute("aria-expanded", "false");
   await expect(desktop.getByRole("listitem")).toHaveCount(0);
-  await desktop.getByRole("button", { name: "Open contr-desktop" }).click();
+  await desktop.getByRole("button", { name: "Expand contr-desktop" }).click();
   await expect(desktop.getByRole("listitem")).toHaveCount(5);
   await app.close();
 });

@@ -21,7 +21,7 @@ export function StatusLine({
       {working?.text && (
         <>
           <span role="status" aria-label="running" className="flex shrink-0 text-ink-100">
-            <StatusGlyph state="working" className="text-[13px]!" />
+            <span aria-hidden className="flex"><StatusGlyph state="working" className="text-[13px]!" /></span>
           </span>
           <span className="shrink-0 whitespace-nowrap">{working.text}</span>
           {working.detail && <span className="min-w-0 shrink truncate font-mono text-[11px] text-dim dark:text-ink-38">{working.detail.replace(/^\((.*)\)$/, "$1")}</span>}

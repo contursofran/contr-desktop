@@ -9,7 +9,7 @@ describe("Row", () => {
   it("draws a pending perm row as a running chip with its title", () => {
     const out = html({ k: "perm", text: "Bash", perm: { title: "Bash", tool: "Bash", state: "pending" } });
     expect(out).toContain("rounded-full");
-    expect(out).toContain('role="status"');
+    expect(out).toContain('role="img"');
     expect(out).toContain("Running · Bash");
   });
 

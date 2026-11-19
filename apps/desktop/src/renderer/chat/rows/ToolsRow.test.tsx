@@ -19,7 +19,7 @@ describe("ToolsRow", () => {
     const row = { id: "x", k: "tools", ts: 0, chips: [{ symbol: "terminal", text: "Running a command", calls: [call(false)] }] };
     const out = renderToStaticMarkup(<ToolsRow row={row as never} />);
     expect(out).toContain('aria-expanded="false"');
-    expect(out).toContain('role="status"');
+    expect(out).toContain('role="img"');
     expect(out).toContain("Running a command");
     expect(out).not.toContain("<li");
   });
