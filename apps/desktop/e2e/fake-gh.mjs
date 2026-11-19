@@ -41,29 +41,40 @@ if (args[0] === "pr" && args[1] === "list") {
   process.stdout.write(JSON.stringify(args.includes("merged") ? merged : open));
   process.exit(0);
 }
-// `pr view 31 --json ...` gives the PR card's PR (a failed and a running check, one review); other numbers fail as gh does.
-if (args[0] === "pr" && args[1] === "view") {
-  if (args[2] !== "31") {
-    process.stderr.write(`no pull requests found for branch "${args[2]}"\n`);
-    process.exit(1);
-  }
-  const at = (s) => new Date(Date.UTC(2026, 10, 18, 14, 0, s)).toISOString();
-  const run = (name, s, d, conclusion) => ({ __typename: "CheckRun", name, workflowName: "CI", status: "COMPLETED", conclusion, startedAt: at(s), completedAt: at(s + d) });
-  const head = "a1c9e4f0b2d4c6e8f0a1b3c5d7e9f1a3b5c7d9e1";
-  process.stdout.write(JSON.stringify({
-    number: 31, title: "Status board: parse contr-status into rows", state: "OPEN", isDraft: false, url: "https://github.com/o/r/pull/31",
-    additions: 312, deletions: 40, headRefName: "agent/31-status-board", baseRefName: "main", changedFiles: 9, headRefOid: head,
-    statusCheckRollup: [
-      run("Typecheck", 0, 38, "SUCCESS"), run("Lint", 0, 21, "SUCCESS"), run("Unit", 0, 64, "SUCCESS"), run("e2e", 0, 252, "FAILURE"),
-      { __typename: "CheckRun", name: "Build", workflowName: "CI", status: "IN_PROGRESS", conclusion: "", startedAt: new Date(Date.now() - 130_000).toISOString(), completedAt: "0001-01-01T00:00:00Z" },
-    ],
-    latestReviews: [{ author: { login: "r-31" }, state: "COMMENTED", submittedAt: at(400), commit: { oid: head } }],
-    mergeStateStatus: "BLOCKED",
-  }));
-  process.exit(0);
-}
 if (args[0] !== "api" || args[1] !== "graphql") process.exit(1);
 const query = args.find((a) => a.startsWith("query=")) ?? "";
+// The PR card reads its PR and the two latest commits, then asks only for the failed run's annotations.
+if (query.includes("pullRequest(number: $number)")) {
+  const now = Date.now();
+  const at = (s) => new Date(now - 900_000 + s * 1000).toISOString();
+  const workflow = { workflowRun: { workflow: { id: "workflow-ci" }, event: "push" } };
+  const run = (name, s, d, conclusion) => ({ __typename: "CheckRun", id: `run-${name}`, name, checkSuite: workflow, status: "COMPLETED", conclusion, startedAt: at(s), completedAt: at(s + d) });
+  const previous = "a1c9e4f0b2d4c6e8f0a1b3c5d7e9f1a3b5c7d9e1";
+  const head = "a3f02b10b2d4c6e8f0a1b3c5d7e9f1a3b5c7d9e1";
+  const commit = (oid, nodes) => ({ commit: { oid, statusCheckRollup: { contexts: { nodes } } } });
+  const pullRequest = args.includes("number=31") ? {
+    number: 31, title: "Status board: parse contr-status into rows", state: "OPEN", isDraft: false, url: "https://github.com/o/r/pull/31",
+    additions: 312, deletions: 40, headRefName: "agent/31-status-board", baseRefName: "main", changedFiles: 9, headRefOid: head,
+    commits: { nodes: [
+      commit(previous, [run("e2e", 0, 252, "FAILURE")]),
+      commit(head, [
+        run("Typecheck", 0, 38, "SUCCESS"), run("Lint", 0, 21, "SUCCESS"), run("Unit", 0, 64, "SUCCESS"),
+        { __typename: "CheckRun", id: "run-e2e-fix", name: "e2e", checkSuite: workflow, status: "IN_PROGRESS", startedAt: new Date(now - 130_000).toISOString() },
+      ]),
+    ] },
+    latestReviews: { nodes: [{ author: { login: "r-31" }, state: "COMMENTED", submittedAt: at(400), commit: { oid: previous } }] },
+    mergeStateStatus: "BLOCKED",
+  } : null;
+  process.stdout.write(JSON.stringify({ data: { repository: { pullRequest } } }));
+  process.exit(0);
+}
+if (query.includes("annotations(first: 100)")) {
+  const nodes = args.includes("id=run-e2e") ? [
+    { annotationLevel: "FAILURE", path: "apps/desktop/e2e/keys.spec.ts", location: { start: { line: 88 } }, title: "Tab leaves the reply box" },
+  ] : [];
+  process.stdout.write(JSON.stringify({ data: { node: { annotations: { nodes } } } }));
+  process.exit(0);
+}
 const numbers = [...query.matchAll(/number: (\d+)/g)].map((m) => Number(m[1]));
 if (process.env.FAKE_GH_LOG) appendFileSync(process.env.FAKE_GH_LOG, `${JSON.stringify(numbers)}\n`);
 // A checks query (contr-status board): each issue's closing PR and the state of its checks.

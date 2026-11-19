@@ -31,8 +31,14 @@ test("contr-pr shows the PR from gh and its worker from the orchestration tool; 
   // 312 of 352 lines are added: 4 of 5 boxes.
   await expect(card.locator("[data-box=a]")).toHaveCount(4);
   // b-31 of the chat's agent (t7), not the b-31 of t12.
-  await expect(card.getByTestId("pr-meta")).toHaveText("agent/31-status-board → main·9 files·b-31·head a1c9e4f");
-  await expect(card.locator("[data-check]")).toHaveText([/^✓Typecheck38s$/, /^✓Lint21s$/, /^✓Unit1m 04s$/, /^✕e2e4m 12s$/, /^Buildrunning 2m$/]);
+  await expect(card.getByTestId("pr-meta")).toHaveText("agent/31-status-board → main·9 files·b-31·head a3f02b1");
+  await expect(card.locator("[data-check]")).toHaveText([
+    /^✓Typecheck38s$/,
+    /^✓Lint21s$/,
+    /^✓Unit1m 04s$/,
+    /^✕e2e · keys\.spec\.ts:88 · Tab leaves the reply box4m 12s$/,
+    /^e2e on the fix, a3f02b1running 2m$/,
+  ]);
   await expect(card.locator("[data-check=running] [data-state=working]")).toHaveCount(1);
   await expect(card.getByTestId("pr-review")).toHaveText("Review: r-31, on a1c9e4f");
   await expect(card.getByTestId("pr-merge")).toHaveText("Merge: blocked");

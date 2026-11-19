@@ -408,12 +408,14 @@ export interface ChangeLog {
 /** Main to renderer: show the Settings view (the app menu's "Check for Updates…"). */
 export const OPEN_SETTINGS_EVENT = "contr:open-settings";
 
-/** One check of a PR's head (gh's rollup). Times are ms; a check that runs has no `completedAt`, a queued one no `startedAt`. */
+/** One check on the head, or the failed check it replaces. Times are ms. */
 export interface PrCheck {
   name: string;
   state: "pass" | "fail" | "running" | "queued" | "skipped";
   startedAt: number | null;
   completedAt: number | null;
+  failure?: { path: string; line: number | null; text: string };
+  fixSha?: string;
 }
 
 /** The `contr-pr` card's data, as gh and the orchestration tool say now. */
