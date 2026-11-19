@@ -23,8 +23,11 @@ export interface Draft {
  * Enter during a send queues the new text and images; a good send clears only what it sent (`outbox.ts`).
  * `keyboard`: true when the box may take the keyboard, false while a card owns the card keys, undefined until the chat
  * has its first full answer (the card is known then).
+ * `focusFrom` is the control focused when the owner opened the chat.
  */
-export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: string; title: string; draft?: Draft; keyboard?: boolean }) {
+export function ReplyBox({ terminal, title, draft, keyboard, focusFrom }: {
+  terminal: string; title: string; draft?: Draft; keyboard?: boolean; focusFrom: Element | null;
+}) {
   const [text, setText] = useState(() => readDraft(terminal).text);
   const box = useRef<HTMLTextAreaElement>(null);
   useGrow(box, text);
@@ -51,7 +54,7 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
   const [, setQueued] = useState(0);
   const untaken = out.untaken({ text, images });
   const message = composeMessage(untaken.text, untaken.images);
-  useKeyboard(box, keyboard);
+  useKeyboard(box, keyboard, focusFrom);
 
   async function sendCommand(command: string): Promise<boolean> {
     const result = await sendText(command);
@@ -170,44 +173,35 @@ export function ReplyBox({ terminal, title, draft, keyboard }: { terminal: strin
   );
 }
 
-/** Where the focus stays when the box could take the keyboard: the owner works in a text field, a menu or a dialog. */
-const HOLDS = "textarea, input, select, [contenteditable]:not([contenteditable=false]), [role=menu], [role=listbox], [role=combobox], [role=dialog]";
+/** Tabs keep focus for keyboard navigation. Text fields, menus and dialogs keep focus while in use. */
+const HOLDS = "textarea, input, select, [contenteditable]:not([contenteditable=false]), [role=tab], [role=menu], [role=listbox], [role=combobox], [role=dialog]";
 
 /**
  * The box takes the keyboard when the chat shows (docs/design/recipe-herdr.md): once when `keyboard` is first known
  * (at start, on another agent's chat, back from Terminal), and when the window becomes active. Never on a redraw or a
  * new message. It does not take the keyboard while a card owns the card keys (`keyboard` false), from another text
  * field, a menu or a dialog, or while text is selected (a selection stays).
- * `keyboard` can become known late (a slow first answer): the box then takes the keyboard only if the focus is still
- * where it was when the chat showed or the window became active, or on the page body. A control focused in between
- * keeps the focus (issue #159).
+ * At startup, the first answer can move focus only from the page body. After the owner opens a chat, the box can
+ * also take focus from the control that opened it. A control focused while the chat loads keeps focus.
  */
-function useKeyboard(box: { current: HTMLTextAreaElement | null }, keyboard: boolean | undefined) {
+function useKeyboard(box: { current: HTMLTextAreaElement | null }, keyboard: boolean | undefined, focusFrom: Element | null) {
   const may = useRef(keyboard);
   may.current = keyboard;
-  // The focused element when the chat showed or the window became active.
-  const mark = useRef<Element | null>(null);
-  useLayoutEffect(() => {
-    mark.current = document.activeElement;
-  }, []);
-  const take = useCallback(() => {
+  const take = useCallback((from: Element | null) => {
     const el = box.current;
     const active = document.activeElement;
     if (!may.current || !el || active === el) return;
-    if (active !== mark.current && active !== document.body) return;
+    if (active !== document.body && active !== from) return;
     if (active?.closest(HOLDS) || !(document.getSelection()?.isCollapsed ?? true)) return;
     el.focus();
     el.setSelectionRange(el.value.length, el.value.length);
   }, [box]);
   const known = keyboard !== undefined;
   useEffect(() => {
-    if (known) take();
-  }, [known, take]);
+    if (known) take(focusFrom);
+  }, [known, focusFrom, take]);
   useEffect(() => {
-    const onActive = () => {
-      mark.current = document.activeElement;
-      take();
-    };
+    const onActive = () => take(document.activeElement);
     window.addEventListener("focus", onActive);
     return () => window.removeEventListener("focus", onActive);
   }, [take]);
