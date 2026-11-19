@@ -1,3 +1,4 @@
+import { WebglAddon } from "@xterm/addon-webgl";
 import { expect, test, vi } from "vitest";
 import { commands, page } from "vitest/browser";
 import { css, shoot, transcript } from "../../test/281-shell";
@@ -29,7 +30,12 @@ function terminalFake() {
   };
 }
 
-test("a terminal connection that ends shows hc's words, and Retry opens the terminal again", async () => {
+test("a terminal connection that ends shows hc's words, and Retry opens the terminal again", async ({ onTestFinished }) => {
+  // The font checks read xterm's DOM rows. Keep this test on the DOM renderer.
+  const activate = vi.spyOn(WebglAddon.prototype, "activate").mockImplementation(() => {
+    throw new Error("WebGL unavailable");
+  });
+  onTestFinished(() => activate.mockRestore());
   const terminal = terminalFake();
   const reason = "hc closed the connection: fake hc: the core is not running";
   terminal.attach.mockImplementationOnce(async () => {

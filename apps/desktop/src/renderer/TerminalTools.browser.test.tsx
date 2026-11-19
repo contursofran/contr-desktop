@@ -1,3 +1,4 @@
+import { Terminal } from "@xterm/xterm";
 import { expect, onTestFinished, test, vi } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 import { css, shot, transcript } from "../../test/281-shell";
@@ -8,11 +9,14 @@ const modifier = navigator.platform.startsWith("Mac") ? "Meta" : "Control";
 const url = "https://example.com/build";
 const oscUrl = "https://example.com/report";
 
-async function openTerminal(output: (cols: number) => string, readyText = "Build") {
+async function openTerminal(output: (cols: number) => string, { readyText = "Build", webgl = false } = {}) {
   let write: Parameters<TerminalApi["onData"]>[0];
   const input = vi.fn();
+  const open = vi.spyOn(Terminal.prototype, "open");
+  onTestFinished(() => { open.mockRestore(); });
   await renderApp(transcript, null, {
     terminal: {
+      webgl,
       attach: async (cols) => {
         write(new TextEncoder().encode(output(cols)));
         return { terminal: "t7" };
@@ -25,7 +29,11 @@ async function openTerminal(output: (cols: number) => string, readyText = "Build
   });
   await page.getByRole("radio", { name: "Terminal" }).click();
   const host = page.getByTestId("terminal");
-  await expect.poll(() => host.query()?.querySelector(".xterm-rows")?.textContent).toContain(readyText);
+  await expect.poll(() => {
+    const buffer = (open.mock.contexts[0] as Terminal | undefined)?.buffer.active;
+    if (!buffer) return "";
+    return Array.from({ length: buffer.length }, (_, row) => buffer.getLine(row)?.translateToString(true)).join("\n");
+  }).toContain(readyText);
   const textarea = css(".xterm-helper-textarea", host);
   return { host, textarea, field: page.elementLocator(textarea), input };
 }
@@ -106,7 +114,7 @@ test("finds wrapped output, moves through matches and returns focus on Escape", 
   await expect.element(field).toHaveFocus();
 });
 
-test("shows search highlights for dev server output in both themes", async () => {
+test("shows search highlights on WebGL for dev server output in both themes", async () => {
   const output = [
     "~/code/contr-desktop main $ pnpm dev",
     "$ pnpm --filter desktop dev",
@@ -119,7 +127,8 @@ test("shows search highlights for dev server output in both themes", async () =>
     "[electron] Loading renderer from http://localhost:5173/",
     "[electron] Renderer ready on port 5173",
   ].join("\r\n");
-  const { host } = await openTerminal(() => output, "Renderer ready on port 5173");
+  const { host } = await openTerminal(() => output, { readyText: "Renderer ready on port 5173", webgl: true });
+  await expect.poll(() => host.query()?.querySelector(".xterm-screen canvas")).toBeInstanceOf(HTMLCanvasElement);
   await userEvent.keyboard(`{${modifier}>}f{/${modifier}}`);
   await page.getByRole("textbox", { name: "Find in terminal" }).fill("5173");
   await expect.element(page.getByLabelText("Match count")).toHaveTextContent("1 of 3");

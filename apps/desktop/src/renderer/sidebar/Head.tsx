@@ -15,7 +15,7 @@ const inert = "flex size-[26px] items-center justify-center rounded-lg text-fain
 /**
 * The sidebar head (docs/design/redesign, `.side-top`): one 40 px row with the app name, the machine switch, search and the
  * sidebar toggle. A long machine name is cut with "…"; its tooltip and its label have the full name (owner, D142). The toggle hides the sidebar (`onHide`); the top bar then has the
- * toggle that shows it. Search and "Add machine…" do nothing yet, so they are inert as the top bar's +: `aria-disabled`, `faint`, "(not yet)".
+ * toggle that shows it. Search and "Add machine…" are inert: `aria-disabled`, `faint`, "(not yet)".
  * The app reads agents of this computer only, so the other machines are inert as "Add machine…", with "(not yet)",
  * and the label stays "This computer": a picked machine over this computer's agents would be wrong data.
  */

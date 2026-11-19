@@ -36,7 +36,7 @@ When the code changes a feature, update its row in the same PR.
 | Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
 | Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
-| New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `Popups.browser.test.tsx` |
+| New tab | Opens the + and picks a program | Click, ⌘T, Enter to start, Escape to close | `button "New tab"`, `menu "New tab" > menuitem` | Claude Code has focus first, then Codex and Shell. The new tab opens last and is selected. A failed start shows the hc error. | `NewTab.browser.test.tsx`, `new-tab`, `topbar`, `Popups.browser.test.tsx` |
 | Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `radiogroup "Chat or Terminal" > radio "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
 | Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `States.browser.test.tsx` |
 
@@ -113,6 +113,7 @@ When the code changes a feature, update its row in the same PR.
 | Terminal links | Opens a URL or OSC 8 link | Cmd+click on macOS, Ctrl+click elsewhere | Terminal link | An HTTP or HTTPS link opens outside contr | `TerminalTools.browser.test.tsx` |
 | Terminal clipboard | Copies a selection or pastes text | Cmd+C / Cmd+V on macOS, Ctrl+C with selection / Ctrl+Shift+V on Linux | Terminal | Copy uses the selected text. Paste follows the terminal's bracketed paste mode | `TerminalTools.browser.test.tsx` |
 | Terminal find | Searches the terminal buffer | Cmd+F on macOS, Ctrl+F elsewhere. Enter, Shift+Enter, Esc | Search `Find in terminal` | Finds matches across wrapped lines, shows the match count, and returns focus to the terminal on close | `TerminalTools.browser.test.tsx` |
+| Terminal resize and renderer recovery | Resizes the work area or loses the WebGL context | Window resize | `data-testid="terminal"` | The first fit and each changed grid size reach hc, including the final size. If WebGL cannot start or its context is lost, xterm displays output in the DOM. After context loss it stays on the DOM renderer until the window reloads. | `TerminalResize.browser.test.tsx`, `terminal` |
 | Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | One centered note with no box: "The connection to hc ended.", hc's words in mono, Retry; Retry attaches when the file is gone; when the sidebar's "hc is not reachable" clears, the terminal attaches again with no Retry; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `TerminalError.browser.test.tsx`, `terminal-error`, `hc-outage` |
 
 ## Inbox
