@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, type WebContents } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, SET_TIER_CHANNEL, TAB_TITLE_CHANNEL, type FeedEvent, type SpeedTier } from "../../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, CODEX_OPTION_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, SET_TIER_CHANNEL, TAB_TITLE_CHANNEL, type CodexOption, type FeedEvent, type SpeedTier } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
 import { answer, approve, type Answer } from "./card";
@@ -106,11 +106,15 @@ export function setupHelper(appRoot: string): void {
   ipcMain.handle(REPLY_INFO_CHANNEL, async () => {
     const terminal = chatTerminal();
     if (codexThreadId(terminal)) {
-      const session = await codexSession(terminal).catch(() => null);
-      return { agent: "codex", model: session?.model ?? null, effort: null, tier: null, tiers: [], speed: null, context: null, models: [], efforts: [] };
+      return (await codexSession(terminal)).options.info();
     }
     const info = await replyInfo(helper(), terminal, commands(terminal));
     return tierFailures.has(terminal) ? { ...info, tiers: [] } : info;
+  });
+  ipcMain.handle(CODEX_OPTION_CHANNEL, async (_event, terminal: string, change: CodexOption) => {
+    if (terminal !== chatTerminal() || !codexThreadId(terminal)) return { error: "The active chat changed." };
+    try { return await (await codexSession(terminal)).options.set(change); }
+    catch (error) { return { error: (error as Error).message }; }
   });
   ipcMain.handle(SET_TIER_CHANNEL, async (_event, terminal: string, tier: SpeedTier) => {
     if (!terminal || terminal !== chatTerminal()) return { ok: false, message: "The active chat changed" };

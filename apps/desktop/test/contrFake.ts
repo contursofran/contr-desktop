@@ -62,6 +62,7 @@ export function contrFake(rows: FeedRow[], card: Card | null, overrides: Partial
       ],
       efforts: [],
     }),
+    setCodexOption: async () => ({ error: "Unsupported" }),
     setTier: unsupported,
     branch: async () => "main",
     usage: async () => [],

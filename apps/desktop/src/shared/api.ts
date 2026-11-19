@@ -69,6 +69,7 @@ export interface ContrApi {
   digest(): Promise<Digest>;
   /** Model, effort, speed tier, context, output speed and menu choices from the helper. */
   replyInfo(): Promise<ReplyInfo>;
+  setCodexOption(terminal: string, change: CodexOption): Promise<ReplyInfo | { error: string }>;
   /** Sets the speed tier of the active chat through the helper's `tier` command. */
   setTier(terminal: string, tier: SpeedTier): Promise<{ ok: boolean; message?: string }>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
@@ -227,6 +228,7 @@ export interface Digest {
 /** The reply box's data. A part the helper does not know is null (or empty). */
 export type SpeedTier = "standard" | "fast" | "ultrafast";
 export type AcceleratedTier = Exclude<SpeedTier, "standard">;
+export type CodexOption = { kind: "model" | "effort" | "tier" | "permission"; value: string };
 
 export interface ReplyInfo {
   agent: string | null;
@@ -238,6 +240,7 @@ export interface ReplyInfo {
   context: { percent: number; text: string; warn: boolean } | null;
   models: { value: string; label: string }[];
   efforts: { value: string; label: string }[];
+  permissions?: { selected: string | null; choices: { value: string; label: string }[] };
 }
 
 /** The checks of a PR's head from gh: the rollup's state and the counts of all its checks. */
@@ -289,6 +292,7 @@ export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
 export const DIGEST_CHANNEL = "contr:digest";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
+export const CODEX_OPTION_CHANNEL = "contr:codex-option";
 export const SET_TIER_CHANNEL = "contr:set-tier";
 export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";

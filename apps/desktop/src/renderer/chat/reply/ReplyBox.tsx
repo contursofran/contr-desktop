@@ -1,7 +1,8 @@
 // Inset focus ring adapted from t3code apps/web/src/components/chat/ChatHeader.tsx
 // (b5554ac8114f2ce7ce8b5973690ccb8cbb248efd, MIT). Use the contr focus token.
 import { Plus } from "lucide-react";
-import type { SpeedTier } from "../../../shared/api";
+import type { CodexOption, SpeedTier } from "../../../shared/api";
+import { codexThreadId } from "../../../shared/codex";
 import { Tip } from "../../ui/Tip";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { Attachments } from "./Attachments";
@@ -46,7 +47,7 @@ export function ReplyBox({ terminal, title, draft, keyboard, focusFrom }: {
   useEffect(() => saveDraft(terminal, { text, images }), [terminal, text, images]);
   const [error, setError] = useState<string | null>(null);
   const placeholder = replyPlaceholder(title);
-  const { info, branch } = useReplyInfo();
+  const { info, branch, updateInfo } = useReplyInfo();
   // Messages and menu commands go one after the other: a menu choice made during a send is not lost.
   const queue = useRef(serial()).current;
   const sendText = (body: string) =>
@@ -69,6 +70,14 @@ export function ReplyBox({ terminal, title, draft, keyboard, focusFrom }: {
     const result = await queue(() => window.contr.setTier(terminal, tier)).catch((e: unknown) => ({ ok: false, message: String(e) }));
     if (!result.ok) setError(result.message ?? "Could not set the speed tier");
     return result.ok;
+  }
+
+  async function setCodexOption(change: CodexOption) {
+    setError(null);
+    const result = await queue(() => window.contr.setCodexOption(terminal, change))
+      .catch((error: unknown) => ({ error: String(error) }));
+    if ("error" in result) setError(result.error);
+    else updateInfo(result);
   }
 
   async function send() {
@@ -157,7 +166,7 @@ export function ReplyBox({ terminal, title, draft, keyboard, focusFrom }: {
             <Plus aria-hidden className="size-3.5" />
           </button>
         </Tip>
-        <ModelButton info={info} send={sendCommand} setTier={setTier} />
+        <ModelButton info={info} send={sendCommand} setTier={setTier} setCodexOption={codexThreadId(terminal) ? setCodexOption : undefined} />
         <span className="flex-1" />
         <ContextRing context={info.context} />
         <OutputSpeed speed={info.speed} />
