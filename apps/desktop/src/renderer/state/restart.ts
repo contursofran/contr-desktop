@@ -1,3 +1,4 @@
+import { codexThreadId } from "../../shared/codex";
 import type { Sidebar } from "../../shared/api";
 import { findAgent } from "../topbar/TopBar";
 
@@ -32,7 +33,7 @@ export function saveSide(side: Side, store: Store = localStorage): void {
  * (CONTR_TERMINAL); else the first agent of the list; else none ("").
  */
 export function startAgent(sidebar: Sidebar, stored: string): string {
-  if (stored && findAgent(sidebar, stored)) return stored;
+  if (stored && (codexThreadId(stored) || findAgent(sidebar, stored))) return stored;
   if (sidebar.selected) return sidebar.selected;
   return sidebar.projects.find((p) => p.agents.length > 0)?.agents[0]!.terminal ?? "";
 }

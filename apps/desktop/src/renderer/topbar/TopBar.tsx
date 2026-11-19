@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTab } from "@ui-sdk/react/tabs";
 import { PanelLeft, Sparkle, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { Sidebar, SidebarAgent, TerminalKind } from "../../shared/api";
+import { codexThreadId } from "../../shared/codex";
 import { AddTabMenu } from "./AddTabMenu";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
 import { Tip } from "../ui/Tip";
@@ -27,7 +28,7 @@ export function findAgent(data: Sidebar, terminal: string): SidebarAgent | undef
 
 /** A tab's label: the sidebar entry's title, else the title read from hc (`titles`), else "" while it loads. Never the terminal id. */
 export function tabLabel(data: Sidebar, terminal: string, titles: Record<string, string>): string {
-  return findAgent(data, terminal)?.title ?? titles[terminal] ?? "";
+  return findAgent(data, terminal)?.title ?? (codexThreadId(terminal) ? "Codex" : titles[terminal] ?? "");
 }
 
 /** The open tabs with `selected` added at the end when it is not open yet. */
@@ -131,7 +132,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSta
               <TabOrderItem key={t} value={t} className={`flex h-7 max-w-[min(100%,var(--tab-max-width))] shrink-0 touch-none select-none items-center gap-2 rounded-lg px-2.5 text-[12.5px] data-grabbed:w-0.5 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:shadow-none data-grabbed:*:hidden ${shown ? "bg-chrome text-ink-100 shadow-[inset_0_0_0_1px_var(--panel-line)]" : "text-dim hover:bg-hover hover:text-muted"}`}>
                 <Tip label={title}>
                   <TabsTab value={t} id={tabId(t)} aria-controls={panelId(t)} aria-description={agent && GLYPH_LABELS[agent.state]} className="flex min-w-0 items-center gap-2">
-                    {agent ? <AgentIcon kind={agent.kind} size={15} color="var(--color-muted)" /> : <Sparkle aria-hidden className="size-3.5 shrink-0" />}
+                    {agent || codexThreadId(t) ? <AgentIcon kind={agent ? agent.kind : "codex"} size={15} color="var(--color-muted)" /> : <Sparkle aria-hidden className="size-3.5 shrink-0" />}
                     <span data-title className="truncate">{title}</span>
                   </TabsTab>
                 </Tip>

@@ -12,6 +12,7 @@ const shell = { PATH: "/usr/bin:/bin", CONTR_HC: "/usr/local/bin/hc", CONTR_GIT:
 
 test("with no switches the environment names the fakes", () => {
   const env = launchEnv({}, shell);
+  expect(env.CONTR_CODEX).toBe(path.join(e2e, "fake-codex.mjs"));
   expect(env.CONTR_HC).toBe(path.join(e2e, "fake-hc.mjs"));
   expect(env.CONTR_HELPER).toBe(path.join(e2e, "fake-helper.mjs"));
   expect(env.CONTR_ORCH).toBe(path.join(e2e, "fake-orch.mjs"));

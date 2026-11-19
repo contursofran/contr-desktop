@@ -8,6 +8,8 @@ import type { TerminalStart } from "../../shared/api";
 import { terminalDisplay } from "../../shared/terminal-display";
 import { appChildren } from "../children";
 import { chatTerminal } from "../helper";
+import { codexThreadId } from "../../shared/codex";
+import { codexSession, newCodexChat } from "../codex/session";
 import { HcAttach } from "./hc-attach";
 
 const sessions = new Map<number, HcAttach>();
@@ -18,18 +20,41 @@ export function registerTerminalIpc(): void {
     const display = appDisplay();
     for (const session of sessions.values()) session.setDisplay(display);
   });
-  ipcMain.handle("terminal:start", (_event, kind: unknown, cwd: unknown) => startTerminal(kind, cwd));
-  ipcMain.handle("terminal:attach", (e, cols: number, rows: number) => {
-    const terminal = chatTerminal();
-    const wc: WebContents = e.sender;
-    const old = sessions.get(wc.id);
-    old?.close();
+  ipcMain.handle("terminal:start", (_event, kind: unknown, cwd: unknown) => startTab(kind, cwd));
+  const attaching = new WeakMap<WebContents, symbol>();
+  const watched = new WeakSet<WebContents>();
+  ipcMain.handle("terminal:attach", async (e, cols: number, rows: number) => {
+    const tab = chatTerminal();
+    const wc = e.sender;
+    sessions.get(wc.id)?.close();
+    sessions.delete(wc.id);
+    if (!watched.has(wc)) {
+      watched.add(wc);
+      wc.once("destroyed", () => { sessions.get(wc.id)?.close(); sessions.delete(wc.id); });
+    }
+    const attachId = Symbol();
+    attaching.set(e.sender, attachId);
+    let terminal = tab;
+    if (codexThreadId(tab)) {
+      try {
+        const session = await codexSession(tab);
+        if (!session.resumable) return { terminal: tab, error: "Send a message in Chat before opening the Codex terminal." };
+        session.companion ??= runTerminal([session.rpc.binary, "resume", "--remote", session.rpc.endpoint, session.threadId], session.cwd)
+          .then((result) => {
+            if ("error" in result) throw new Error(result.error);
+            return result.terminal;
+          }).catch((error: unknown) => {
+            session.companion = undefined;
+            throw error;
+          });
+        terminal = await session.companion;
+      } catch (error) { return { terminal: tab, error: (error as Error).message }; }
+      if (e.sender.isDestroyed() || tab !== chatTerminal() || attaching.get(e.sender) !== attachId) return { terminal };
+    }
     const a = new HcAttach({ terminal, session: process.env.CONTR_HC_SESSION, hc: process.env.CONTR_HC }, cols, rows, appDisplay(), {
       data: (bytes) => { if (!wc.isDestroyed()) wc.send("terminal:data", bytes); },
       end: (reason) => { if (!wc.isDestroyed()) wc.send("terminal:end", reason); },
     });
-    // One `destroyed` listener per renderer: it closes the attach of that time.
-    if (!old) wc.once("destroyed", () => { sessions.get(wc.id)?.close(); sessions.delete(wc.id); });
     sessions.set(wc.id, a);
     return { terminal };
   });
@@ -37,16 +62,24 @@ export function registerTerminalIpc(): void {
   ipcMain.on("terminal:resize", (e, cols: number, rows: number) => sessions.get(e.sender.id)?.resize(cols, rows));
 }
 
-/** Starts only one of the three programs in the New tab menu. */
-async function startTerminal(kind: unknown, cwd: unknown): Promise<TerminalStart> {
+async function startTab(kind: unknown, cwd: unknown): Promise<TerminalStart> {
   if (kind !== "claude" && kind !== "codex" && kind !== "shell") return { error: "Unknown terminal program" };
   if (cwd !== null && (typeof cwd !== "string" || !isAbsolute(cwd))) return { error: "The terminal needs an absolute folder path" };
+  const folder = cwd ?? homedir();
+  if (kind === "codex") {
+    try { return { terminal: await newCodexChat(folder) }; }
+    catch (error) { return { error: (error as Error).message }; }
+  }
+  return runTerminal(kind === "shell" ? [] : [kind], folder);
+}
+
+function runTerminal(argv: string[], cwd: string): Promise<TerminalStart> {
   const session = process.env.CONTR_HC_SESSION;
   const args = session ? ["connect", "--session", session] : ["connect"];
   // Codex queries the terminal's colors at startup, which can finish before the view attaches.
   const request = {
     jsonrpc: "2.0", id: 1, method: "terminal.run",
-    params: { argv: kind === "shell" ? [] : [kind], cwd: cwd ?? homedir(), no_parent: true, display: appDisplay() },
+    params: { argv, cwd, no_parent: true, display: appDisplay() },
   };
   return new Promise((resolve) => {
     const child = appChildren.execFile(process.env.CONTR_HC ?? "hc", args, { encoding: "utf8", timeout: 10_000 }, (error, out, stderr) => {

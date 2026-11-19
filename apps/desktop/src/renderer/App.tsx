@@ -1,3 +1,4 @@
+import { codexThreadId } from "../shared/codex";
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useShortcut } from "@ui-sdk/react/shortcuts";
 import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
@@ -48,7 +49,7 @@ export function App() {
   const started = useRef(false);
   useEffect(() => {
     if (!started.current) {
-      if (sidebar.projects.length === 0) return;
+      if (sidebar.projects.length === 0 && !codexThreadId(readShown())) return;
       started.current = true;
       const start = startAgent(sidebar, readShown());
       if (start !== sidebar.selected) {
@@ -64,7 +65,7 @@ export function App() {
   useEffect(() => {
     if (hcDown) return;
     for (const t of tabs) {
-      if (findAgent(sidebar, t) || t in titles) continue;
+      if (codexThreadId(t) || findAgent(sidebar, t) || t in titles) continue;
       setTitles((m) => ({ ...m, [t]: "" }));
       void window.contr.tabTitle(t).then((r) => {
         // hc runs and does not list the terminal: a saved tab of a gone agent closes.
@@ -105,6 +106,7 @@ export function App() {
   const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
   const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
     if (kind === "shell") setSide("terminal");
+    if (kind === "codex") setSide("chat");
     select(terminalId);
   }, [select]);
   const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);

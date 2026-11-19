@@ -47,7 +47,7 @@ A session that gets no command for 30 minutes stops by itself. When `start` says
 - No window may show and nothing may take the owner's focus: start the app only through this script or
   `e2e/launch.ts`. Use the page's keys and clicks only, never OS-level keys or mouse (no `osascript`, `cliclick` or
   `xdotool`).
-- Only the fakes: `CONTR_HELPER`, `CONTR_HC`, `CONTR_ORCH`, `CONTR_GIT` and `CONTR_GH` are always fakes in `e2e/` or
+- Only the fakes: `CONTR_CODEX`, `CONTR_HELPER`, `CONTR_HC`, `CONTR_ORCH`, `CONTR_GIT` and `CONTR_GH` are always fakes in `e2e/` or
   your own fakes in `tmp/`; the script refuses any other program.
 - Never touch the owner's hc core, Herdr app, session logs (`~/.claude`, `~/.codex`) or installed contr app. Do not
   start, stop or send input to them.
