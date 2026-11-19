@@ -1,9 +1,12 @@
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useShortcut } from "@ui-sdk/react/shortcuts";
+import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
+import { isEditableFocused } from "./hotkeys/editableFocus";
+import { hotkey } from "./hotkeys/registry";
 import { blockedAgents } from "../shared/inbox";
 import { ChatList, ChatLoading } from "./chat/list/ChatList";
 import { Empty } from "./chat/Empty";
@@ -16,7 +19,7 @@ import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
 import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
-import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
+import { Sidebar, adjacentAgent, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
 import type { Sidebar as SidebarData, TerminalKind } from "../shared/api";
@@ -113,16 +116,37 @@ export function App() {
     // No tab left: main stops the feed and its per-second reads.
     else void window.contr.select("").then((selected) => setSidebar((s) => ({ ...s, selected })));
   };
+  const closeShownTab = () => {
+    if (tabs.includes(view.selected)) close(view.selected);
+  };
+  const onMenuClose = useEffectEvent(closeShownTab);
+  useEffect(() => window.contr.onCloseTab?.(() => onMenuClose()), []);
+  const showSide = (next: Side) => {
+    if (next === "chat") setReplyFocus({ terminal: sidebar.selected, from: document.activeElement });
+    setSide(next);
+  };
+  const platform = window.contr.platform;
+  // The native File menu owns the key on macOS. Browser builds have only the renderer binding.
+  const nativeCloseTab = platform === "darwin" && window.contr.onCloseTab !== undefined;
+  useShortcut(nativeCloseTab ? undefined : hotkey("CLOSE_TAB", platform), closeShownTab);
+  useShortcut(hotkey("TOGGLE_CHAT_TERMINAL", platform), () => {
+    showSide(side === "chat" ? "terminal" : "chat");
+  }, { when: () => Boolean(view.selected) });
+  const move = (step: -1 | 1) => {
+    const next = adjacentAgent(view, step);
+    if (next) select(next);
+  };
+  // xterm's keyboard input is a textarea. Editors and xterm keep the arrows.
+  const canMove = () => Boolean(view.selected) && !isEditableFocused();
+  useShortcut(hotkey("PREVIOUS_AGENT", platform), () => move(-1), { when: canMove });
+  useShortcut(hotkey("NEXT_AGENT", platform), () => move(1), { when: canMove });
   return (
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox !== null && !settings} onInbox={() => openInbox()} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
-        {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={(next) => {
-          if (next === "chat") setReplyFocus({ terminal: sidebar.selected, from: document.activeElement });
-          setSide(next);
-        }} />}
+        {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={showSide} />}
         {settings ? <SettingsView />
           : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />
           : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />

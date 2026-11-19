@@ -42,6 +42,9 @@ export async function chatSettled(list = chatList().element()) {
   }
 }
 
+// ChatList clips the 40 px behind the Chat / Terminal switch.
+const CHAT_TOP_CLIP = 40;
+
 /** Find a virtual row by scrolling half a viewport at a time, as the Electron helper does. */
 export async function chatRow(id: string) {
   const list = await chatList().findElement();
@@ -54,10 +57,12 @@ export async function chatRow(id: string) {
       const row = findRow(id, list);
       if (row) {
         row.scrollIntoView({ block: "nearest" });
+        const hidden = list.getBoundingClientRect().top + CHAT_TOP_CLIP - row.getBoundingClientRect().top;
+        if (hidden > 0) list.scrollTop -= Math.ceil(hidden);
         await chatSettled(list);
         const box = findRow(id, list)?.getBoundingClientRect();
         const view = list.getBoundingClientRect();
-        if (box && box.bottom > view.top && box.top < view.bottom) return true;
+        if (box && box.bottom > view.top + CHAT_TOP_CLIP && box.top < view.bottom) return true;
       }
       const max = list.scrollHeight - list.clientHeight;
       if (top >= max) return false;
