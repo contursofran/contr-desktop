@@ -26,6 +26,8 @@
 // `update check` answers an `update` line: `installed` from <CONTR_HOME>/install.json `build`, `newest` the stamp of the tag
 // FAKE_CORE_NEWEST (`build-YYYY-MM-DD-<sha7>`). FAKE_CORE_FAIL=check:<code> answers that error; FAKE_CORE_FIELDS=c2 adds
 // the fields of contr-core issue C2 (versions 0.1.41 and 0.1.57, `newer`, `root`, `releases`).
+// `update install` writes the newest stamp. FAKE_CORE_FAIL=install:<code> fails before the write;
+// FAKE_CORE_FAIL=start makes the new home helper fail its version probe. FAKE_CORE_SLOW=<ms> delays the update.
 // FAKE_CORE_LOG=<file>: each call appends {args, home} (home is CONTR_HOME, or null) as one JSON line.
 // The worker terminals of fake-hc.mjs (t8 to t10) have their own session in fixtures/workers: `feed`, `model`, `status`,
 // `working` and `card` give that worker's data. FAKE_HELPER_CARD and FAKE_HELPER_MODEL=none still win.
@@ -75,11 +77,21 @@ const worker = workers[arg("terminal")];
 const slow = { feed: process.env.FAKE_HELPER_SLOW_FEED, send: process.env.FAKE_HELPER_SLOW_SEND }[cmd];
 if (slow) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(slow));
 
+const root = process.env.CONTR_CORE_HOME;
+if (cmd === "version" && process.env.FAKE_CORE_FAIL === "start" && root
+    && process.argv[1] === path.join(root, "bin", "herdr-contr-feed")) process.exit(1);
+const coreNewest = process.env.FAKE_CORE_NEWEST;
+const [, date, sha] = /^build-(\d{4}-\d{2}-\d{2})-([0-9a-f]{7})$/.exec(coreNewest ?? "") ?? [];
+const newest = `${sha} ${date}`;
+
 out({ build: "fake", cmd, protocol: 1, sidecar: "0.0.0-fake", type: "header" });
 const failing = process.env.FAKE_HELPER_ERROR || (process.env.FAKE_HELPER_ERROR_WHILE && existsSync(process.env.FAKE_HELPER_ERROR_WHILE) && "no-core");
 if (failing) {
   out({ code: failing, message: `fake error ${failing}`, type: "error" });
   end(false);
+} else if (cmd === "version" && root) {
+  out({ type: "version", build: newest, release: null });
+  end(true);
 } else if (cmd === "feed") {
   // The cursor is the row count: rows appended to the fixture since then come as a splice.
   const fixture = worker ? path.join(workerDir, worker.fixture) : process.env.FAKE_HELPER_FIXTURE;
@@ -100,11 +112,27 @@ if (failing) {
     end(false);
   } else {
     const installed = JSON.parse(readFileSync(path.join(process.env.CONTR_HOME, "install.json"), "utf8")).build;
-    const [, date, sha] = /^build-(\d{4}-\d{2}-\d{2})-([0-9a-f]{7})$/.exec(process.env.FAKE_CORE_NEWEST ?? "") ?? [];
-    const newest = `${sha} ${date}`;
-    const line = { type: "update", installed, newest, tag: process.env.FAKE_CORE_NEWEST, url: "https://example.invalid/release", differs: installed.split(" ")[0] !== sha, checked_at: Math.floor(Date.now() / 1000) };
+    const line = { type: "update", installed, newest, tag: coreNewest, url: "https://example.invalid/release", differs: installed.split(" ")[0] !== sha, checked_at: Math.floor(Date.now() / 1000) };
     if (process.env.FAKE_CORE_FIELDS === "c2") Object.assign(line, { installed_version: "0.1.41", newest_version: "0.1.57", newer: true, root: process.env.CONTR_HOME, releases: [] });
     out(line);
+    end(true);
+  }
+} else if (cmd === "update" && rest[0] === "install") {
+  const home = process.env.CONTR_HOME;
+  const fail = process.env.FAKE_CORE_FAIL?.split(":");
+  if (process.env.FAKE_CORE_SLOW) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Number(process.env.FAKE_CORE_SLOW));
+  }
+  if (fail?.[0] === "install" && fail[1]) {
+    out({ type: "error", code: fail[1], message: `fake ${fail[1]}` });
+    end(false);
+  } else {
+    out({ type: "update-plan", tag: coreNewest });
+    const helper = path.join(home, "bin", "herdr-contr-feed");
+    rmSync(helper);
+    symlinkSync(import.meta.filename, helper);
+    writeFileSync(path.join(home, "install.json"), JSON.stringify({ build: newest }));
+    out({ type: "update-done", installed: newest, tag: coreNewest, text: "Done." });
     end(true);
   }
 } else if (cmd === "send" && process.env.FAKE_HELPER_SEND_ERROR) {

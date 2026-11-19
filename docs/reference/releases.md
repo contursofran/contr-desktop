@@ -164,7 +164,7 @@ Updates (`updateView.ts`):
   line's `installed_version` (contr-core issue C2), else `installed`.
 - Newest: `newest_version` (C2), else `newest`; "Up to date" when there is
   nothing newer. Update shows when `newer` (C2), else `differs`, is true; the
-  foot's Settings button then has the dot. The button does nothing yet.
+  foot's Settings button then has the dot.
 - Folder: the root.
 
 The source is the helper's `update check` with `CONTR_HOME=<root>`. The app
@@ -179,6 +179,25 @@ With no root (dev, e2e with no `CONTR_CORE_HOME`) the part says
 part says "The Herdr app uses this core. contr runs its own copy and does not
 change this folder." A failed start install or a home that does not start
 shows its text under the part.
+
+Update runs the active helper with `update install` and `CONTR_HOME=<root>`.
+For a root named `herdr-contr`, it also passes `--home <parent>`. It waits
+up to 10 minutes. The button says “Updating…” during that time. The
+release download is about 23 MB.
+
+After the install, the app probes the home's helper for protocol 1. It
+restarts each feed with a new cursor and clears the commands cache. If the
+probe fails, the app uses the bundle for this run and shows the reason.
+
+New agent sessions use the new kit. Running agents keep the kit and MCP
+server they started with. New tool calls and status-line draws use the update
+from the same paths. The app leaves the status-line setting as it was and
+sends no signal or input to running agents, hc core, or the Herdr app.
+
+If the installer fails before it writes, the core files stay as they were
+and Update is still available. If a write fails, some files can be new.
+The core has no rollback.
+The install record keeps the old build so the next press can repair it.
 
 ## Name
 

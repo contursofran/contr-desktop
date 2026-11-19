@@ -23,11 +23,13 @@ describe("corePath", () => {
     // The home has no tool: the bundle's.
     expect(corePath("herdr-contr-orch", "/A.app/Contents/Resources/app.asar", undefined, {})).toBe("/A.app/Contents/Resources/bin/herdr-contr-orch");
   });
-  it("a bundle source runs the bundle, or CONTR_CORE_BUNDLE", () => {
+  it("a bundle source runs CONTR_CORE_BUNDLE only in e2e", () => {
     const root = temp();
     helperIn(root);
     setCore({ source: "bundle", root });
     expect(corePath("herdr-contr-feed", "/r/apps/desktop", undefined, {})).toBe("/r/bin/herdr-contr-feed");
-    expect(corePath("herdr-contr-feed", "/r/apps/desktop", undefined, { CONTR_CORE_BUNDLE: "/b" })).toBe("/b/herdr-contr-feed");
+    const env = { CONTR_CORE_BUNDLE: "/b" };
+    expect(corePath("herdr-contr-feed", "/r/apps/desktop", undefined, env)).toBe("/r/bin/herdr-contr-feed");
+    expect(corePath("herdr-contr-feed", "/r/apps/desktop", undefined, { ...env, CONTR_E2E: "1" })).toBe("/b/herdr-contr-feed");
   });
 });

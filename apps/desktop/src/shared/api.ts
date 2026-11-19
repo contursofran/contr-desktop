@@ -122,6 +122,7 @@ export interface ContrApi {
   onCore(listener: (state: CoreState) => void): () => void;
   /** Runs the helper's `update check` for the core's root; `force` asks GitHub again (Check now). A call while a check runs waits for it. */
   checkCore(force?: boolean): Promise<void>;
+  updateCore(): Promise<void>;
   /** Calls the listener when the app menu's "Check for Updates…" asks to show Settings. Returns the unsubscribe. */
   onOpenSettings(listener: () => void): () => void;
   /** Subscribes to File > Close Tab when the renderer has a native menu. */
@@ -398,6 +399,7 @@ export interface CoreState extends UpdateState {
 export const CORE_CHANNEL = "contr:core";
 export const CORE_EVENT = "contr:core-event";
 export const CORE_CHECK_CHANNEL = "contr:core-check";
+export const CORE_UPDATE_CHANNEL = "contr:core-update";
 
 /** One release in Settings > Change log. */
 export interface ChangeLogRelease {

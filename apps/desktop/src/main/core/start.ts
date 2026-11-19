@@ -1,10 +1,9 @@
 import { existsSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { binPath } from "../helper/binPath";
 import { runHelper } from "../helper/run";
 import { coreOrder, parseStamp, readBundleTag, readInstalled, stampOfTag } from "./build";
-import { setCore, type CurrentCore } from "./current";
+import { coreBundlePath, setCore, type CurrentCore } from "./current";
 import { installCore } from "./install";
 import { pickCore } from "./pick";
 import { coreRoot, herdrRoot, sharedWithHerdr } from "./root";
@@ -57,7 +56,7 @@ export async function startCore(
   let core: CurrentCore = { source: "bundle", root: found?.root ?? null, error: null };
   if (found) {
     const helper = path.join(found.root, "bin", "herdr-contr-feed");
-    const bundleHelper = binPath("herdr-contr-feed", appRoot, undefined, env.CONTR_CORE_BUNDLE);
+    const bundleHelper = coreBundlePath("herdr-contr-feed", appRoot, env);
     const bundle = path.dirname(bundleHelper);
     const pick = pickCore({
       root: found.root,
