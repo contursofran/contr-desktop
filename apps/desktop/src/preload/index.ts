@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, DIGEST_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, SEND_CHANNEL, TAB_TITLE_CHANNEL, REPLY_INFO_CHANNEL, SET_TIER_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, OWNER_CHANNEL, OWNER_EVENT, OWNER_ANSWER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_ERROR_CHANNEL, OWNER_ERROR_EVENT, SETTINGS_CHANNEL, THEME_CHANNEL, UPDATE_CHANNEL, UPDATE_EVENT, UPDATE_DOWNLOAD_CHANNEL, UPDATE_RESTART_CHANNEL, UPDATE_CHECK_CHANNEL, CHANGELOG_CHANNEL, OPEN_SETTINGS_EVENT, CORE_CHANNEL, CORE_EVENT, CORE_CHECK_CHANNEL, type CoreState, type UpdateState, type OwnerItems, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
-import { PR_CARD_CHANNEL } from "../shared/api";
+import { CLOSE_TAB_EVENT, PR_CARD_CHANNEL } from "../shared/api";
 
 const api: ContrApi = {
   platform: process.platform,
@@ -75,6 +75,11 @@ const api: ContrApi = {
     const handler = () => listener();
     ipcRenderer.on(OPEN_SETTINGS_EVENT, handler);
     return () => ipcRenderer.off(OPEN_SETTINGS_EVENT, handler);
+  },
+  onCloseTab(listener) {
+    const handler = () => listener();
+    ipcRenderer.on(CLOSE_TAB_EVENT, handler);
+    return () => ipcRenderer.off(CLOSE_TAB_EVENT, handler);
   },
   terminal: terminalApi,
   prCard: (n) => ipcRenderer.invoke(PR_CARD_CHANNEL, n),
