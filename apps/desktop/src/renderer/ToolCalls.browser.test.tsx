@@ -42,7 +42,7 @@ test("tool calls fold into one line that opens to one line per call; the footer 
   expect(getComputedStyle(sep.querySelector("span")!).backgroundColor).toBe("rgba(255, 255, 255, 0.06)");
   expect(getComputedStyle(p).fontFamily).toContain("JetBrains Mono");
   button.blur();
-  await chatRow("a2-t1");
+  await chatRow("a2-t1", "center");
   await page.screenshot({ path: `${browserShots}/tool-calls-dark.png` });
   // The middle of the list, so the ↓ button does not cover the line.
   const middle = () => chatRow("st-1", "center");
@@ -54,7 +54,7 @@ test("tool calls fold into one line that opens to one line per call; the footer 
   expect(getComputedStyle(p).color).toBe("rgba(0, 0, 0, 0.584)");
   await middle();
   await page.screenshot({ path: `${browserShots}/compaction-light.png` });
-  await chatRow("a2-t1");
+  await chatRow("a2-t1", "center");
   await page.screenshot({ path: `${browserShots}/tool-calls-light.png` });
 
   button.focus();
