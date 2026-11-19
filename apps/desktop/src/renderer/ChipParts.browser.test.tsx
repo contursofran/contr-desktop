@@ -30,7 +30,7 @@ test("worker, owner item, decision and file chips draw with the theme tokens", a
   await commands.colorScheme("dark");
   const row = await chatRow("a3");
   row.insertAdjacentHTML("beforeend", parts);
-  const group = row.querySelector("[data-chip-parts]")!;
+  const group = row.querySelector<HTMLParagraphElement>("[data-chip-parts]")!;
   const chips = Array.from(group.querySelectorAll("[data-slot=context-chip]"));
   expect(chips.map(normalizedText)).toEqual(["b-31", "b-41", "b-60", "b-70", "D7Block or row?", "T3", "D112", "e2e/keys.spec.ts:88"]);
   expect(group.querySelector("[data-decision]")!.tagName).toBe("SPAN");
@@ -56,6 +56,16 @@ test("worker, owner item, decision and file chips draw with the theme tokens", a
   expect(style(6).boxShadow).toContain("rgba(0, 0, 0, 0.07) 0px 0px 0px 1px inset");
   expect(doneGlyph().color).toBe("rgba(0, 0, 0, 0.514)");
   await page.elementLocator(group).screenshot({ path: `${browserShots}/chip-parts-light.png` });
+
+  // Keep the three worker states together and enlarge them for the chat-row screenshots.
+  group.replaceChildren(chips[0]!, " ", chips[1]!, " ", chips[3]!);
+  group.style.zoom = "2";
+  group.scrollIntoView({ block: "center" });
+  const chat = page.elementLocator(row);
+  await chat.screenshot({ path: `${browserShots}/worker-states-light.png` });
+  await commands.colorScheme("dark");
+  await expect.poll(() => doneGlyph().color).toBe("rgba(255, 255, 255, 0.42)");
+  await chat.screenshot({ path: `${browserShots}/worker-states-dark.png` });
 });
 
 const board: Board = {
