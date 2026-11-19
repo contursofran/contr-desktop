@@ -48,10 +48,13 @@ test("the new-tab menu starts an agent in the selected worker's folder and keeps
   }
 });
 
-test("Codex starts in the first project with the app's light palette", async () => {
+test("Codex streams in Chat and opens the same thread in the terminal", async () => {
   const log = test.info().outputPath("hc-run.jsonl");
+  const data = test.info().outputPath("profile");
   mkdirSync(path.dirname(log), { recursive: true });
-  const app = await launchApp({ ...project, FAKE_HC_RUN_LOG: log });
+  mkdirSync(data, { recursive: true });
+  const env = { ...project, FAKE_HC_RUN_LOG: log, FAKE_HC_CONNECT: "1" };
+  const app = await launchApp(env, data);
   try {
     const page = await app.firstWindow();
     await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Chat panel usability audit" }).waitFor();
@@ -61,12 +64,39 @@ test("Codex starts in the first project with the app's light palette", async () 
     await page.getByRole("button", { name: "New tab" }).click();
     await page.getByRole("menuitem", { name: "Codex" }).click();
     await expect(page.getByRole("tab", { name: "Codex", selected: true })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Chat" })).toBeChecked();
+    await page.getByRole("radio", { name: "Terminal" }).click();
+    await expect(page.getByText("Send a message in Chat before opening the Codex terminal.")).toBeVisible();
+    await page.getByRole("radio", { name: "Chat" }).click();
+    const reply = page.getByRole("textbox", { name: "Reply to Codex" });
+    await reply.fill("Show the workspace");
+    await reply.press("Enter");
+    await expect(page.getByText("Streaming from Codex.")).toBeVisible();
+    await page.getByRole("button", { name: /allow/i }).click();
+    await expect(page.getByText("Codex finished.")).toBeVisible();
+    await expect(page.getByText("Streaming from Codex.")).toHaveCount(0);
+    await page.screenshot({ path: path.join(shots, "codex-app-server.png") });
+    await page.getByRole("radio", { name: "Terminal" }).click();
+    await expect(page.locator(".xterm-rows").getByText(/fake terminal/)).toBeVisible();
     expect(launches(log).map((launch) => launch.params)).toEqual([{
-      cwd: "/work/contr-desktop", argv: ["codex"], no_parent: true,
+      cwd: "/work/contr-desktop",
+      argv: [path.join(e2e, "fake-codex.mjs"), "resume", "--remote", expect.stringMatching(/^unix:/), "test-thread"],
+      no_parent: true,
       display: { bg: "#eff0f2", fg: "#2c2c2d", cursor: "#1e1e1e" },
     }]);
+    await page.getByRole("radio", { name: "Chat" }).click();
+    await expect(page.getByText("Codex finished.")).toBeVisible();
   } finally {
     await app.close();
+  }
+
+  const restarted = await launchApp(env, data);
+  try {
+    const page = await restarted.firstWindow();
+    await expect(page.getByRole("tab", { name: "Codex", selected: true })).toBeVisible();
+    await expect(page.getByText("Codex finished.")).toBeVisible();
+  } finally {
+    await restarted.close();
   }
 });
 
@@ -98,7 +128,7 @@ test("the launch IPC returns the hc error message", async () => {
   const app = await launchApp({ ...project, FAKE_HC_RUN_ERROR: "fake hc: cannot start program" });
   try {
     const page = await app.firstWindow();
-    expect(await page.evaluate(() => window.contr.terminal.start?.("codex", null)))
+    expect(await page.evaluate(() => window.contr.terminal.start?.("shell", null)))
       .toEqual({ error: "fake hc: cannot start program" });
   } finally {
     await app.close();

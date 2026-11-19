@@ -10,6 +10,7 @@ const SAY: Record<string, string> = {
   core: "hc did not answer.",
   locate: "This agent's conversation was not found yet.",
   read: "This agent's conversation could not be read.",
+  codex: "Codex App Server could not load the conversation.",
   protocol: "The herdr-contr helper does not match this version. Install both again.",
 };
 
@@ -25,15 +26,18 @@ export function helperProblem(error: { code: string; message: string }): string 
  */
 export function HelperError({ error, onRetry }: { error: { code: string; message: string }; onRetry: () => void }) {
   const [helper, setHelper] = useState("");
-  useEffect(() => void window.contr.settings().then((s) => setHelper(s.helper)), []);
+  const codex = error.code === "codex";
+  useEffect(() => {
+    if (!codex) void window.contr.settings().then((s) => setHelper(s.helper));
+  }, [codex]);
   return (
     // The chat list's scrollbar gutters (ChatList.tsx), so the block's sides are the reply box's.
     <div className="flex min-h-0 flex-1 items-center overflow-y-auto px-4 [scrollbar-gutter:stable_both-edges]">
-      <ErrorNote label="Helper error" problem={helperProblem(error)} detail={`${error.code}: ${error.message}`} onRetry={onRetry}>
-        <p className="mt-2 flex min-w-0 items-center gap-2 text-xs text-muted">
+      <ErrorNote label={codex ? "Codex error" : "Helper error"} problem={helperProblem(error)} detail={`${error.code}: ${error.message}`} onRetry={onRetry}>
+        {!codex && <p className="mt-2 flex min-w-0 items-center gap-2 text-xs text-muted">
           <span className="shrink-0">Helper</span>
           <PathText label="Helper path" path={helper} />
-        </p>
+        </p>}
       </ErrorNote>
     </div>
   );

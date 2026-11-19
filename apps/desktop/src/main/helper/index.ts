@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, type WebContents } from "electron";
-import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, SET_TIER_CHANNEL, TAB_TITLE_CHANNEL, type SpeedTier } from "../../shared/api";
+import { ANSWER_CHANNEL, APPROVE_CHANNEL, FEED_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, REPLY_INFO_CHANNEL, SEND_CHANNEL, SET_TIER_CHANNEL, TAB_TITLE_CHANNEL, type FeedEvent, type SpeedTier } from "../../shared/api";
 import path from "node:path";
 import { pasteImage, sendText, startFeed } from "./feed";
 import { answer, approve, type Answer } from "./card";
@@ -7,6 +7,8 @@ import { tabTitle } from "./title";
 import { helperPath, runHelper } from "./run";
 import { cachedCommands, replyInfo, setReplyTier } from "./reply";
 import { pickImage } from "./pick";
+import { codexThreadId } from "../../shared/codex";
+import { codexSession } from "../codex/session";
 import { noteFeed } from "../digest/ipc";
 
 let selected: string | undefined;
@@ -62,15 +64,37 @@ export function setupHelper(appRoot: string): void {
     // No agent shown: no feed.
     const terminal = chatTerminal();
     if (terminal === "") return;
+    if (codexThreadId(terminal)) {
+      let stopped = false;
+      let unfollow: (() => void) | undefined;
+      feeds.set(sender, () => { stopped = true; unfollow?.(); });
+      const emit = (feed: FeedEvent) => {
+        if (!stopped && !sender.isDestroyed()) sender.send(FEED_CHANNEL, feed);
+      };
+      void codexSession(terminal).then((session) => {
+        if (!stopped) unfollow = session.follow(emit);
+      }).catch((error: Error) => emit({ type: "error", code: "codex", message: error.message }));
+      return;
+    }
     feeds.set(sender, startFeed(helper(), terminal, (feed) => {
       noteFeed(terminal, feed);
       if (!sender.isDestroyed()) sender.send(FEED_CHANNEL, feed);
     }));
   };
-  ipcMain.handle(SEND_CHANNEL, (_event, text: string) => sendText(helper(), chatTerminal(), text));
-  ipcMain.handle(APPROVE_CHANNEL, (_event, request: string, allow: boolean) => approve(helper(), chatTerminal(), request, allow));
+  ipcMain.handle(SEND_CHANNEL, async (_event, text: string) => {
+    const tab = chatTerminal();
+    if (!codexThreadId(tab)) return sendText(helper(), tab, text);
+    try { return (await codexSession(tab)).send(text); }
+    catch (error) { return { ok: false, message: (error as Error).message }; }
+  });
+  ipcMain.handle(APPROVE_CHANNEL, async (_event, request: string, allow: boolean) => {
+    const tab = chatTerminal();
+    if (!codexThreadId(tab)) return approve(helper(), tab, request, allow);
+    try { return (await codexSession(tab)).approve(request, allow); }
+    catch (error) { return { result: "failed", message: (error as Error).message }; }
+  });
   ipcMain.handle(ANSWER_CHANNEL, (_event, request: string, answers: Answer[]) => answer(helper(), chatTerminal(), request, answers));
-  ipcMain.handle(TAB_TITLE_CHANNEL, (_event, terminal: string) => tabTitle(terminal));
+  ipcMain.handle(TAB_TITLE_CHANNEL, (_event, terminal: string) => codexThreadId(terminal) ? { title: "Codex" } : tabTitle(terminal));
   // `commands` changes seldom: one good answer per agent and app run.
   const fresh = () => cachedCommands((terminal) => runHelper(helper(), ["commands", "--terminal", terminal]));
   let commands = fresh();
@@ -81,6 +105,10 @@ export function setupHelper(appRoot: string): void {
   };
   ipcMain.handle(REPLY_INFO_CHANNEL, async () => {
     const terminal = chatTerminal();
+    if (codexThreadId(terminal)) {
+      const session = await codexSession(terminal).catch(() => null);
+      return { agent: "codex", model: session?.model ?? null, effort: null, tier: null, tiers: [], speed: null, context: null, models: [], efforts: [] };
+    }
     const info = await replyInfo(helper(), terminal, commands(terminal));
     return tierFailures.has(terminal) ? { ...info, tiers: [] } : info;
   });

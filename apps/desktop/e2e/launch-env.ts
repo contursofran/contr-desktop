@@ -8,6 +8,7 @@ const repo = path.resolve(e2e, "../../..");
 
 /** The switch of each outside program that the main process starts, and its fake in this folder. */
 export const FAKES = {
+  CONTR_CODEX: path.join(e2e, "fake-codex.mjs"),
   CONTR_HC: path.join(e2e, "fake-hc.mjs"),
   CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
   CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
