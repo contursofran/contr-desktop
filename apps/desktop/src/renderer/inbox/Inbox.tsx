@@ -70,7 +70,7 @@ function DoneEnd({ id, onSaved }: { id: string; onSaved: (n: string) => void }) 
   return (
     <span className="flex items-center gap-2">
       {error && <span role="alert" className="text-xs text-blocked">{error}</span>}
-      <button type="button" disabled={off} onClick={() => void done()} className={`${endText} rounded px-1 hover:text-ink-100 disabled:opacity-50`}>Done</button>
+      <button type="button" disabled={off} onClick={() => void done()} className={`${endText} rounded pl-2 hover:text-ink-100 disabled:opacity-50`}>Done</button>
     </span>
   );
 }
@@ -94,7 +94,7 @@ export function Inbox({ items, blocked, name, onOpen, initialItem }: { items: Ow
   const count = list.length + blocked.length;
   return (
     <section aria-label="Inbox" className="min-h-0 flex-1 overflow-y-auto px-14 pt-7 pb-5">
-      <div className="mx-auto flex w-full max-w-[760px] flex-col">
+      <div className="mx-auto flex w-full max-w-read flex-col">
         <div className="flex items-baseline gap-3 pb-3.5">
           <h1 className="text-base font-semibold text-ink-100">Inbox</h1>
           {count > 0 && <span className="font-mono text-[11px] text-dim">{count} open · oldest first</span>}

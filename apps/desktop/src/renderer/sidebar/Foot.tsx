@@ -42,7 +42,7 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
                 <span role="meter" aria-label={`${r.plan} usage`} aria-valuenow={r.percent ?? undefined} aria-valuetext={r.percent === null ? "No current data" : undefined} aria-valuemin={0} aria-valuemax={100} className="h-1 min-w-0 flex-1 overflow-hidden rounded-sm bg-meter-track">
                   <span className="block h-full bg-meter-fill" style={{ width: `${Math.min(100, r.percent ?? 0)}%` }} />
                 </span>
-                <span className="shrink-0 font-mono text-[11px] whitespace-nowrap text-muted">{r.value}</span>
+                <span className="w-[88px] shrink-0 text-right font-mono text-[11px] whitespace-nowrap text-muted tabular-nums">{r.value}</span>
               </li>
             );
             const tip = usageTip(r, now);
