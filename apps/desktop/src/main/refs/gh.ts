@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { appChildren } from "../children";
 import type { CheckCounts, RefState } from "../../shared/api";
 
 /** The head commit's check rollup, with the count of each check state. */
@@ -74,7 +74,7 @@ export function ghRefs(cwd: string, numbers: number[], gh = process.env.CONTR_GH
   const args = ["api", "graphql", "-f", `query=${refsQuery(numbers)}`, "-F", "owner={owner}", "-F", "repo={repo}"];
   return new Promise((resolve) => {
     // gh exits non-zero when one number is unknown, but stdout still has the others.
-    execFile(gh, args, { cwd, timeout: 15_000 }, (_error, stdout) => resolve(readRefs(String(stdout ?? ""), numbers)));
+    appChildren.execFile(gh, args, { cwd, timeout: 15_000 }, (_error, stdout) => resolve(readRefs(String(stdout ?? ""), numbers)));
   });
 }
 

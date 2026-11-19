@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { appChildren } from "../children";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { OWNER_ANSWER_CHANNEL, OWNER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_ERROR_CHANNEL, OWNER_ERROR_EVENT, OWNER_EVENT, type OwnerItems } from "../../shared/api";
 import { orchPath } from "../board/board";
@@ -32,7 +32,7 @@ const OWNER_POLL_MS = 3_000;
 
 function runOrch(orch: string, args: string[]): Promise<{ code: number | null; stderr: string }> {
   return new Promise((resolve) => {
-    execFile(orch, args, { timeout: 30_000 }, (e, _stdout, stderr) => {
+    appChildren.execFile(orch, args, { timeout: 30_000 }, (e, _stdout, stderr) => {
       const code = e ? (typeof e.code === "number" ? e.code : null) : 0;
       resolve({ code, stderr: String(stderr ?? "") || (e && code == null ? e.message : "") });
     });
