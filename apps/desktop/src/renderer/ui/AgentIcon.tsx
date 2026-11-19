@@ -1,4 +1,4 @@
-import { Bot } from "lucide-react";
+import { Bot, Terminal } from "lucide-react";
 import claude from "../sidebar/icons/claude.svg?raw";
 import codex from "../sidebar/icons/codex.svg?raw";
 
@@ -16,6 +16,7 @@ const PICTURES: Record<string, string> = { "claude-code": picture(claude), codex
  * else a one-color glyph (a bot, for a kind with no picture) in `color`.
  */
 export function AgentIcon({ kind, size, color }: { kind: string | null | undefined; size: number; color: string }) {
+  if (kind === "shell") return <Terminal aria-hidden data-icon="shell" className="shrink-0" style={{ width: size, height: size, color }} />;
   const src = kind ? PICTURES[kind] : undefined;
   if (!src) return <Bot aria-hidden data-icon="agent" className="shrink-0" style={{ width: size, height: size, color }} />;
   return <span aria-hidden data-icon={kind} className="flex shrink-0" style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: src }} />;

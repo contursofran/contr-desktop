@@ -17,6 +17,7 @@ async function openTerminal(output: (cols: number) => string, { readyText = "Bui
   await renderApp(transcript, null, {
     terminal: {
       webgl,
+      close: async () => ({ ok: true }),
       attach: async (cols) => {
         write(new TextEncoder().encode(output(cols)));
         return { terminal: "t7" };

@@ -65,7 +65,7 @@ export function contextTip(percent: number): string {
 
 /**
  * The reply box's placeholder: "Reply to <title>", else "Reply" while the title is not known.
- * "Terminal" is the fallback of main/helper/title.ts `readTabTitle` for a terminal with no title and no agent: not a name.
+ * "Terminal" is the fallback of main/helper/title.ts `readTabDetails` for a terminal with no title and no agent.
  */
 export function replyPlaceholder(title: string): string {
   return title === "" || title === "Terminal" ? "Reply" : `Reply to ${title}`;

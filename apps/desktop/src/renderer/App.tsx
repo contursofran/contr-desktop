@@ -1,7 +1,7 @@
 import { codexThreadId } from "../shared/codex";
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useShortcut } from "@ui-sdk/react/shortcuts";
-import { useCallback, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
@@ -23,7 +23,7 @@ import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
 import { Sidebar, adjacentAgent, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, panelId, readTabs, saveTabs, tabId, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
-import type { Sidebar as SidebarData, TerminalKind } from "../shared/api";
+import type { Sidebar as SidebarData, TabDetails, TerminalKind } from "../shared/api";
 
 const NO_ISSUES: number[] = [];
 
@@ -61,23 +61,23 @@ export function App() {
   }, [sidebar]);
   useEffect(() => setTabs((t) => openTab(t, sidebar.selected)), [sidebar.selected]);
   // Titles from hc for tabs with no sidebar entry, read once per terminal. While hc fails, no title is read and no tab closes.
-  const [titles, setTitles] = useState<Record<string, string>>({});
+  const [titles, setTitles] = useState<Record<string, TabDetails>>({});
   useEffect(() => {
     if (hcDown) return;
     for (const t of tabs) {
       if (codexThreadId(t) || findAgent(sidebar, t) || t in titles) continue;
-      setTitles((m) => ({ ...m, [t]: "" }));
+      setTitles((m) => ({ ...m, [t]: { title: "" } }));
       void window.contr.tabTitle(t).then((r) => {
         // hc runs and does not list the terminal: a saved tab of a gone agent closes.
         if ("gone" in r) setTabs((open) => open.filter((x) => x !== t));
-        else if ("title" in r) setTitles((m) => ({ ...m, [t]: r.title }));
+        else if ("title" in r) setTitles((m) => ({ ...m, [t]: r }));
         // hc failed: the tab stays, and its title is read again after the next hc outage (below), not in a loop.
       });
     }
   }, [tabs, sidebar, titles, hcDown]);
   // An hc outage starts: the titles not read yet are read again when it ends.
   useEffect(() => {
-    if (hcDown) setTitles((m) => Object.fromEntries(Object.entries(m).filter(([, title]) => title !== "")));
+    if (hcDown) setTitles((m) => Object.fromEntries(Object.entries(m).filter(([, details]) => details.title !== "")));
   }, [hcDown]);
   // The Inbox in the main pane (D95) until an agent is selected.
   const [inbox, setInbox] = useState<{ item: string | null } | null>(null);
@@ -109,16 +109,39 @@ export function App() {
     select(terminalId);
   }, [select]);
   const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
-  const close = (terminal: string) => {
-    const next = nextAfterClose(tabs, terminal);
-    setTabs((t) => t.filter((x) => x !== terminal));
-    if (terminal !== sidebar.selected) return;
-    if (next) select(next);
-    // No tab left: main stops the feed and its per-second reads.
-    else void window.contr.select("").then((selected) => setSidebar((s) => ({ ...s, selected })));
+  const tabState = useRef({ tabs, selected: sidebar.selected });
+  useLayoutEffect(() => { tabState.current = { tabs, selected: sidebar.selected }; }, [tabs, sidebar.selected]);
+  const pendingClose = useRef(false);
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState<string>();
+  const close = async (terminal: string) => {
+    if (pendingClose.current) return;
+    pendingClose.current = true;
+    setClosing(true);
+    setCloseError(undefined);
+    try {
+      if (!codexThreadId(terminal)) {
+        const result = await window.contr.terminal.close(terminal);
+        if ("error" in result) throw new Error(result.error);
+      }
+      const current = tabState.current;
+      if (terminal === current.selected) {
+        // An empty selection stops the feed. Keep the Inbox or Settings open if shown during the close.
+        const next = nextAfterClose(current.tabs, terminal);
+        if (next) setReplyFocus({ terminal: next, from: document.activeElement });
+        const selected = await window.contr.select(next);
+        setSidebar((s) => ({ ...s, selected }));
+      }
+      setTabs((t) => t.filter((x) => x !== terminal));
+    } catch (error) {
+      setCloseError(error instanceof Error ? error.message : String(error));
+    } finally {
+      pendingClose.current = false;
+      setClosing(false);
+    }
   };
   const closeShownTab = () => {
-    if (tabs.includes(view.selected)) close(view.selected);
+    if (tabs.includes(view.selected)) void close(view.selected);
   };
   const onMenuClose = useEffectEvent(closeShownTab);
   useEffect(() => window.contr.onCloseTab?.(() => onMenuClose()), []);
@@ -146,8 +169,9 @@ export function App() {
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox !== null && !settings} onInbox={() => openInbox()} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={(terminal) => void close(terminal)} onReorder={setTabs} onStart={start} starting={starting} closing={closing} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
+        {closeError && <p role="alert" aria-label="Close tab error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot close the tab. {closeError}</p>}
         {!inbox && !settings && sidebar.selected && !chatOnly && <Switch side={side} onSide={showSide} />}
         {settings ? <SettingsView />
           : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />

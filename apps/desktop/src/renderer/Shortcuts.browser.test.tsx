@@ -20,6 +20,7 @@ function fakeTerminal(output = "fake terminal t7 attached\r\n") {
   let write: Parameters<TerminalApi["onData"]>[0] | undefined;
   return {
     webgl: false,
+    close: async () => ({ ok: true as const }),
     async attach() {
       write?.(new TextEncoder().encode(output));
       return { terminal: "t7" };

@@ -18,7 +18,7 @@ const agents = [
 const listed = process.env.FAKE_HC_LIST ? JSON.parse(readFileSync(process.env.FAKE_HC_LIST, "utf8")).terminals : null;
 const args = process.argv.slice(2);
 const [cmd, , terminal] = args;
-const runTitles = { claude: "Claude Code", codex: "Codex", shell: "Shell" };
+const runTitles = { claude: "Claude Code", codex: "Codex", shell: "Terminal" };
 // FAKE_HC_DOWN: a file path. While the file is there, each command fails as an hc with no core does.
 if (process.env.FAKE_HC_DOWN && existsSync(process.env.FAKE_HC_DOWN)) {
   process.stderr.write("fake hc: the core is not running\n");
@@ -30,7 +30,8 @@ else if (cmd === "get") {
   if ((process.env.FAKE_HC_GONE ?? "").split(",").includes(terminal)) process.exit(1);
   const launched = /^t-new-(claude|codex|shell)-/.exec(terminal)?.[1];
   if (launched) {
-    process.stdout.write(`${JSON.stringify({ address: terminal, title: runTitles[launched] })}\n`);
+    const agent = launched === "claude" ? "claude-code" : launched === "codex" ? "codex" : undefined;
+    process.stdout.write(`${JSON.stringify({ address: terminal, title: runTitles[launched], agent })}\n`);
     process.exit(0);
   }
   const found = (listed ?? agents).find((t) => t.address === terminal);
@@ -58,6 +59,7 @@ else if (cmd === "get") {
 
 /**
  * `connect` accepts a plain `terminal.run` request (FAKE_HC_RUN_LOG records its params, FAKE_HC_RUN_ERROR sets its error).
+ * `terminal.kill` succeeds and writes its target to FAKE_HC_KILL_LOG when set.
  * FAKE_HC_CONNECT=1: it also accepts the `hello` line, then framed JSON-RPC.
  * `terminal.attach` opens channel 1 and writes one line into it. The process ends when the app closes stdin.
  * FAKE_HC_CONNECT=bad-hello: the `hello` answer is a line that is not JSON.
@@ -101,6 +103,13 @@ function connect() {
           writeFileSync(target + "/ready", address);
         }
         process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, result: { address } })}\n`);
+        return;
+      }
+      if (request.method === "terminal.kill") {
+        const { id, params } = request;
+        if (!params.terminal) process.exit(1);
+        if (process.env.FAKE_HC_KILL_LOG) appendFileSync(process.env.FAKE_HC_KILL_LOG, `${params.terminal}\n`);
+        process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, result: { address: params.terminal, state: "finished" } })}\n`);
         return;
       }
       if (!["1", "bad-hello"].includes(process.env.FAKE_HC_CONNECT)) process.exit(1);

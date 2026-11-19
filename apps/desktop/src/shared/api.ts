@@ -132,8 +132,9 @@ export interface ContrApi {
   prCard(n: number): Promise<PrCard | null>;
 }
 
-/** The answer of `tabTitle`: the title, the terminal is gone (hc runs and does not list it), or hc failed. */
-export type TabTitle = { title: string } | { gone: true } | { error: string };
+export type TabDetails = { title: string; kind?: string };
+/** The title and program, a missing terminal, or an hc error. */
+export type TabTitle = TabDetails | { gone: true } | { error: string };
 
 /** An agent row. An orchestrator has workers (hc `parent`). `name` is the worker's name, else hc's name. */
 export interface SidebarAgent {
@@ -254,6 +255,7 @@ export type RefState =
 
 export type TerminalKind = "claude" | "codex" | "shell";
 export type TerminalStart = { terminal: string } | { error: string };
+export type TerminalClose = { ok: true } | { error: string };
 
 /** The Terminal side: the agent's hc terminal. */
 export interface TerminalApi {
@@ -261,6 +263,8 @@ export interface TerminalApi {
   webgl?: boolean;
   /** Starts a terminal in hc, with no parent. null uses the home folder. */
   start?(kind: TerminalKind, cwd: string | null): Promise<TerminalStart>;
+  /** Ends one hc terminal. An already removed terminal counts as closed. */
+  close(terminal: string): Promise<TerminalClose>;
   /** Attaches at this size. Returns the terminal, or an error to show. */
   attach(cols: number, rows: number): Promise<{ terminal?: string; error?: string }>;
   /** Keys and paste, as the terminal's bytes. */

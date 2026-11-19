@@ -66,12 +66,10 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
   const virtual = nav.getByRole("button", { name: /Virtual list/ });
   expect((await virtual.findElement()).querySelectorAll('[data-icon="agent"]')).toHaveLength(1);
 
-  // The tab glyph is 12 px in a 10 px box (#228). The sidebar glyph stays in a 14 px box.
-  const tabLoader = auditTab.querySelector('[role="img"][aria-label="Working"]');
+  // The tab has Herdr's ring. The sidebar glyph stays in a 14 px box.
+  const tabLoader = auditTab.querySelector('[data-state="working"]');
   const sideLoader = audit.getByRole("img", { name: "Working" });
-  expect(tabLoader?.getAttribute("data-state")).toBe("working");
-  await paint(() => tabLoader, "width").toBe("10px");
-  await paint(() => tabLoader, "font-size").toBe("12px");
+  await paint(() => tabLoader, "width").toBe("12px");
   await expect.element(sideLoader).toHaveAttribute("data-state", "working");
   await paint(() => sideLoader.query(), "width").toBe("14px");
 
@@ -79,7 +77,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
     await commands.colorScheme(scheme);
     const t = THEME[scheme];
     await paint(() => nav.query()?.closest("aside"), "background-color").toBe(t.chrome);
-    await paint(() => tabs.query()?.closest('[data-slot="tabs"]'), "background-color").toBe(t.canvas);
+    await paint(() => tabs.query()?.closest('[data-slot="tabs"]'), "background-color").toBe(t.chrome);
     await paint(() => page.getByRole("main").query(), "background-color").toBe(t.canvas);
     await paint(() => tabLoader, "color").toBe(t.working);
     await paint(() => sideLoader.query(), "color").toBe(t.working);
@@ -112,7 +110,7 @@ test("the palette is the design-system tokens; the agent icons and the loader ar
   for (const scheme of ["dark", "light"] as const) {
     await commands.colorScheme(scheme);
     await paint(() => doneTab.querySelector('[data-state="done"]'), "background-color").toBe(THEME[scheme].done);
-    await paint(() => blockedTab.querySelector('[data-state="blocked"]'), "color").toBe(THEME[scheme].blocked);
+    await paint(() => blockedTab.querySelector('[data-state="blocked"]'), "background-color").toBe(THEME[scheme].blocked);
     await page.screenshot({ path: `../../../../tmp/shots/browser/colors-done-blocked-${scheme}.png` });
   }
 });
