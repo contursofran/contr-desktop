@@ -37,6 +37,8 @@ test("project tabs follow the sidebar, keep separate orders and closures, and li
     await expect(tabs.getByRole("tab")).toHaveText([a, b, handoff]);
     await sidebar.getByRole("button", { name: "Worker check" }).click();
     await expect(tabs.getByRole("tab")).toHaveText([a, b, handoff, "Worker check"]);
+    await tabs.getByRole("tab", { name: a }).click();
+    await expect(shown).toHaveText(a);
     await tabs.getByRole("tab", { name: a }).press("Alt+ArrowRight");
     await expect(tabs.getByRole("tab")).toHaveText([b, a, handoff]);
 
