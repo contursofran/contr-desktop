@@ -73,7 +73,7 @@ test("Hide sidebar hides it, the top bar shows it again clear of the window butt
   page = await app.firstWindow();
   show = page.getByRole("button", { name: "Show sidebar" });
   await expect(page.locator("aside > header").getByRole("button", { name: "Hide sidebar" })).toBeVisible();
-  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText(["Chat panel usability audit"]);
+  await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText(["Chat panel usability audit", "Release notes draft"]);
   await expect(show).toHaveCount(0);
   await app.close();
 });

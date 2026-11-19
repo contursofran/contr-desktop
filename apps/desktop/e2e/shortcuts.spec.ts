@@ -10,11 +10,15 @@ test("File > Close Tab sends the close command to the shown tab", async () => {
   try {
     const page = await app.firstWindow();
     const tabs = page.getByRole("tablist", { name: "Tabs" });
-    await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Chat panel usability audit");
+    await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit", "Release notes draft"]);
+    const shown = tabs.getByRole("tab", { selected: true });
+    await expect(shown).toHaveText("Chat panel usability audit");
     const closeTab = () => app.evaluate(({ BrowserWindow, Menu }) => {
       const window = BrowserWindow.getAllWindows()[0];
       Menu.getApplicationMenu()?.getMenuItemById("close-tab")?.click(undefined, window);
     });
+    await closeTab();
+    await expect(shown).toHaveText("Release notes draft");
     await closeTab();
     await expect(tabs.getByRole("tab")).toHaveCount(0);
     await closeTab();
