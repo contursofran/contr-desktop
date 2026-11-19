@@ -23,6 +23,11 @@ export function currentCore(): CurrentCore {
   return current;
 }
 
+/** The bundled program path, with a substitute bundle only in e2e. */
+export function coreBundlePath(name: string, appRoot: string, env = process.env): string {
+  return binPath(name, appRoot, undefined, env.CONTR_E2E === "1" ? env.CONTR_CORE_BUNDLE : undefined);
+}
+
 /**
  * The path of a core program: the override first; then `<root>/bin/<name>` when the app runs the home's core
  * and the file exists; else the bundled copy (binPath, or `CONTR_CORE_BUNDLE` in its place).
@@ -33,5 +38,5 @@ export function corePath(name: string, appRoot: string, override: string | undef
     const home = path.join(current.root, "bin", name);
     if (existsSync(home)) return home;
   }
-  return binPath(name, appRoot, undefined, env.CONTR_CORE_BUNDLE);
+  return coreBundlePath(name, appRoot, env);
 }

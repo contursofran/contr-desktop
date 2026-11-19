@@ -14,9 +14,16 @@ const THEMES: { value: ThemeChoice; label: string }[] = [
 /** The Settings view in the main pane, as groups of rows (#187): the theme, the updates, the core, the change log, and the helper path. All colors from the theme tokens. */
 export function SettingsView() {
   const [data, setData] = useState<Settings>();
+  const [core, setCore] = useState<CoreState>();
+  const source = core?.source;
   useEffect(() => {
-    void window.contr.settings().then(setData);
+    void window.contr.core().then(setCore);
+    void window.contr.checkCore(false);
+    return window.contr.onCore(setCore);
   }, []);
+  useEffect(() => {
+    if (source) void window.contr.settings().then(setData);
+  }, [source]);
   const choose = (theme: ThemeChoice) => {
     void window.contr.setTheme(theme).then((t) => setData((d) => d && { ...d, theme: t }));
   };
@@ -45,7 +52,7 @@ export function SettingsView() {
             </SegmentedControl>
           </Row>
         </Group>
-        <Updates />
+        <Updates core={core} />
         <Group title="Helper">
           <Row label="Path">
             <PathValue label="Helper path" path={data?.helper ?? ""} />
@@ -60,7 +67,7 @@ export function SettingsView() {
  * The Updates section: this version, the newest one, Check now, and the Update button (installs the .zip, else opens the .dmg).
  * Each open of the view runs one check. The change log stands under it, after the Core part.
  */
-function Updates() {
+function Updates({ core }: { core?: CoreState }) {
   const [u, setU] = useState<UpdateState>();
   useEffect(() => {
     void window.contr.update().then(setU);
@@ -79,7 +86,7 @@ function Updates() {
         onUpdate={() => void window.contr.downloadUpdate()}
         onRestart={() => void window.contr.restartToUpdate()}
       />
-      <Core />
+      <Core state={core} />
       <ChangeLog current={u?.current} checked={u?.checked} />
     </>
   );
@@ -89,13 +96,7 @@ function Updates() {
  * The Core part: the core's version, the newest one, Check now and the folder (docs/reference/releases.md, "The Core part").
  * Each open of the view runs one check that the core's day cache can answer; Check now asks GitHub again.
  */
-function Core() {
-  const [c, setC] = useState<CoreState>();
-  useEffect(() => {
-    void window.contr.core().then(setC);
-    void window.contr.checkCore(false);
-    return window.contr.onCore(setC);
-  }, []);
+function Core({ state: c }: { state?: CoreState }) {
   const now = useNow();
   return (
     <UpdateCard
@@ -104,6 +105,7 @@ function Core() {
       current={c?.current}
       labels={{ current: "Core version", newest: "Newest core version", lastCheck: "Last core check" }}
       onCheck={() => void window.contr.checkCore(true)}
+      onUpdate={() => void window.contr.updateCore()}
     >
       {c?.root && (
         <Row label="Folder">
@@ -131,8 +133,7 @@ function UpdateCard({ title, view: v, current, labels, onCheck, onUpdate, onRest
   current: string | undefined;
   labels: { current: string; newest: string; lastCheck: string };
   onCheck: () => void;
-  /** With no handler the Update button does nothing yet (the core's update comes later). */
-  onUpdate?: () => void;
+  onUpdate: () => void;
   onRestart?: () => void;
   children?: ReactNode;
 }) {

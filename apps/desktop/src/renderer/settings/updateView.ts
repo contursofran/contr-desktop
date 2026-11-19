@@ -13,7 +13,7 @@ export interface UpdateView {
   lastCheck: string | null;
   /** 0 to 100 while a download runs. */
   progress: number | null;
-  /** The line after a .dmg is opened: its file name, not its path. */
+  /** The line after a core update or after a .dmg opens. */
   status: string | null;
   /** The failed check's or download's message; a new check hides an old check's failure while it runs. */
   error: string | null;
@@ -32,21 +32,26 @@ export function updateView(u: UpdateState | CoreState | undefined, now: number, 
   if (kind === "core" && "shared" in u && u.shared && !u.dev) {
     return { newest: "Unknown", check: null, action: null, lastCheck: null, progress: null, status: CORE_SHARED, error: u.error };
   }
+  const core = kind === "core" && "installing" in u ? u : undefined;
   const failed = u.checkFailed === true;
   const upToDate = !failed && u.latest != null && u.latest === u.current && !u.available && !u.ready;
   const newest = u.dev ? "Development build" : upToDate ? "Up to date" : (u.latest ?? (failed && !u.checking ? "Unknown" : "Checking…"));
   const action: UpdateView["action"] = u.ready
     ? { kind: "restart", label: "Restart to update" }
-    : u.available
-      ? { kind: "update", label: u.progress !== null ? `Downloading ${u.progress}%` : "Update", disabled: u.progress !== null }
-      : null;
+    : core?.installing
+      ? { kind: "update", label: "Updating…", disabled: true }
+      : u.available
+        ? { kind: "update", label: u.progress !== null ? `Downloading ${u.progress}%` : "Update", disabled: u.progress !== null }
+        : null;
   return {
     newest,
-    check: u.dev ? null : { label: u.checking ? "Checking…" : "Check now", disabled: u.checking },
+    check: u.dev ? null : { label: u.checking ? "Checking…" : "Check now", disabled: u.checking || core?.installing === true },
     action,
     lastCheck: u.checked != null && !u.checking && !failed ? checkedText(u.checked, Math.max(now, u.checked)) : null,
     progress: u.progress,
-    status: u.downloaded ? `Opened ${u.downloaded.split(/[\\/]/).pop()}. Drag contr to Applications.` : null,
+    status: core?.updated
+      ? `Updated to ${core.updated}. New agent sessions use the new kit. Agents that run now keep the kit they started with.`
+      : u.downloaded ? `Opened ${u.downloaded.split(/[\\/]/).pop()}. Drag contr to Applications.` : null,
     error: failed && u.checking ? null : u.error,
   };
 }

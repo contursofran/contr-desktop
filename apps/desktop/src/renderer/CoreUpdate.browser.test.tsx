@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
 import { shoot } from "../../test/274-chat";
 import { coreState, footer, mountSettings, settings } from "../../test/282-settings";
@@ -62,4 +62,26 @@ test("without a core root, the Core part shows Development build without a folde
   await expect.element(check()).not.toBeInTheDocument();
   await expect.element(page.getByLabelText("Core folder")).not.toBeInTheDocument();
   await shoot("core-dev");
+});
+
+test("Update sends the core request and shows install states", async () => {
+  const updateCore = vi.fn(async () => {});
+  const { coreUpdate } = await mountSettings({
+    app: { dev: true }, core: { latest: "0.1.57", available: true }, overrides: { updateCore },
+  });
+  await update().click();
+  expect(updateCore).toHaveBeenCalledOnce();
+
+  coreUpdate.publish({ installing: true });
+  await expect.element(card().getByRole("button", { name: "Updating…" })).toBeDisabled();
+  coreUpdate.publish({ installing: false, error: "Core update failed: fake unzip" });
+  await expect.element(card().getByRole("alert")).toHaveTextContent("Core update failed: fake unzip");
+  await expect.element(update()).toBeEnabled();
+
+  coreUpdate.publish({ current: "0.1.57", available: false, updated: "0.1.57", error: null });
+  await expect.element(card().getByRole("status")).toHaveTextContent(
+    "Updated to 0.1.57. New agent sessions use the new kit. Agents that run now keep the kit they started with.",
+  );
+  await expect.element(newest()).toHaveTextContent("Up to date");
+  await expect.element(dot()).not.toBeInTheDocument();
 });

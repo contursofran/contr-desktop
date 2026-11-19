@@ -12,6 +12,8 @@
   `settleListScroll` in `apps/desktop/src/renderer/chat/list/ChatList.tsx`.
 - Editable focus at `5b265f8eb7db05df055b2e882d4c10d332076d6b`:
   `apps/desktop/src/renderer/hotkeys/editableFocus.ts`.
+- Core update transitions at `5b265f8eb7db05df055b2e882d4c10d332076d6b`: adapted
+  reducers in `apps/desktop/src/main/core/update.ts`.
 - Copied files: each copied file names its source path and pinned commit in a
   header, and says what we changed. This section lists the copied files by
   folder.
