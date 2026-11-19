@@ -45,18 +45,6 @@ async function coreCard(page: Page) {
   return page.getByRole("region", { name: "Settings" }).getByRole("region", { name: "Core" });
 }
 
-test("the helper check reports the newer core and update availability", async () => {
-  const { core, env } = setup();
-  const app = await launchApp({ ...env, FAKE_CORE_NEWEST: "build-2026-11-20-ccccccc" });
-  const page = await app.firstWindow();
-  await expect(page.getByLabel("Update ready")).toBeVisible();
-  const card = await coreCard(page);
-  await expect(card.getByLabel("Core version", { exact: true })).toHaveText("bbbbbbb 2026-11-17");
-  await expect(card.getByLabel("Newest core version")).toHaveText("ccccccc 2026-11-20");
-  await expect(card.getByLabel("Core folder")).toHaveText(core);
-  await app.close();
-});
-
 test("the helper check error reaches Settings", async () => {
   const { env } = setup();
   const app = await launchApp({ ...env, FAKE_CORE_NEWEST: "build-2026-11-20-ccccccc", FAKE_CORE_FAIL: "check:http" });
@@ -108,7 +96,11 @@ test("a press updates the core, says what new sessions get, and the chat goes on
   try {
     const page = await app.firstWindow();
     await expect(page.getByText("Hashing…")).toBeVisible();
+    await expect(page.getByLabel("Update ready")).toBeVisible();
     const card = await coreCard(page);
+    await expect(card.getByLabel("Core version", { exact: true })).toHaveText("bbbbbbb 2026-11-17");
+    await expect(card.getByLabel("Newest core version")).toHaveText("ccccccc 2026-11-20");
+    await expect(card.getByLabel("Core folder")).toHaveText(core);
     await expect(updateButton(card)).toBeEnabled();
     await expect(card.getByRole("button", { name: "Check now" })).toBeEnabled();
     await shots(card, "available");
