@@ -5,8 +5,9 @@ screenshot check. Start the app with the `verify` skill (`.claude/skills/verify/
 the data in the "Expected" column. Data that needs a switch names it.
 
 A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLabel` and `text "…"` as `getByText`;
-`a > b` is `b` inside `a`. The skill's `click`, `text` and `roles` take the same words. "Spec" is the file in
-`apps/desktop/e2e/` that tests the feature. When the code changes a feature, update its row in the same PR.
+`a > b` is `b` inside `a`. The skill's `click`, `text` and `roles` take the same words. "Spec" names the test.
+Electron specs are in `apps/desktop/e2e/`. Files ending in `.browser.test.tsx` are in `apps/desktop/src/renderer/`.
+When the code changes a feature, update its row in the same PR.
 
 ## Sidebar
 
@@ -59,11 +60,11 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Charts | Reads `contr-chart bar` and `contr-chart line` | `fixture=charts-session` | `list "Bar chart"`, `img "Line chart, …"` | A title with its quieter part above each chart; grey bars, largest first, rows 20 px apart, with the value and note as text in a 120 px column; a line not wider than 666 px, with the latest point brightest and one outlier labelled with its note (`9.4 · #31`); an unknown kind stays code | `charts` |
 | Task lists | Reads `- [x]` items | — | — | Check boxes in theme colors | `tasklist` |
 | Pictures | Reads a message with a picture | `fixture=missing-picture-session` | — | A local picture draws; one that cannot load is a muted chip; a web picture stays a link | `missing-picture` (Electron), `Markdown.browser.test.tsx` |
-| Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `rtl` |
-| Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `column` |
-| Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `column` |
-| Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `scroll` |
-| Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `jump` |
+| Right-to-left text | Reads Arabic or Hebrew | `fixture=rtl-session` | — | Right-to-left base; code and English stay left to right | `Rtl.browser.test.tsx` |
+| Reading column | Looks at a wide and a narrow window | `size=1440x900`, `size=640x600` | — | At most 760 px, centered, 56 px side padding (16 px under 768 px); its parts line up; the text ends left of the Chat or Terminal switch | `Column.browser.test.tsx` |
+| Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `Column.browser.test.tsx` |
+| Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `Scroll.browser.test.tsx` |
+| Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `Jump.browser.test.tsx` |
 | Loading | Opens a chat before the first feed answer | `FAKE_HELPER_SLOW_FEED=3000` | `status "Reading the chat"` | The loader and "Reading the chat…" | `reply-send` |
 | Helper error | Opens a chat when the helper fails | `FAKE_HELPER_ERROR=<code>` | `alert "Helper error"`, `button "Retry"` | Plain words, the error, the helper path with Copy, Retry; the reply box is off | `states`, `app`, `small-texts` |
 | No agent | Starts with no agent | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | `status "No agent"` | "No agents yet": the main area says how an agent shows | `states` |
@@ -101,7 +102,7 @@ A selector is `role "name"` as `getByRole` takes it, `label "name"` as `getByLab
 | Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `reply` |
 | Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `reply` |
 | Focus | Opens a chat or comes back to the window | — | `textbox /^Reply to/` | The box takes the keyboard, but not from a chat selection, an open menu or a card that owns the keys | `focus` |
-| Tab order | Presses Tab | Tab | — | Top bar, card, reply box, then ↓ and the chat rows | `keys`, `jump` |
+| Tab order | Presses Tab | Tab | — | Top bar, card, reply box, then ↓ and the chat rows | `keys`, `Jump.browser.test.tsx` |
 
 ## Terminal
 
