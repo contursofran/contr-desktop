@@ -1,43 +1,50 @@
-// Dev runner: Vite dev server for the renderer, esbuild watch for main and
-// preload, and Electron, restarted when main or preload change.
+// Vite reloads the renderer. Only a successful main or preload build restarts Electron.
 import { spawn } from "node:child_process";
-import { watch } from "node:fs";
+import { once } from "node:events";
 import electron from "electron";
 import { createServer } from "vite";
-import { buildMain } from "./build.mjs";
+import { watchMain } from "./build.mjs";
 
 const server = await createServer();
 await server.listen();
 const url = server.resolvedUrls.local[0];
-await buildMain(true);
-
 let child;
-function start() {
-  child = spawn(String(electron), ["."], {
+let stopping = false;
+
+async function stopChild() {
+  const previous = child;
+  child = undefined;
+  if (previous) {
+    const exited = once(previous, "exit");
+    previous.kill("SIGTERM");
+    await exited;
+  }
+}
+
+const build = await watchMain(async () => {
+  await stopChild();
+  if (stopping) return;
+  const next = spawn(String(electron), ["."], {
     stdio: "inherit",
     env: { ...process.env, VITE_DEV_SERVER_URL: url },
   });
-  child.on("exit", (code, signal) => {
-    if (signal !== "SIGTERM") shutdown(code ?? 0);
+  child = next;
+  next.once("exit", (code) => {
+    if (child === next) {
+      child = undefined;
+      void shutdown(code ?? 0);
+    }
   });
-}
-
-let timer;
-watch("out", { recursive: true }, () => {
-  clearTimeout(timer);
-  timer = setTimeout(() => {
-    child.kill("SIGTERM");
-    start();
-  }, 200);
 });
 
 async function shutdown(code) {
+  if (stopping) return;
+  stopping = true;
+  await stopChild();
+  await build.dispose();
   await server.close();
-  process.exit(code);
+  process.exitCode = code;
 }
-process.on("SIGINT", () => {
-  child?.kill("SIGTERM");
-  void shutdown(0);
-});
 
-start();
+process.on("SIGINT", () => void shutdown(0));
+process.on("SIGTERM", () => void shutdown(0));

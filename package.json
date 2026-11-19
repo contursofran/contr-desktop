@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@12.18.0",
   "scripts": {
+    "verify:local": "python3 scripts/verify-local.py",
     "dev": "pnpm --filter desktop dev",
     "build": "pnpm --filter desktop build",
     "typecheck": "pnpm --filter desktop typecheck",

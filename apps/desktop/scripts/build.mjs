@@ -14,11 +14,20 @@ const options = {
   logLevel: "info",
 };
 
-export async function buildMain(watch = false) {
-  if (!watch) return build(options);
-  const ctx = await context(options);
+export async function watchMain(onBuilt) {
+  const ctx = await context({
+    ...options,
+    plugins: [{
+      name: "restart-electron",
+      setup(builder) {
+        builder.onEnd((result) => {
+          if (!result.errors.length) return onBuilt();
+        });
+      },
+    }],
+  });
   await ctx.watch();
   return ctx;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) await buildMain();
+if (import.meta.url === `file://${process.argv[1]}`) await build(options);

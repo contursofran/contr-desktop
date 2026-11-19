@@ -34,6 +34,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "browser",
+          ...(process.env.CI ? {} : { maxWorkers: 2 }),
           root: import.meta.dirname,
           include: ["src/**/*.browser.test.tsx"],
           setupFiles: ["./test/browserSetup.ts"],

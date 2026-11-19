@@ -83,10 +83,17 @@ parts; when the design has no answer, ask.
 - `pnpm test:browser` runs renderer tests in headless Chromium. Put a new
   test of the renderer's DOM, layout, theme, keys or focus there, not in
   Electron (`docs/decisions/272-browser-tests.md`).
-- Locally, run `pnpm typecheck`, `pnpm lint`, `pnpm test`,
-  `pnpm test:browser`, and only the e2e specs that cover the change:
-  `pnpm e2e --workers=2 e2e/<spec>.spec.ts`. Run the checks one after
-  another, not at the same time. The `CI` check runs the full e2e suite.
+- While editing, use the feature map and run the smallest relevant test,
+  such as `pnpm test:browser Inbox.browser.test.tsx`. For an Electron
+  change, pass all relevant specs to one `pnpm e2e --workers=2` command.
+  Each invocation builds the app once.
+- Before a PR, run `pnpm verify:local e2e/<spec>.spec.ts ...` (Python 3).
+  It waits for the shared local slot, then runs typecheck, lint, unit,
+  browser, and the selected Electron specs in order. Omit the specs when
+  no Electron test applies. Use `--full-e2e` for a full local run.
+  Agents in other worktrees can edit and run focused tests while waiting.
+  Local browser tests use at most two workers. CI runs the full suite and
+  logs file durations. Compare several runs before changing CI workers.
 - To run, drive and look at the app, use the `verify` skill
   (`.claude/skills/verify/SKILL.md`), not a new launch script;
   `docs/feature-map.md` lists each feature with its keys, selector,
