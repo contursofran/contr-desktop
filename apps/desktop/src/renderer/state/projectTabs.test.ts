@@ -45,6 +45,12 @@ describe("project tabs", () => {
     expect(visibleTabs(restored, members, "project:B", "c")).toEqual(["c"]);
   });
 
+  it("puts a new sidebar agent before a saved shell", () => {
+    store(null);
+    const tabs = editProject(readTabs(), "project:A", () => ({ order: ["a", "shell"], closed: [] }));
+    expect(visibleTabs(tabs, members, "project:A", "a")).toEqual(["a", "b", "shell"]);
+  });
+
   it.each([null, "{not json", '{"a":1}'])("uses empty state for %s", (value) => {
     store(value);
     expect(readTabs()).toEqual({ projects: {}, legacy: [] });

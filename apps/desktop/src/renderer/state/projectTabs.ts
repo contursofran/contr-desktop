@@ -78,9 +78,13 @@ export function tabProject(tabs: SavedTabs, members: Map<string, TabMember>, ter
 export function visibleTabs(tabs: SavedTabs, members: Map<string, TabMember>, project: string, selected: string): string[] {
   const { order, closed } = tabs.projects[project] ?? EMPTY;
   const agents = [...members].flatMap(([id, member]) =>
-    member.project === project && !member.worker ? [id] : [],
+    member.project === project && !member.worker && !order.includes(id) ? [id] : [],
   );
-  return [...new Set([...order, ...agents, ...(project === "" ? tabs.legacy : []), selected])].filter((id) => {
+  // Put newly listed agents before saved terminals without a sidebar row.
+  const firstTerminal = order.findIndex((id) => !members.has(id));
+  const insertAt = firstTerminal < 0 ? order.length : firstTerminal;
+  const ordered = [...order.slice(0, insertAt), ...agents, ...order.slice(insertAt)];
+  return [...new Set([...ordered, ...(project === "" ? tabs.legacy : []), selected])].filter((id) => {
     if (!id) return false;
     if (id === selected) return true;
     const member = members.get(id);

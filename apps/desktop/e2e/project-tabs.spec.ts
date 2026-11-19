@@ -21,7 +21,14 @@ test("project tabs follow the sidebar, keep separate orders and closures, and li
       ["t8", "Worker check", "/work/contr-desktop", "t7"],
     ].map(([address, title, cwd, parent]) => ({ address, title, cwd, parent, agent: "claude-code", state: "live", status: "idle" })),
   }));
-  const env = { CONTR_TERMINAL: "t7", FAKE_HC_LIST: list };
+  const fixture = info.outputPath("chat.jsonl");
+  const message = "The runner checks passed on both machines.";
+  const rows = [
+    { id: "question", k: "user", text: "Check the runner on both machines." },
+    { id: "answer", k: "assistant", text: message },
+  ];
+  writeFileSync(fixture, rows.map((row) => JSON.stringify(row)).join("\n"));
+  const env = { CONTR_TERMINAL: "t7", FAKE_HC_LIST: list, FAKE_HELPER_FIXTURE: fixture };
   const [a, b, c, d] = ["Chat panel usability audit", "Release notes draft", "Install health check", "Runner diagnostics"];
   const handoff = "Project handoff";
   const number = process.platform === "darwin" ? "Meta" : "Control";
@@ -51,6 +58,7 @@ test("project tabs follow the sidebar, keep separate orders and closures, and li
     await tabs.getByRole("tab", { name: d }).press("Alt+ArrowLeft");
     await expect(tabs.getByRole("tab")).toHaveText([d, c]);
 
+    await expect(page.getByText(message, { exact: true })).toBeVisible();
     for (const scheme of ["dark", "light"] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       await page.screenshot({ path: path.join(shots, `335-project-tabs-${scheme}.png`) });
