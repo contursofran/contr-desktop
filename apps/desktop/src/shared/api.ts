@@ -74,7 +74,7 @@ export interface ContrApi {
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
   branch(): Promise<string | null>;
   /** The Projects list and the selected agent. */
-  sidebar(): Promise<Sidebar>;
+  sidebar(openTabs?: string[]): Promise<Sidebar>;
   /** Listens to changes of the Projects list. Returns a function that stops listening. */
   onSidebar(listener: (sidebar: Sidebar) => void): () => void;
   /** Makes this terminal's agent the chat's agent; "" shows none and stops the feed. Returns the selected terminal. */

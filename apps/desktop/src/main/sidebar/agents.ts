@@ -51,6 +51,7 @@ export interface ListInput {
   folders?: Map<string, string>;
   /** The project of a working folder. */
   projectOf: (cwd: string) => string;
+  codex?: SidebarAgent[];
 }
 
 /**
@@ -59,7 +60,7 @@ export interface ListInput {
  * A live worker (`liveWorkerParents`, the status line's rule) whose parent is listed shows under it, with or without a `status`;
  * the orchestration tool gives its name and work.
  */
-export function buildProjects({ hc, orch, titles, folders, projectOf }: ListInput): SidebarProject[] {
+export function buildProjects({ hc, orch, titles, folders, projectOf, codex = [] }: ListInput): SidebarProject[] {
   const parents = liveWorkerParents(hc, orch);
   const terms = parseList<HcTerminal>(hc, "terminals").filter((t) => isLiveAgent(t) || parents.has(t.address as string));
   const named = new Map<string, OrchAgent>();
@@ -82,6 +83,9 @@ export function buildProjects({ hc, orch, titles, folders, projectOf }: ListInpu
       // A worker with no status shows only under its parent.
       agent: isLiveAgent(t),
     });
+  }
+  for (const chat of codex) {
+    agents.set(chat.terminal, { ...chat, parent: null, agent: true, cwd: chat.cwd ?? "" });
   }
   const projects = new Map<string, SidebarAgent[]>();
   const cwds = new Map<string, string>();

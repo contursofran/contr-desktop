@@ -26,11 +26,12 @@ test("the shown agent and the Chat / Terminal pick stay over a restart", async (
   let page = await app.firstWindow();
   // No stored agent: the first agent of the list shows.
   await expect(shown(page)).toHaveAccessibleName(/Chat panel usability audit/);
-  await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Install health check" }).click();
-  await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await terminalPick(page).click();
   await expect(terminalPick(page)).toBeChecked();
-  // The pick is one for the window: it stays when another agent shows.
+  await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Install health check" }).click();
+  await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
+  await expect(terminalPick(page)).toHaveCount(0);
+  // The Terminal pick is still saved when a terminal-backed Claude agent shows.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
   await expect(shown(page)).toHaveAccessibleName(/Release notes draft/);
   await expect(terminalPick(page)).toBeChecked();

@@ -1,5 +1,7 @@
 # Start Codex chats through App Server
 
+See [Show Codex chats in Projects](324-codex-chat-sidebar.md) for the current view and connection.
+
 New tab → Codex starts a thread in the project folder. The desktop app
 receives chat and tool events over a private Unix socket and sends prompts
 and approval decisions through the same connection.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { SidebarAgent } from "../../shared/api";
 import { GET_LIMIT, sidebarReader, type Exec } from "./reader";
 
 interface Term {
@@ -78,6 +79,23 @@ describe("sidebarReader", () => {
     expect(f.count("orch")).toBe(1);
     expect(titleOf(recovered, "t0")).toBe("Title after outage");
     expect(recovered.hcError).toBeUndefined();
+  });
+
+  it("lists a native Codex project when hc is down", async () => {
+    const f = fakes(0);
+    const exec: Exec = (program, args) => program === "hc"
+      ? Promise.resolve({ out: "", error: "hc is not reachable" })
+      : f.exec(program, args);
+    const reader = sidebarReader({ hc: "hc", git: "git", orch: () => "orch", exec, favicon: () => null });
+    const chat: SidebarAgent = {
+      terminal: "codex:thread", cwd: "/w/workspace", title: "Workspace overview",
+      name: null, state: "idle", kind: "codex", issue: null, workers: [],
+    };
+    await expect(reader.read([chat])).resolves.toMatchObject({
+      hcError: "hc is not reachable",
+      projects: [{ name: "workspace", cwd: "/w/workspace", branch: "main", agents: [chat] }],
+    });
+    expect(f.count("orch")).toBe(0);
   });
 
   it("runs hc get once for each new agent, none when idle, and one for a changed agent", async () => {
