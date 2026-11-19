@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
-import { createWriteStream, mkdtempSync } from "node:fs";
-import os from "node:os";
+import { createWriteStream, rmSync } from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -8,8 +7,9 @@ import { Transform } from "node:stream";
 import { CHANGELOG_CHANNEL, UPDATE_CHANNEL, UPDATE_CHECK_CHANNEL, UPDATE_DOWNLOAD_CHANNEL, UPDATE_EVENT, UPDATE_RESTART_CHANNEL, type UpdateState } from "../../shared/api";
 import { changeLogSource } from "./changelog";
 import { afterCheck, singleFlight } from "./check";
-import { bundleOf, startSwap, unpack, writable } from "./install";
-import { DMG, getJson, newer, parseRelease, readReleaseFile, RELEASE_FILE_URL, RELEASE_URL, RELEASES_URL, ZIP, type ReleaseFile } from "./release";
+import { updateConfig } from "./config";
+import { stageZip, startSwap, writable } from "./install";
+import { getJson, newer, parseRelease, readReleaseFile, type Release, type ReleaseFile } from "./release";
 
 /**
  * GitHub has no release event for an app: the newest release is read at start, every 6 hours, each time the
@@ -32,21 +32,26 @@ export const CHECK_MS = 6 * 60 * 60_000;
  * CONTR_RELEASE_FILE_URL points it at a fake release.json (e2e); e2e with no such switch reads no release.json.
  */
 export function registerUpdateIpc(): { check: () => Promise<void> } {
-  const url = process.env.CONTR_UPDATE_URL ?? (app.isPackaged ? RELEASE_URL : null);
-  const file = process.env.CONTR_RELEASE_FILE_URL ?? (app.isPackaged ? RELEASE_FILE_URL : null);
-  const e2e = process.env.CONTR_E2E === "1";
-  const target = process.env.CONTR_INSTALL_DIR ? path.join(process.env.CONTR_INSTALL_DIR, "contr.app") : app.isPackaged ? bundleOf(app.getPath("exe")) : null;
-  const log = changeLogSource(process.env.CONTR_RELEASES_URL ?? (app.isPackaged ? RELEASES_URL : null), fetch, file);
+  const { e2e, url, file, releases, target, downloads } = updateConfig(process.env, app.isPackaged, () => app.getPath("exe"));
+  const log = changeLogSource(releases, fetch, file);
   const current = (e2e && process.env.CONTR_VERSION) || app.getVersion();
   const state: UpdateState = { current, dev: url === null && file === null, latest: null, available: false, progress: null, downloaded: null, ready: false, error: null, checking: false, checked: null, checkFailed: false };
-  let release: { version: string; dmgUrl: string | null; zipUrl: string | null } | null = null;
+  let release: Release | null = null;
   let next: string | null = null;
+  let restarting = false;
+  const clearStage = () => {
+    if (next) rmSync(path.dirname(next), { recursive: true, force: true });
+    next = null;
+  };
+  app.once("will-quit", () => {
+    if (!restarting) clearStage();
+  });
   const set = (change: Partial<UpdateState>) => {
     Object.assign(state, change);
     for (const w of BrowserWindow.getAllWindows()) w.webContents.send(UPDATE_EVENT, { ...state });
   };
   /** Installs from the .zip when the release has it and the app's folder is writable. */
-  const zipUrl = (r = release) => (r?.zipUrl && target && writable(path.dirname(target)) ? r.zipUrl : null);
+  const zipUrl = (r: Release) => (r.zipUrl && target && writable(path.dirname(target)) ? r.zipUrl : null);
   /** One check at a time (singleFlight); see afterCheck for a check while a download runs or is ready. */
   const check = singleFlight(async () => {
     if (!url && !file) return void log.load();
@@ -82,18 +87,16 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
   };
   const download = async () => {
     if (!release || state.progress !== null || state.ready) return;
-    const zip = zipUrl();
+    const zip = zipUrl(release);
     set({ progress: 0, error: null, downloaded: null });
     try {
       if (zip) {
-        const file = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-zip-")), ZIP);
-        await fetchTo(zip, file);
-        next = await unpack(file, release.version);
+        next = await stageZip((file) => fetchTo(zip, file), release.version, release.sha256);
         set({ progress: null, ready: true });
         return;
       }
       if (!release.dmgUrl) throw new Error("The release has no .dmg.");
-      const file = path.join(process.env.CONTR_DOWNLOADS ?? app.getPath("downloads"), DMG);
+      const file = path.join(downloads ?? app.getPath("downloads"), `contr-mac-universal-${release.version}.dmg`);
       await fetchTo(release.dmgUrl, file);
       if (!e2e) {
         const failed = await shell.openPath(file);
@@ -105,9 +108,17 @@ export function registerUpdateIpc(): { check: () => Promise<void> } {
     }
   };
   /** Starts the detached swap script and quits; the script opens the new app (or the old one on failure). */
-  const restart = () => {
-    if (!state.ready || !next || !target || e2e) return;
-    startSwap(process.pid, target, next);
+  const restart = async () => {
+    if (!state.ready || !next || !target || e2e || restarting) return;
+    restarting = true;
+    try {
+      await startSwap(process.pid, target, next);
+    } catch (e) {
+      restarting = false;
+      clearStage();
+      set({ ready: false, error: `Update failed: ${(e as Error).message}` });
+      return;
+    }
     app.quit();
   };
   ipcMain.handle(UPDATE_CHANNEL, () => ({ ...state }));

@@ -5,10 +5,10 @@ const asset = (name: string) => ({ name, browser_download_url: `https://x/${name
 
 describe("parseRelease", () => {
   it("reads the version from the notes and the .dmg and .zip urls", () => {
-    expect(parseRelease({ name: "build-2026-11-16-abc1234", body: "contr 0.1.12 from abc.", assets: [asset("contr-mac-universal.zip"), asset("contr-mac-universal.dmg")] })).toEqual({ version: "0.1.12", dmgUrl: "https://x/contr-mac-universal.dmg", zipUrl: "https://x/contr-mac-universal.zip" });
+    expect(parseRelease({ name: "build-2026-11-16-abc1234", body: "contr 0.1.12 from abc.", assets: [asset("contr-mac-universal.zip"), asset("contr-mac-universal.dmg")] })).toEqual({ version: "0.1.12", dmgUrl: "https://x/contr-mac-universal.dmg", zipUrl: "https://x/contr-mac-universal.zip", sha256: null });
   });
   it("falls back to the name and gives no urls with no assets", () => {
-    expect(parseRelease({ name: "contr 1.2.3", assets: [] })).toEqual({ version: "1.2.3", dmgUrl: null, zipUrl: null });
+    expect(parseRelease({ name: "contr 1.2.3", assets: [] })).toEqual({ version: "1.2.3", dmgUrl: null, zipUrl: null, sha256: null });
   });
   it("throws with no version", () => expect(() => parseRelease({ body: "notes" })).toThrow("no version"));
 });
@@ -23,18 +23,22 @@ describe("newer", () => {
 });
 
 const FILE = "https://github.com/o/r/releases/latest/download/release.json";
-const file = { schema: 1, version: "0.1.30", tag: "build-2026-11-17-ccccccc", sha: "c", date: "2026-11-17T00:00:00Z", assets: ["contr-mac-universal.dmg", "contr-mac-universal.zip"], releases: [{ version: "0.1.30", tag: "build-2026-11-17-ccccccc", date: "2026-11-17", changes: ["A (#1)"] }, { version: "bad" }] };
+const sha256 = "A3".repeat(32);
+const file = { sha256, schema: 1, version: "0.1.30", tag: "build-2026-11-17-ccccccc", sha: "c", date: "2026-11-17T00:00:00Z", assets: ["contr-mac-universal.dmg", "contr-mac-universal.zip"], releases: [{ version: "0.1.30", tag: "build-2026-11-17-ccccccc", date: "2026-11-17", changes: ["A (#1)"] }, { version: "bad" }] };
 const answer = (body: unknown, status = 200, headers: Record<string, string> = {}) => (async () => new Response(typeof body === "string" ? body : JSON.stringify(body), { status, headers })) as typeof fetch;
 const limit = () => ({ "x-ratelimit-remaining": "0", "x-ratelimit-reset": String(new Date(2026, 10, 17, 14, 5, 30).getTime() / 1000) });
 
 describe("parseReleaseFile", () => {
   it("gives the version, the asset URLs under releases/download/<tag>/ and the change log", () => {
     expect(parseReleaseFile(file, FILE)).toEqual({
-      release: { version: "0.1.30", dmgUrl: "https://github.com/o/r/releases/download/build-2026-11-17-ccccccc/contr-mac-universal.dmg", zipUrl: "https://github.com/o/r/releases/download/build-2026-11-17-ccccccc/contr-mac-universal.zip" },
+      release: { version: "0.1.30", dmgUrl: "https://github.com/o/r/releases/download/build-2026-11-17-ccccccc/contr-mac-universal.dmg", zipUrl: "https://github.com/o/r/releases/download/build-2026-11-17-ccccccc/contr-mac-universal.zip", sha256: sha256.toLowerCase() },
       releases: [file.releases[0]],
     });
   });
-  it("gives no URL for an asset that the release does not have", () => expect(parseReleaseFile({ ...file, assets: [] }, FILE).release).toEqual({ version: "0.1.30", dmgUrl: null, zipUrl: null }));
+  it("gives no URL for an asset that the release does not have", () => expect(parseReleaseFile({ ...file, assets: [], sha256: undefined }, FILE).release).toEqual({ version: "0.1.30", dmgUrl: null, zipUrl: null, sha256: null }));
+  it.each([undefined, "bad", 42])("keeps older release metadata and treats %s as a missing hash", (sha256) => {
+    expect(parseReleaseFile({ ...file, sha256 }, FILE).release.sha256).toBeNull();
+  });
   it("throws for another schema or no version", () => {
     expect(() => parseReleaseFile({ ...file, schema: 2 }, FILE)).toThrow();
     expect(() => parseReleaseFile({ ...file, version: undefined }, FILE)).toThrow();
