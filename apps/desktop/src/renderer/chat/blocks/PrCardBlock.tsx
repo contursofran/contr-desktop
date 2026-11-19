@@ -63,6 +63,12 @@ const MARK: Record<PrCheck["state"], { text: string; label: string; ink: string 
 
 function CheckRow({ check, now }: { check: PrCheck; now: number }) {
   const mark = MARK[check.state];
+  const failure = check.failure;
+  const file = failure?.path.split("/").at(-1);
+  const location = file && failure?.line ? `${file}:${failure.line}` : file;
+  const label = failure
+    ? [check.name, location, failure.text].filter(Boolean).join(" · ")
+    : check.fixSha ? `${check.name} on the fix, ${check.fixSha.slice(0, 7)}` : check.name;
   return (
     <div data-check={check.state} className={`grid h-7 grid-cols-[16px_1fr_auto] items-center gap-[10px] border-t border-hairline px-[14px] text-[12.5px] ${check.state === "fail" ? "text-ink-100" : "text-ink-62"}`}>
       {mark ? (
@@ -70,7 +76,7 @@ function CheckRow({ check, now }: { check: PrCheck; now: number }) {
       ) : (
         <StatusGlyph state={check.state === "running" ? "working" : "waiting"} className="w-4! text-[11px]!" />
       )}
-      <span className="truncate">{check.name}</span>
+      <span className="truncate" dir="auto" title={failure ? label : undefined}>{label}</span>
       <span className="font-mono text-[11px] text-ink-38">{checkTime(check, now)}</span>
     </div>
   );
