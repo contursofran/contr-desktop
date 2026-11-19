@@ -1,4 +1,3 @@
-import { appendFileSync } from "node:fs";
 import type { Sidebar } from "../../shared/api";
 import { readTitle } from "../helper/title";
 import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, runRead, type HcTerminal } from "./agents";
@@ -49,7 +48,7 @@ async function eachLimited<T>(items: T[], limit: number, fn: (item: T) => Promis
 }
 
 /**
- * The Projects list read with few processes: one `hc ls --json` and one orchestration tool read each time;
+ * The Projects list read with few processes: one `hc ls --json` and one orchestration tool read when hc answers;
  * `hc get --json` (title and session folder) only for a terminal that is new, whose `turn`, `status` or `cwd` changed,
  * or that an `hc events` line names (other than a status line, which `hc ls` shows). The others keep their last answer.
  */
@@ -74,30 +73,34 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
   const favicons = new Map<string, string | null>();
 
   const read = async () => {
-    const trace = (stage: string, error?: string | null) => {
-      const file = process.env.FAKE_HC_DOWN;
-      if (file) appendFileSync(file + ".trace", JSON.stringify([Date.now(), stage, error]) + "\n");
-    };
-    trace("read");
-    const hcRead = exec(hc, ["ls", "--json"]).then((r) => { trace("hc exit", r.error); return r; });
-    trace("hc spawn returned");
-    const orchRead = exec(orch(), ["agents", "ls", "--all", "--json"]).then((r) => { trace("orch exit", r.error); return r; });
-    trace("orch spawn returned");
-    const [hcList, orchOut] = await Promise.all([hcRead, orchRead]);
-    // hc failed: no agents, and the renderer shows why.
+    const hcList = await exec(hc, ["ls", "--json"]);
     const { terms, error: hcError } = readHcList(hcList.out, hcList.error);
+    if (hcError) {
+      // Worker names need the hc list. Report the outage and read all agent data again after recovery.
+      got.clear();
+      marked.clear();
+      projects.clear();
+      gits.clear();
+      favicons.clear();
+      gitAll = false;
+      return { projects: [], hcError };
+    }
+
     const live = terms.filter((t): t is HcTerminal & { address: string } => typeof t.address === "string");
     const addresses = new Set(live.map((t) => t.address));
     for (const a of got.keys()) if (!addresses.has(a)) got.delete(a);
     for (const a of marked) if (!addresses.has(a)) marked.delete(a);
     const todo = live.filter((t) => got.get(t.address)?.key !== changeKey(t) || marked.has(t.address));
-    await eachLimited(todo, GET_LIMIT, async (t) => {
-      marked.delete(t.address);
-      const r = await exec(hc, ["get", "--json", t.address]);
-      const entry = { key: changeKey(t), title: readTitle(r.out, ""), folder: readSessionFolder(r.out) };
-      // A failed get is tried again on the next read; until then the last answer stays.
-      if (!r.error) got.set(t.address, entry);
-    });
+    const [orchOut] = await Promise.all([
+      exec(orch(), ["agents", "ls", "--all", "--json"]),
+      eachLimited(todo, GET_LIMIT, async (t) => {
+        marked.delete(t.address);
+        const r = await exec(hc, ["get", "--json", t.address]);
+        const entry = { key: changeKey(t), title: readTitle(r.out, ""), folder: readSessionFolder(r.out) };
+        // A failed get is tried again on the next read; until then the last answer stays.
+        if (!r.error) got.set(t.address, entry);
+      }),
+    ]);
     const titles = new Map<string, string>();
     const folders = new Map<string, string>();
     for (const [a, g] of got) {
@@ -121,7 +124,7 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
         return { ...p, ...gits.get(p.cwd)!, favicon: favicons.get(p.cwd)! };
       }),
     );
-    return { projects: list, ...(hcError ? { hcError } : {}) };
+    return { projects: list };
   };
 
   const event = (line: string) => {

@@ -46,6 +46,40 @@ const titleOf = (s: Awaited<ReturnType<ReturnType<typeof sidebarReader>["read"]>
   s.projects.flatMap((p) => p.agents).find((a) => a.terminal === address)?.title;
 
 describe("sidebarReader", () => {
+  it("returns an hc outage without waiting for orchestration and reads fresh data after recovery", async () => {
+    const f = fakes(1);
+    const reason = "hc is not reachable";
+    let down = false;
+    let finishOrch!: (result: Awaited<ReturnType<Exec>>) => void;
+    const heldOrch = new Promise<Awaited<ReturnType<Exec>>>((resolve) => { finishOrch = resolve; });
+    const exec: Exec = (program, args) => {
+      if (down && program === "hc") return Promise.resolve({ out: "", error: reason });
+      if (down && program === "orch") return heldOrch;
+      return f.exec(program, args);
+    };
+    const reader = sidebarReader({ hc: "hc", git: "git", orch: () => "orch", exec, favicon: () => null });
+    await reader.read();
+
+    down = true;
+    const outage = reader.read();
+    const checkpoint = new Promise<string>((resolve) => setImmediate(() => resolve("read is still pending")));
+    try {
+      await expect(Promise.race([outage, checkpoint])).resolves.toEqual({ projects: [], hcError: reason });
+    } finally {
+      finishOrch({ out: "[]", error: null });
+      await outage;
+    }
+
+    down = false;
+    f.terms[0]!.title = "Title after outage";
+    f.reset();
+    const recovered = await reader.read();
+    expect(f.count("hc get --json t0")).toBe(1);
+    expect(f.count("orch")).toBe(1);
+    expect(titleOf(recovered, "t0")).toBe("Title after outage");
+    expect(recovered.hcError).toBeUndefined();
+  });
+
   it("runs hc get once for each new agent, none when idle, and one for a changed agent", async () => {
     const f = fakes(200);
     const reader = sidebarReader({ hc: "hc", git: "git", orch: () => "orch", exec: f.exec, favicon: () => null });
