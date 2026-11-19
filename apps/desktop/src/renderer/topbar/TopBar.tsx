@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import type { Sidebar, SidebarAgent, TerminalKind } from "../../shared/api";
 import { codexThreadId } from "../../shared/codex";
 import { AddTabMenu } from "./AddTabMenu";
+import { useTabNavigation } from "./tab-navigation";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
 import { Tip } from "../ui/Tip";
 import { AgentIcon } from "../ui/AgentIcon";
@@ -84,6 +85,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSta
   onShowSidebar?: () => void;
 }) {
   const row = useRef<HTMLDivElement>(null);
+  const dragBounds = useRef<DOMRect | undefined>(undefined);
   useEffect(() => {
     const el = row.current;
     if (!el) return;
@@ -100,6 +102,7 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSta
   }, [data.selected, tabs, titles]);
   const activeTitle = tabLabel(data, data.selected, titles);
   const mac = window.contr.platform === "darwin";
+  const wheelTabs = useTabNavigation(tabs, data.selected, onSelect, mac);
   return (
     <Tabs
       value={data.selected || null}
@@ -115,13 +118,20 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSta
           </button>
         </Tip>
       )}
-      <div className="relative flex min-w-0 items-center self-stretch gap-0.5 [-webkit-app-region:no-drag]">
+      <div onWheel={wheelTabs} className="relative flex min-w-0 items-center self-stretch gap-0.5 [-webkit-app-region:no-drag]">
         <TabOrderRoot
           ref={row}
           value={tabs}
-          onValueChange={onReorder}
+          onValueChange={(order, details) => {
+            if (details.reason === "drag" && details.event instanceof MouseEvent) {
+              const bounds = dragBounds.current;
+              const { clientX, clientY } = details.event;
+              if (!bounds || clientX < bounds.left || clientX >= bounds.right || clientY < bounds.top || clientY >= bounds.bottom) return;
+            }
+            onReorder(order);
+          }}
           render={(props) => (
-            <TabsList {...props} aria-label="Tabs" data-tab-row className="flex min-w-0 items-center self-stretch gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border" />
+            <TabsList {...props} onPointerDownCapture={(event) => { dragBounds.current = event.currentTarget.getBoundingClientRect(); }} aria-label="Tabs" data-tab-row className="flex min-w-0 items-center self-stretch gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border" />
           )}
         >
           {({ order }) => order.map((t) => {

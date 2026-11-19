@@ -156,7 +156,40 @@ test("arrows, Home and End move tab focus, and Enter and Space select the focuse
   expect(titles()).toEqual(names);
 });
 
-test("a tab drag shows a thin drop line before it changes the order", async () => {
+test("Herdr shortcuts and wheel switch open tabs in order", async () => {
+  await renderApp(transcript, null, { ...selectable(sidebar).overrides, platform: "darwin" });
+  await open(names[1]);
+  await open(names[2]);
+  const selected = tabs.getByRole("tab", { selected: true });
+  const key = async (chord: string, name: string) => {
+    await userEvent.keyboard(chord);
+    await expect.element(selected).toHaveTextContent(name);
+  };
+  await key("{Control>}{Tab}{/Control}", names[0]);
+  await key("{Control>}{Shift>}{Tab}{/Shift}{/Control}", names[2]);
+  await key("{Meta>}2{/Meta}", names[1]);
+  const bracket = (key: string) => selected.element()
+    .dispatchEvent(new KeyboardEvent("keydown", { key, metaKey: true, shiftKey: true, bubbles: true, cancelable: true }));
+  bracket("}");
+  await expect.element(selected).toHaveTextContent(names[2]);
+  bracket("{");
+  await expect.element(selected).toHaveTextContent(names[1]);
+
+  const scroll = (deltaX: number, deltaY: number, deltaMode: number = WheelEvent.DOM_DELTA_LINE) =>
+    tabs.element().dispatchEvent(new WheelEvent("wheel", { deltaX, deltaY, deltaMode, bubbles: true }));
+  scroll(30, 0);
+  await expect.element(selected).toHaveTextContent(names[1]);
+  scroll(0, 1);
+  await expect.element(selected).toHaveTextContent(names[2]);
+  scroll(0, 5, WheelEvent.DOM_DELTA_PIXEL);
+  await expect.element(selected).toHaveTextContent(names[2]);
+  scroll(0, 20, WheelEvent.DOM_DELTA_PIXEL);
+  await expect.element(selected).toHaveTextContent(names[0]);
+  scroll(0, -1);
+  await expect.element(selected).toHaveTextContent(names[2]);
+});
+
+test("a tab drag shows a thin drop line and cancels when released outside the strip", async () => {
   await renderApp(transcript, null, selectable(sidebar).overrides);
   const [a, b] = names;
   await open(b);
@@ -175,13 +208,14 @@ test("a tab drag shows a thin drop line before it changes the order", async () =
     const lines = () => tabs.element().querySelectorAll("[data-grabbed]");
     await expect.poll(() => lines().length).toBe(1);
     expect(lines()[0].getBoundingClientRect().width).toBeLessThanOrEqual(3);
+    await shoot("326-tab-drag", tabs);
     await mouse.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: drop, y: y + 40, buttons: 1 });
-    await shoot("282-tab-drag", bar());
   } finally {
     await mouse.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: drop, y: y + 40, button: "left", clickCount: 1 });
   }
-  await expect.poll(titles).toEqual([b, a]);
-  expect(tabs.element().querySelector("[data-grabbed]")).toBeNull();
+  await expect.poll(() => tabs.element().querySelector("[data-grabbed]")).toBeNull();
+  expect(titles()).toEqual([a, b]);
+  await expect.element(tab(b)).toHaveAttribute("aria-selected", "true");
 });
 
 test("Alt moves tabs and keeps focus on the moved tab, while a plain arrow only moves focus", async () => {
@@ -195,6 +229,10 @@ test("Alt moves tabs and keeps focus on the moved tab, while a plain arrow only 
   await userEvent.keyboard("{Alt>}{ArrowRight}{/Alt}");
   expect(titles()).toEqual([a, b]);
   await expect.element(tab(b)).toHaveFocus();
+  await userEvent.keyboard("{Alt>}{ArrowRight}{/Alt}");
+  expect(titles()).toEqual([b, a]);
+  await userEvent.keyboard("{Alt>}{ArrowLeft}{/Alt}");
+  expect(titles()).toEqual([a, b]);
   await userEvent.keyboard("{Alt>}{Home}{/Alt}");
   await userEvent.keyboard("{ArrowRight}");
   await expect.element(tab(a)).toHaveFocus();

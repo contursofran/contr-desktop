@@ -28,6 +28,14 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
 
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
+  await page.keyboard.press("Control+Tab");
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Chat panel usability audit");
+  await page.keyboard.press("Control+Shift+Tab");
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+2" : "Control+2");
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Install health check");
+
   // A tab click switches the chat as a sidebar click does.
   await tabs.getByRole("tab", { name: "Chat panel usability audit" }).click();
   await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
