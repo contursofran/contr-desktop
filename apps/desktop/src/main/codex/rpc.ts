@@ -44,7 +44,10 @@ export class CodexRpc {
     const child = appChildren.track(spawn(binary, ["app-server", "--stdio"], { stdio: "pipe" }));
     const rpc = new CodexRpc(child, receive, closed);
     try {
-      await rpc.request("initialize", { clientInfo: { name: "contr", version: "0.1.0" } });
+      await rpc.request("initialize", {
+        clientInfo: { name: "contr", version: "0.1.0" },
+        capabilities: { experimentalApi: true },
+      });
       rpc.write({ method: "initialized" });
       return rpc;
     } catch (error) {

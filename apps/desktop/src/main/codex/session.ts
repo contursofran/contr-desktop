@@ -6,6 +6,7 @@ import type { Card, FeedEvent, FeedRow, PromptResult, SidebarAgent } from "../..
 import { CodexRpc, type Message } from "./rpc";
 import { Coordinator } from "./coordinator";
 import { openOrchestration } from "./orchestration";
+import { CodexOptions, type EffectiveOptions } from "./options";
 
 interface Item {
   id: string;
@@ -26,9 +27,8 @@ interface Thread {
   preview?: string;
   turns?: { items: Item[] }[];
 }
-interface ThreadResult {
+interface ThreadResult extends EffectiveOptions {
   thread: Thread;
-  model: string;
 }
 const sessions = new Map<string, Promise<Session>>();
 let connection: Promise<CodexRpc> | undefined;
@@ -123,7 +123,7 @@ export function codexSession(tab: string): Promise<Session> {
 export class Session {
   readonly threadId;
   private thread: Thread;
-  readonly model;
+  readonly options: CodexOptions;
   private rows: FeedRow[] = [];
   private indices = new Map<string, number>();
   private listeners = new Set<(event: FeedEvent) => void>();
@@ -140,7 +140,7 @@ export class Session {
   constructor(readonly rpc: CodexRpc, data: ThreadResult, private tools?: Awaited<ReturnType<typeof openOrchestration>>) {
     this.threadId = data.thread.id;
     this.thread = data.thread;
-    this.model = data.model;
+    this.options = new CodexOptions(rpc, this.thread.cwd, data);
     for (const turn of data.thread.turns ?? []) for (const item of turn.items) this.item(item, true);
     this.updateAgent();
     live.set(this.threadId, this);
@@ -222,7 +222,7 @@ export class Session {
 
   follow(listener: (event: FeedEvent) => void) {
     this.listeners.add(listener);
-    listener({ type: "splice", at: 0, rows: this.rows, agent: "codex", model: this.model });
+    listener({ type: "splice", at: 0, rows: this.rows, agent: "codex", model: this.options.model });
     listener(this.working());
     listener(this.card());
     this.reportsChanged = true;
@@ -234,6 +234,7 @@ export class Session {
     const revision = this.turnRevision;
     const { turn } = await this.rpc.request<{ turn: { id: string; status: string } }>("turn/start", {
       threadId: this.threadId,
+      ...this.options.turn(),
       input: [{ type: "text", text }],
     });
     // The reply can arrive before turn/started. A newer notification takes priority.
