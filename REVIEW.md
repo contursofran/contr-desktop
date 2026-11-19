@@ -22,8 +22,8 @@ Paths are in `apps/desktop/` unless they start with `.github/` or
    - Trigger: a change of focus, `tabIndex`, key handlers or card keys
      (`renderer/chat/reply/`, `renderer/chat/card/`,
      `renderer/chat/owner/`, `renderer/App.tsx`, `renderer/topbar/`).
-   - Check: run `focus.spec.ts`, `attach.spec.ts`, `topbar.spec.ts`,
-     `small-texts.spec.ts`, `cards.spec.ts` and `Keys.browser.test.tsx` (run `pnpm test:browser Keys.browser.test.tsx` in a fresh process each time) 20 times
+   - Check: run `Focus.browser.test.tsx`, `attach.spec.ts`, `topbar.spec.ts`,
+     `small-texts.spec.ts`, `cards.spec.ts` and `Keys.browser.test.tsx` (run `pnpm test:browser Focus.browser.test.tsx Keys.browser.test.tsx` in a fresh process each time) 20 times
      each. All runs pass.
    - From: #155 (three specs then failed at random).
 2. A new or changed e2e spec
