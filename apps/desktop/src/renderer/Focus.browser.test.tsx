@@ -73,14 +73,19 @@ test("with a card that owns the card keys, the reply box leaves the keyboard: a 
 });
 
 test("a late first answer leaves the focus on a button that took it while the chat was read", async () => {
-  const { firstFeed, append } = await mountReply({ holdFeed: true });
+  // Keep the two replies in view so this test observes focus without relying on virtual scrolling.
+  const { firstFeed, append } = await mountReply({
+    holdFeed: true,
+    initialRows: [{ id: "first", k: "assistant", text: "First reply." }],
+  });
   await expect.element(loading()).toBeVisible();
   const attach = page.getByRole("button", { name: "Attach image" });
   (await attach.findElement() as HTMLElement).focus();
   await expect.element(loading()).toBeVisible();
   firstFeed();
   await expect.element(loading()).not.toBeInTheDocument();
-  // Deliver the next splice after the first tick's card had a chance to move focus.
+  await containsText(chatList()).toContain("First reply.");
+  await expect.element(attach).toHaveFocus();
   append({ id: "late", k: "assistant", ts: 1793671080000, text: "Next tick." });
   await containsText(chatList()).toContain("Next tick.");
   await expect.element(attach).toHaveFocus();
