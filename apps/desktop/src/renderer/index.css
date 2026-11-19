@@ -125,6 +125,7 @@ body {
 .status-glyph[data-state="waiting"]::before,
 .status-glyph[data-state="blocked"]::before { content: "⠿"; animation: status-pulse 1.6s ease-in-out infinite; }
 .status-glyph[data-state="idle"]::before { content: "⠶"; }
+.status-glyph[data-state="done"]::before { content: "⠿"; }
 @media (prefers-reduced-motion: reduce) {
   .status-glyph::before { animation: none !important; }
 }
