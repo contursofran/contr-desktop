@@ -127,7 +127,7 @@ export class Session {
   private rows: FeedRow[] = [];
   private indices = new Map<string, number>();
   private listeners = new Set<(event: FeedEvent) => void>();
-  private approvals = new Map<string, { id: string | number; card: Card }>();
+  private approvals = new Map<string, { id: string | number; card: Card; elicitation: boolean }>();
   private turn?: string;
   private turnRevision = 0;
   private sending = false;
@@ -272,11 +272,20 @@ Coordinate this goal with contr_workers. Read the repository rules and call flow
   approve(request: string, allow: boolean): PromptResult {
     const approval = this.approvals.get(request);
     if (!approval) return { result: "changed" };
-    this.rpc.write({ id: approval.id, result: { decision: allow ? "accept" : "decline" } });
+    const decision = allow ? "accept" : "decline";
+    const result = approval.elicitation ? { action: decision, content: null, _meta: null } : { decision };
+    this.rpc.write({ id: approval.id, result });
     this.approvals.delete(request);
     this.updateAgent();
     this.emit(this.card());
     return { result: "sent" };
+  }
+
+  private addApproval(id: string | number, fields: Pick<Extract<Card, { kind: "approval" }>, "title" | "command" | "details">, elicitation = false) {
+    const request = String(id);
+    this.approvals.set(request, { id, elicitation, card: { kind: "approval", request, ...fields, tool: fields.title, answered: false } });
+    this.updateAgent();
+    this.emit(this.card());
   }
 
   private working(): FeedEvent {
@@ -342,6 +351,17 @@ Coordinate this goal with contr_workers. Read the repository rules and call flow
       this.approvals.delete(String(params.requestId));
       this.updateAgent();
       this.emit(this.card());
+    } else if (id !== undefined && method === "mcpServer/elicitation/request" && params.mode === "form") {
+      const meta = params._meta as { codex_approval_kind?: unknown; tool_params?: unknown } | null | undefined;
+      if (meta?.codex_approval_kind !== "mcp_tool_call" || typeof params.message !== "string" || !params.message.trim()) {
+        this.rpc.write({ id, error: { code: -32601, message: "This request is unavailable in contr Chat." } });
+        return;
+      }
+      const args = meta.tool_params;
+      const details = args && typeof args === "object"
+        ? Object.entries(args).map(([key, value]) => `${JSON.stringify(key)}: ${JSON.stringify(value)}`).join("\n")
+        : undefined;
+      this.addApproval(id, { title: params.message, command: "", details }, true);
     } else if (id !== undefined && (method === "item/commandExecution/requestApproval" || method === "item/fileChange/requestApproval")) {
       const rowIndex = typeof params.itemId === "string" ? this.indices.get(params.itemId) : undefined;
       const summary = rowIndex === undefined ? undefined : this.rows[rowIndex]?.chips?.[0]?.text;
@@ -352,10 +372,7 @@ Coordinate this goal with contr_workers. Read the repository rules and call flow
         this.rpc.write({ id, result: { decision: "decline" } });
         return;
       }
-      const request = String(id);
-      this.approvals.set(request, { id, card: { kind: "approval", request, command, title, tool: title, answered: false } });
-      this.updateAgent();
-      this.emit(this.card());
+      this.addApproval(id, { title, command });
     } else if (id !== undefined) {
       this.rpc.write({ id, error: { code: -32601, message: "This request is unavailable in contr Chat." } });
     }

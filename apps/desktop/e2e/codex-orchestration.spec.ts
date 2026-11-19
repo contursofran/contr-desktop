@@ -37,10 +37,35 @@ test("a Codex chat starts an hc worker and receives its report after the active 
 
     await page.getByRole("button", { name: "Orchestrate" }).click();
     await expect(reply).toHaveText("/contr:orchestrate ");
-    await reply.fill("/contr:orchestrate Review the release with a Codex worker.");
+    const goal = "/contr:orchestrate Review the release with a Codex worker.";
+    await reply.fill(goal);
     await reply.press("Enter");
-    const approval = page.getByRole("button", { name: /allow/i });
-    await expect(approval).toBeVisible();
+    const card = page.getByRole("region", { name: "Approval" });
+    const flow = card.getByText('Allow the contr_workers MCP server to run tool "flow"?', { exact: false });
+    const approval = card.getByRole("button", { name: /allow/i });
+    await expect(flow).toBeVisible();
+    await card.getByRole("button", { name: /deny/i }).click();
+    await expect(page.getByText("Worker tool approval declined.")).toBeVisible();
+    await expect(card).toHaveCount(0);
+    expect(JSON.parse(readFileSync(orchList, "utf8"))).toEqual([]);
+
+    await reply.fill(goal);
+    await reply.press("Enter");
+    await expect(flow).toBeVisible();
+    await approval.click();
+    const spawn = card.getByText('Allow the contr_workers MCP server to run tool "spawn"?');
+    await expect(spawn).toBeVisible();
+    await expect(card.getByText('"task": "Return a fixture report."', { exact: false })).toBeVisible();
+    expect(JSON.parse(readFileSync(orchList, "utf8"))).toEqual([]);
+    const shots = path.resolve(import.meta.dirname, "../../../tmp/shots");
+    for (const [width, height] of [[640, 480], [1400, 900]]) {
+      await app.evaluate(({ BrowserWindow }, [w, h]) => BrowserWindow.getAllWindows()[0]!.setContentSize(w, h), [width, height]);
+      await expect(spawn).toBeInViewport({ ratio: 1 });
+      await expect(approval).toBeInViewport({ ratio: 1 });
+      await page.screenshot({ path: path.join(shots, `348-codex-mcp-approval-${width}.png`) });
+    }
+    await approval.click();
+    await expect(card.getByText("pwd", { exact: true })).toBeVisible();
     await expect(projects.getByRole("button", { name: /Code review/ })).toBeVisible();
     await expect(page.getByText("Second line from worker.")).toHaveCount(0);
     const { address, params } = JSON.parse(readFileSync(log, "utf8").trim());
