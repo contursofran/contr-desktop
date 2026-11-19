@@ -72,6 +72,7 @@ test("both arrow shortcuts leave the reply and other editors in control", async 
   await projectNav().getByRole("button", { name: new RegExp(worker) }).click();
   await expect.element(shown()).toHaveTextContent(worker);
   await expect.element(replyBox()).toHaveFocus();
+  const select = vi.spyOn(window.contr, "select");
   await userEvent.keyboard("draft");
   const input = document.createElement("input");
   const editor = document.createElement("div");
@@ -81,10 +82,12 @@ test("both arrow shortcuts leave the reply and other editors in control", async 
 
   for (const field of [replyBox().element(), input, editor]) {
     (field as HTMLElement).focus();
-    await userEvent.keyboard(previous);
-    await userEvent.keyboard(next);
-    await expect.element(field).toHaveFocus();
-    await expect.element(shown()).toHaveTextContent(worker);
+    for (const chord of [previous, next]) {
+      await userEvent.keyboard(chord);
+      expect(select).not.toHaveBeenCalled();
+      await expect.element(field).toHaveFocus();
+      await expect.element(shown()).toHaveTextContent(worker);
+    }
   }
   await expect.element(replyBox()).toHaveValue("draft");
 });
@@ -95,8 +98,10 @@ test("terminal input keeps its keys and Command+W still closes the tab", async (
   await expect.element(replyBox()).toHaveFocus();
   await userEvent.keyboard(toggle);
   await expect.element(terminalInput()).toHaveFocus();
+  const select = vi.spyOn(window.contr, "select");
   await userEvent.keyboard(next);
   await userEvent.keyboard(previous);
+  expect(select).not.toHaveBeenCalled();
   await userEvent.keyboard("x");
   expect(api.input).toHaveBeenLastCalledWith("x");
   await expect.element(shown()).toHaveTextContent(audit);

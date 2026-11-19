@@ -29,24 +29,3 @@ export function hotkey(id: HotkeyId, platform: string): string | undefined {
     return HOTKEYS_REGISTRY[id].key[platform] ?? undefined;
   }
 }
-
-// Adapted from pingdotgg/t3code packages/shared/src/keybindingMatching.ts
-// at 5b265f8eb7db05df055b2e882d4c10d332076d6b. Use the registry's chord strings.
-type ShortcutEvent = Pick<KeyboardEvent,
-  "key" | "code" | "metaKey" | "ctrlKey" | "altKey" | "shiftKey" | "defaultPrevented" | "isComposing" | "repeat"
->;
-
-export function resolveHotkey(event: ShortcutEvent, platform: string): HotkeyId | undefined {
-  if (event.defaultPrevented || event.isComposing || event.repeat) return;
-  const layoutKey = event.key.toLowerCase();
-  const letterCode = event.code.match(/^Key([A-Z])$/)?.[1];
-  const key = letterCode && !/^[a-z]$/.test(layoutKey) ? letterCode.toLowerCase() : layoutKey;
-  const chord = [
-    event.metaKey && "meta",
-    event.ctrlKey && "ctrl",
-    event.altKey && "alt",
-    event.shiftKey && "shift",
-    key,
-  ].filter(Boolean).join("+");
-  return (Object.keys(HOTKEYS_REGISTRY) as HotkeyId[]).find((id) => hotkey(id, platform) === chord);
-}

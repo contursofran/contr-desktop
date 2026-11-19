@@ -10,8 +10,8 @@
   `apps/desktop/test/renderApp.tsx`.
 - Scroll settling at `5b265f8eb7db05df055b2e882d4c10d332076d6b`: adapted
   `settleListScroll` in `apps/desktop/src/renderer/chat/list/ChatList.tsx`.
-- Shortcut matching and editable focus at `5b265f8eb7db05df055b2e882d4c10d332076d6b`:
-  `apps/desktop/src/renderer/hotkeys/registry.ts` (part) and `editableFocus.ts`.
+- Editable focus at `5b265f8eb7db05df055b2e882d4c10d332076d6b`:
+  `apps/desktop/src/renderer/hotkeys/editableFocus.ts`.
 - Copied files: each copied file names its source path and pinned commit in a
   header, and says what we changed. This section lists the copied files by
   folder.
