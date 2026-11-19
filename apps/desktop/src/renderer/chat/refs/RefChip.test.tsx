@@ -43,8 +43,8 @@ describe("RefChip", () => {
   });
 
   it.each([
-    ["passed", { state: "pass", passed: 6, failed: 0, total: 6 }, "6 of 6 checks passed", ">✓ 6/6</span>", "text-ink-45"],
-    ["running", { state: "pending", passed: 4, failed: 0, total: 6 }, "checks running, 4 of 6 passed", 'data-state="working"', "text-ink-45"],
+    ["passed", { state: "pass", passed: 6, failed: 0, total: 6 }, "6 of 6 checks passed", ">✓ 6/6</span>", "text-dim"],
+    ["running", { state: "pending", passed: 4, failed: 0, total: 6 }, "checks running, 4 of 6 passed", 'data-state="working"', "text-dim"],
     ["failed", { state: "fail", passed: 5, failed: 1, total: 6 }, "1 of 6 checks failed", ">✕ 1</span>", "text-ink-100"],
   ] as const)("draws %s checks after the number, out of the selection", (_, checks, label, mark, ink) => {
     const out = chip({ kind: "pr", state: "open", url: "https://github.com/o/r/pull/7", checks });
