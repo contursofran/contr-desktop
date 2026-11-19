@@ -2,7 +2,11 @@
 import { build, context } from "esbuild";
 
 const options = {
-  entryPoints: { "main/index": "src/main/index.ts", "preload/index": "src/preload/index.ts" },
+  entryPoints: {
+    "main/index": "src/main/index.ts",
+    "main/report-terminal": "src/main/codex/report-terminal.ts",
+    "preload/index": "src/preload/index.ts",
+  },
   outdir: "out",
   outExtension: { ".js": ".cjs" },
   bundle: true,

@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { codexCoordinatorName } from "../codex/coordinator";
+import type { SidebarAgent } from "../../shared/api";
 import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, run, runRead } from "./agents";
 
 const hc = JSON.stringify({
@@ -29,6 +31,19 @@ describe("buildProjects", () => {
       },
       { name: "lib", agents: [{ terminal: "t4", cwd: "/w/lib", title: "t4", name: null, state: "idle", kind: null, issue: null, workers: [] }], cwd: "/w/lib", branch: null, ahead: 0, behind: 0, favicon: null },
     ]);
+  });
+
+  it("attaches hc workers to a native Codex chat on each refresh", () => {
+    const chat: SidebarAgent = { terminal: "codex:demo", title: "Coordinator", cwd: "/w/app", state: "idle", kind: "codex", name: null, issue: null, workers: [] };
+    const hc = JSON.stringify({ terminals: [
+      { address: "t1", name: codexCoordinatorName("demo"), state: "live" },
+      { address: "t2", parent: "t1", state: "live", status: "working", agent: "codex" },
+    ] });
+    const input = { hc, orch: "[]", codex: [chat], titles: new Map(), projectOf: () => "app" };
+    const workers = () => buildProjects(input)[0].agents[0].workers.map((w) => w.terminal);
+    expect(workers()).toEqual(["t2"]);
+    expect(workers()).toEqual(["t2"]);
+    expect(chat.workers).toEqual([]);
   });
 
   it("gives no projects when hc fails", () => {

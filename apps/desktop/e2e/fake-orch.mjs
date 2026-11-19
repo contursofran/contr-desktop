@@ -7,6 +7,7 @@
 // `owner done <id>` remove the item from that file. FAKE_ORCH_OWNER_FAIL=1 makes them fail with a message and change nothing;
 // FAKE_ORCH_OWNER_UNREACHED=1 makes them remove the item and say "coordinator not reached".
 // While the file in FAKE_ORCH_OWNER_BAD exists, `owner open --json` prints its text (a read that gives no JSON list).
+import { join } from "node:path";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 const workers = [
@@ -20,7 +21,32 @@ const argv = process.argv.slice(2);
 const args = argv.join(" ");
 const file = process.env.FAKE_ORCH_OWNER;
 const open = () => (file && existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : []);
-if (args === "agents ls --all --json") {
+if (process.env.FAKE_CODEX_ORCHESTRATION && args === "mcp") {
+  const request = JSON.parse(readFileSync(0, "utf8"));
+  const { id, method, params } = request;
+  let result = {};
+  if (method === "initialize") {
+    result = { protocolVersion: params.protocolVersion, capabilities: { tools: {} }, serverInfo: { name: "test-orch", version: "1" } };
+  } else if (method === "tools/list") {
+    result = { tools: ["spawn", "message", "report"].map((name) => ({ name, description: name, inputSchema: { type: "object" } })) };
+  } else if (method === "tools/call" && params.name === "spawn") {
+    const parent = process.env.HC_TERMINAL_ID;
+    const list = JSON.parse(readFileSync(process.env.FAKE_HC_LIST, "utf8"));
+    const coordinator = list.terminals.find((t) => t.address === parent);
+    if (!coordinator) throw new Error("No hc coordinator");
+    const { name, title } = params.arguments;
+    const worker = { address: "t-codex-worker", parent, name, title, agent: "codex", cwd: coordinator.cwd, state: "live", status: "working" };
+    list.terminals.push(worker);
+    writeFileSync(process.env.FAKE_HC_LIST, JSON.stringify(list));
+    writeFileSync(process.env.FAKE_ORCH_LIST, JSON.stringify([{ ...worker, live: true }]));
+    writeFileSync(join(coordinator.target, "001.report"), "code-review: blocked, fixture report\nSecond line from worker.");
+    result = { content: [{ type: "text", text: JSON.stringify(worker) }] };
+  } else if (method === "tools/call") throw new Error("Unexpected tool call " + params.name);
+  process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id, result }) + "\n");
+} else if (process.env.FAKE_CODEX_ORCHESTRATION && args === "agents flow") {
+  if (!process.env.HC_TERMINAL_ID) throw new Error("No hc coordinator");
+  process.stdout.write("Fixture flow: plan first.");
+} else if (args === "agents ls --all --json") {
   const list = process.env.FAKE_ORCH_LIST ? JSON.parse(readFileSync(process.env.FAKE_ORCH_LIST, "utf8")) : workers;
   process.stdout.write(JSON.stringify(process.env.FAKE_ORCH_NONE === "1" ? [] : list));
 } else if (args === "owner open --json") {

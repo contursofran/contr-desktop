@@ -47,9 +47,9 @@ export function orchestratingText(n: number): string | undefined {
 }
 
 /** The text that the quiet "Orchestrate" puts in the reply box. */
-export const ORCHESTRATE_COMMAND = "/contr:orchestrate ";
+export { CODEX_ORCHESTRATE_COMMAND as ORCHESTRATE_COMMAND } from "../../../shared/codex";
 
-/** The quiet "Orchestrate" shows for Claude Code with no live workers. */
-export function showsOrchestrate(agent: string | undefined, workers: number): boolean {
-  return agent === "claude" && workers <= 0;
+/** The quiet "Orchestrate" shows for Claude Code and native Codex chats with no live workers. */
+export function showsOrchestrate(agent: string | undefined, workers: number, nativeCodex = false): boolean {
+  return (agent === "claude" || (agent === "codex" && nativeCodex)) && workers <= 0;
 }

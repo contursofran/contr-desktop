@@ -1,6 +1,11 @@
-import { codexThreadId } from "../../shared/codex";
+import { app } from "electron";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { CODEX_ORCHESTRATE_COMMAND, codexThreadId } from "../../shared/codex";
 import type { Card, FeedEvent, FeedRow, PromptResult, SidebarAgent } from "../../shared/api";
 import { CodexRpc, type Message } from "./rpc";
+import { Coordinator } from "./coordinator";
+import { openOrchestration } from "./orchestration";
 
 interface Item {
   id: string;
@@ -30,6 +35,7 @@ let connection: Promise<CodexRpc> | undefined;
 const live = new Map<string, Session>();
 const agents = new Map<string, SidebarAgent>();
 let sidebarChanged = () => {};
+const reportRoot = () => join(app.getPath("userData"), "codex-reports");
 
 export function onCodexSidebarChange(changed: () => void): void {
   sidebarChanged = changed;
@@ -53,6 +59,10 @@ export function restoreCodexTabs(tabs: string[]): void {
   for (const tab of new Set(tabs)) {
     const threadId = codexThreadId(tab);
     if (!threadId || agents.has(tab)) continue;
+    if (existsSync(join(reportRoot(), threadId))) {
+      void codexSession(tab).catch(() => undefined);
+      continue;
+    }
     void connect().then((rpc) => rpc.request<{ thread: Thread }>("thread/read", { threadId }))
       .then(({ thread }) => {
         if (!agents.has(tab)) updateAgent(thread, "idle");
@@ -67,7 +77,10 @@ function connect() {
   }, (error) => {
     connection = undefined;
     sessions.clear();
-    for (const session of live.values()) session.emit({ type: "error", code: "codex", message: error });
+    for (const session of live.values()) {
+      session.close();
+      session.emit({ type: "error", code: "codex", message: error });
+    }
     live.clear();
   }).catch((error: unknown) => {
     connection = undefined;
@@ -75,11 +88,21 @@ function connect() {
   });
 }
 
-export async function newCodexChat(cwd: string): Promise<string> {
+async function openSession(method: "thread/start" | "thread/resume", params: Record<string, string>) {
   const rpc = await connect();
-  const data = await rpc.request<ThreadResult>("thread/start", { cwd });
-  const session = new Session(rpc, data);
-  const tab = "codex:" + data.thread.id;
+  const tools = await openOrchestration().catch(() => undefined);
+  try {
+    const data = await rpc.request<ThreadResult>(method, { ...params, config: tools?.config });
+    return new Session(rpc, data, tools);
+  } catch (error) {
+    tools?.close();
+    throw error;
+  }
+}
+
+export async function newCodexChat(cwd: string): Promise<string> {
+  const session = await openSession("thread/start", { cwd });
+  const tab = "codex:" + session.threadId;
   sessions.set(tab, Promise.resolve(session));
   return tab;
 }
@@ -89,9 +112,7 @@ export function codexSession(tab: string): Promise<Session> {
   if (known) return known;
   const threadId = codexThreadId(tab);
   if (!threadId) return Promise.reject(new Error("Invalid Codex thread."));
-  const loading = connect().then(async (rpc) =>
-    new Session(rpc, await rpc.request<ThreadResult>("thread/resume", { threadId })),
-  ).catch((error: unknown) => {
+  const loading = openSession("thread/resume", { threadId }).catch((error: unknown) => {
     sessions.delete(tab);
     throw error;
   });
@@ -108,15 +129,87 @@ export class Session {
   private listeners = new Set<(event: FeedEvent) => void>();
   private approvals = new Map<string, { id: string | number; card: Card }>();
   private turn?: string;
+  private turnRevision = 0;
   private sending = false;
+  private reports?: Coordinator;
+  private attachingReports?: Promise<Coordinator>;
+  private delivering = false;
+  private reportsChanged = false;
+  private closed = false;
 
-  constructor(readonly rpc: CodexRpc, data: ThreadResult) {
+  constructor(readonly rpc: CodexRpc, data: ThreadResult, private tools?: Awaited<ReturnType<typeof openOrchestration>>) {
     this.threadId = data.thread.id;
     this.thread = data.thread;
     this.model = data.model;
     for (const turn of data.thread.turns ?? []) for (const item of turn.items) this.item(item, true);
     this.updateAgent();
     live.set(this.threadId, this);
+    if (codexThreadId("codex:" + this.threadId) && existsSync(join(reportRoot(), this.threadId))) {
+      void this.followReports().catch((error: Error) => this.reportError(error));
+    }
+  }
+
+  close() {
+    this.closed = true;
+    this.tools?.close();
+    this.reports?.close();
+  }
+
+  private followReports() {
+    return this.attachingReports ??= this.attachReports().catch((error: unknown) => {
+      this.attachingReports = undefined;
+      throw error;
+    });
+  }
+
+  private async attachReports() {
+    if (!codexThreadId("codex:" + this.threadId)) throw new Error("Invalid Codex thread.");
+    const reports = new Coordinator(reportRoot(), this.threadId, this.thread.cwd);
+    await reports.follow(() => {
+      this.reportsChanged = true;
+      void this.deliverReport();
+    });
+    if (this.closed) {
+      reports.close();
+      throw new Error("Codex disconnected.");
+    }
+    this.reports = reports;
+    this.tools?.enable({
+      cwd: this.thread.cwd,
+      parent: async () => {
+        const parent = await reports.parent();
+        if (!parent) throw new Error("The hc coordinator has ended. Send /contr:orchestrate to start it again.");
+        return parent;
+      },
+    });
+    void this.deliverReport();
+    return reports;
+  }
+
+  private reportError(error: Error) {
+    this.row({ id: "contr:report-error", k: "assistant", text: "Could not deliver the worker report. " + error.message });
+  }
+
+  private async deliverReport() {
+    if (this.closed || this.turn || this.sending || this.delivering || !this.reports || !this.reportsChanged) return;
+    this.delivering = true;
+    this.reportsChanged = false;
+    try {
+      const report = await this.reports.firstReport();
+      if (report) {
+        if (!this.closed && !this.turn && !this.sending) {
+          await this.startTurn("Worker report via contr\n\n" + report.text);
+          await report.delivered();
+        }
+        this.reportsChanged = true;
+      }
+    } catch (error) {
+      if (!this.closed) this.reportError(error as Error);
+      return;
+    } finally {
+      this.delivering = false;
+    }
+    void this.deliverReport();
   }
 
   private updateAgent() {
@@ -132,19 +225,46 @@ export class Session {
     listener({ type: "splice", at: 0, rows: this.rows, agent: "codex", model: this.model });
     listener(this.working());
     listener(this.card());
+    this.reportsChanged = true;
+    void this.deliverReport();
     return () => { this.listeners.delete(listener); };
   }
 
+  private async startTurn(text: string) {
+    const revision = this.turnRevision;
+    const { turn } = await this.rpc.request<{ turn: { id: string; status: string } }>("turn/start", {
+      threadId: this.threadId,
+      input: [{ type: "text", text }],
+    });
+    // The reply can arrive before turn/started. A newer notification takes priority.
+    if (this.turnRevision === revision && turn.status === "inProgress") {
+      this.turn = turn.id;
+      this.updateAgent();
+      this.emit(this.working());
+    }
+  }
+
   async send(text: string) {
-    if (this.sending || this.turn) return { ok: false, message: "Codex is working. Wait for this turn to finish." };
+    if (this.sending || this.delivering || this.turn) return { ok: false, message: "Codex is working. Wait for this turn to finish." };
     this.sending = true;
     try {
-      await this.rpc.request("turn/start", { threadId: this.threadId, input: [{ type: "text", text }] });
+      if (text.startsWith(CODEX_ORCHESTRATE_COMMAND)) {
+        if (!this.tools) throw new Error("Could not load the contr orchestration tools.");
+        const goal = text.slice(CODEX_ORCHESTRATE_COMMAND.length).trim();
+        if (!goal) throw new Error("Enter a goal for the coordinator.");
+        const reports = await this.followReports();
+        await reports.parent(true);
+        text = `${goal}
+
+Coordinate this goal with contr_workers. Read the repository rules and call flow before you spawn workers. Give each worker its own worktree. Worker reports arrive in this chat.`;
+      }
+      await this.startTurn(text);
       return { ok: true };
     } catch (error) {
       return { ok: false, message: (error as Error).message };
     } finally {
       this.sending = false;
+      void this.deliverReport();
     }
   }
 
@@ -200,12 +320,17 @@ export class Session {
       this.updateAgent();
     } else if (method === "turn/started" || method === "turn/completed") {
       const turn = params.turn as { id: string; status: string; error?: { message: string } };
+      this.turnRevision++;
       this.turn = method === "turn/started" ? turn.id : undefined;
       if (!this.turn) {
         if (turn.error?.message) this.row({ id: `error:${turn.id}`, k: "assistant", text: turn.error.message });
       }
       this.updateAgent();
       this.emit(this.working());
+      if (!this.turn) {
+        this.reportsChanged = true;
+        void this.deliverReport();
+      }
     } else if (method === "item/started" || method === "item/completed") {
       this.item(params.item as Item, method === "item/completed");
     } else if (method === "item/agentMessage/delta" && typeof params.itemId === "string" && typeof params.delta === "string") {

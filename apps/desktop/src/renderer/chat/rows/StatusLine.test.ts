@@ -10,10 +10,12 @@ describe("orchestratingText", () => {
 });
 
 describe("showsOrchestrate", () => {
-  it("shows for Claude Code with no workers only", () => {
+  it("shows for Claude Code and native Codex chats with no workers", () => {
     expect(showsOrchestrate("claude", 0)).toBe(true);
     expect(showsOrchestrate("claude", 2)).toBe(false);
     expect(showsOrchestrate("codex", 0)).toBe(false);
+    expect(showsOrchestrate("codex", 0, true)).toBe(true);
+    expect(showsOrchestrate("codex", 2, true)).toBe(false);
     expect(showsOrchestrate(undefined, 0)).toBe(false);
   });
 });
