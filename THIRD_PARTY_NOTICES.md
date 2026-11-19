@@ -339,7 +339,7 @@ THE SOFTWARE.
 
 - Source: https://github.com/ParadevAI/Paradev
 - Pinned commit: `ff9b0c7eea1d9f9cda9150fa2d9193aceae4846d`.
-- Adapted code: the renderer hotkey registry, new-tab menu, session launcher, and `apps/desktop/src/renderer/terminal/webgl.ts`.
+- Adapted code: the hotkey registry in `apps/desktop/src/shared/hotkeys.ts`, the new-tab menu, the session launcher, and `apps/desktop/src/renderer/terminal/webgl.ts`.
 - Adapted clipboard chords and tests in `terminal/clipboard-shortcuts.ts` and `terminal/clipboard-shortcuts.test.ts` under `apps/desktop/src/renderer`.
 - License: MIT.
 

@@ -1,6 +1,6 @@
 import { BrowserWindow, Menu, type MenuItemConstructorOptions } from "electron";
-import { HOTKEYS_REGISTRY } from "../renderer/hotkeys/registry";
 import { CLOSE_TAB_EVENT, OPEN_SETTINGS_EVENT } from "../shared/api";
+import { HOTKEYS_REGISTRY } from "../shared/hotkeys";
 
 /** The id of the app menu's "Check for Updates…" item (e2e clicks it through the main process). */
 export const CHECK_UPDATES_ID = "check-updates";

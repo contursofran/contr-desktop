@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { page, userEvent } from "vitest/browser";
+import { commands, page, userEvent } from "vitest/browser";
 import { browserShots } from "../../test/273-chatRows";
 import { mountReply, projectNav, replyBox } from "../../test/279-reply";
 import type { TerminalApi } from "../shared/api";
@@ -16,12 +16,12 @@ const previous = "{Meta>}{Alt>}{ArrowUp}{/Alt}{/Meta}";
 const toggle = "{Meta>}j{/Meta}";
 const close = "{Meta>}w{/Meta}";
 
-function fakeTerminal() {
+function fakeTerminal(output = "fake terminal t7 attached\r\n") {
   let write: Parameters<TerminalApi["onData"]>[0] | undefined;
   return {
     webgl: false,
     async attach() {
-      write?.(new TextEncoder().encode("fake terminal t7 attached\r\n"));
+      write?.(new TextEncoder().encode(output));
       return { terminal: "t7" };
     },
     input: vi.fn(),
@@ -35,15 +35,33 @@ function fakeTerminal() {
 }
 
 test("Command+J switches from reply to terminal input and back to reply", async () => {
-  const api = fakeTerminal();
+  const prompt = "agent@contr-desktop ~/contr-desktop % ";
+  const api = fakeTerminal([
+    prompt + "pnpm test",
+    "$ pnpm --filter desktop test",
+    "$ vitest run --project unit",
+    "",
+    " ✓ src/renderer/hotkeys/registry.test.ts (8 tests)",
+    " ✓ src/main/menu.test.ts (1 test)",
+    "",
+    " Test Files  2 passed (2)",
+    "      Tests  9 passed (9)",
+    "   Duration  202ms",
+    "",
+    prompt,
+  ].join("\r\n"));
   await mountReply({ overrides: { terminal: api } });
   await expect.element(replyBox()).toHaveFocus();
 
   await userEvent.keyboard(toggle);
   await expect.element(page.getByRole("radio", { name: "Terminal" })).toBeChecked();
   await expect.element(terminalInput()).toHaveFocus();
-  await expect.element(terminal().getByText("fake terminal t7 attached")).toBeVisible();
-  await page.screenshot({ path: `${browserShots}/170-terminal-shortcut.png` });
+  await expect.element(terminal().getByText(prompt + "pnpm test")).toBeVisible();
+  await expect.element(terminal().getByText(/Tests\s+9 passed \(9\)/)).toBeVisible();
+  for (const scheme of ["dark", "light"] as const) {
+    await commands.colorScheme(scheme);
+    await page.screenshot({ path: `${browserShots}/170-terminal-shortcut-${scheme}.png` });
+  }
 
   await userEvent.keyboard(toggle);
   await expect.element(chat()).toBeChecked();
@@ -127,4 +145,37 @@ test("Command+W closes the shown tab from the reply and does nothing in the Inbo
   await expect.element(tab(audit)).toBeVisible();
   await expect.element(shown()).not.toBeInTheDocument();
   await expect.element(chat()).not.toBeInTheDocument();
+});
+
+test.each(["renderer", "native menu"] as const)("one Command+W closes exactly one of three tabs via the %s", async (owner) => {
+  let menuClose: (() => void) | undefined;
+  await mountReply({
+    overrides: owner === "native menu" ? {
+      onCloseTab(listener) {
+        menuClose = listener;
+        return () => { menuClose = undefined; };
+      },
+    } : {},
+  });
+  const open = page.getByRole("tab");
+  await expect.element(tab(audit)).toBeVisible();
+  await projectNav().getByRole("button", { name: new RegExp(worker) }).click();
+  await projectNav().getByRole("button", { name: /^Cards/ }).click();
+  await expect.element(open).toHaveLength(3);
+  await expect.element(shown()).toHaveTextContent("Cards");
+  await expect.element(replyBox()).toHaveFocus();
+
+  const select = vi.spyOn(window.contr, "select");
+  await userEvent.keyboard(close);
+  if (owner === "native menu") {
+    expect(select).not.toHaveBeenCalled();
+    await expect.element(open).toHaveLength(3);
+    expect(menuClose).toBeTypeOf("function");
+    menuClose?.();
+  }
+  await expect.element(open).toHaveLength(2);
+  await expect.element(tab("Cards")).not.toBeInTheDocument();
+  await expect.element(tab(audit)).toBeVisible();
+  await expect.element(shown()).toHaveTextContent(worker);
+  expect(select).toHaveBeenCalledExactlyOnceWith("t8");
 });

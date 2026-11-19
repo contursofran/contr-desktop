@@ -120,7 +120,9 @@ export function App() {
   const onMenuClose = useEffectEvent(closeShownTab);
   useEffect(() => window.contr.onCloseTab?.(() => onMenuClose()), []);
   const platform = window.contr.platform;
-  useShortcut(hotkey("CLOSE_TAB", platform), closeShownTab);
+  // The native File menu owns the key on macOS. Browser builds have only the renderer binding.
+  const nativeCloseTab = platform === "darwin" && window.contr.onCloseTab !== undefined;
+  useShortcut(nativeCloseTab ? undefined : hotkey("CLOSE_TAB", platform), closeShownTab);
   useShortcut(hotkey("TOGGLE_CHAT_TERMINAL", platform), () => {
     setSide((current) => current === "chat" ? "terminal" : "chat");
   }, { when: () => Boolean(view.selected) });
