@@ -21,7 +21,7 @@ export type FeedEvent =
 
 /** The prompt on the agent's screen (helper `card`). */
 export type Card =
-  | { kind: "approval"; request: string; title: string; command: string; tool: string; answered: boolean }
+  | { kind: "approval"; request: string; title: string; command: string; details?: string; tool: string; answered: boolean }
   | { kind: "question"; request: string; question: QuestionCard; unread: number };
 
 export interface QuestionCard {

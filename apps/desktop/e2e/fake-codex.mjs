@@ -10,6 +10,7 @@ const notify = (method, params) => emit({ method, params: { threadId: "test-thre
 let turn = { id: "test-turn", items: [] };
 let url;
 let turning = 0;
+const mcpApprovals = new Map();
 const optionsLog = process.env.FAKE_CODEX_OPTIONS_LOG;
 const defaults = optionsLog ? {
   model: "gpt-test", modelProvider: "test", reasoningEffort: "high", serviceTier: "priority", activePermissionProfile: { id: ":workspace" },
@@ -18,19 +19,46 @@ async function call(method, params = {}) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
   return (await response.json()).result;
 }
+async function approveMcpTool(tool, args = {}) {
+  const id = `mcp-approval-${turning}-${tool}`;
+  const result = await new Promise((resolve) => {
+    mcpApprovals.set(id, resolve);
+    emit({ id, method: "mcpServer/elicitation/request", params: {
+      threadId: "test-thread", turnId: turn.id, serverName: "contr_workers", mode: "form",
+      message: `Allow the contr_workers MCP server to run tool "${tool}"?`,
+      requestedSchema: { type: "object", properties: {} },
+      _meta: { codex_approval_kind: "mcp_tool_call", tool_name: tool, tool_params: args },
+    } });
+  });
+  if (result?.content !== null || result._meta !== null || !["accept", "decline"].includes(result.action)) {
+    throw new Error("Invalid MCP approval response.");
+  }
+  notify("serverRequest/resolved", { requestId: id });
+  return result.action === "accept";
+}
 async function orchestrate() {
   await call("initialize", { protocolVersion: "2025-06-18" });
   const { tools } = await call("tools/list");
   if (tools.map((tool) => tool.name).join() !== "flow,spawn,message") throw new Error("Unexpected tools");
+  if (!await approveMcpTool("flow")) return false;
   const flow = await call("tools/call", { name: "flow" });
   if (!flow.content[0].text.includes("Fixture flow: plan first.")) throw new Error("Missing flow");
-  const reply = await call("tools/call", { name: "spawn", arguments: { name: "code-review", title: "Code review", profile: "codex", task: "Return a fixture report." } });
+  const worker = { name: "code-review", title: "Code review", profile: "codex", task: "Return a fixture report." };
+  if (!await approveMcpTool("spawn", worker)) return false;
+  const reply = await call("tools/call", { name: "spawn", arguments: worker });
   if (reply.isError) throw new Error(reply.content[0].text);
   const other = await call("tools/call", { name: "message", arguments: { name: "t7", text: "Do not deliver." } });
   if (!other.isError) throw new Error("A coordinator can message another terminal");
+  return true;
 }
 createInterface({ input: process.stdin }).on("line", async (line) => {
   const { id, method, params, result } = JSON.parse(line);
+  const approval = mcpApprovals.get(id);
+  if (!method && approval) {
+    mcpApprovals.delete(id);
+    approval(result);
+    return;
+  }
   if (method === "initialize") emit({ id, result: {} });
   if (optionsLog && ["thread/start", "turn/start", "model/list", "permissionProfile/list"].includes(method)) {
     appendFileSync(optionsLog, JSON.stringify({ method, params }) + "\n");
@@ -83,8 +111,12 @@ createInterface({ input: process.stdin }).on("line", async (line) => {
         notify("item/completed", { item: { id: "report-reply", type: "agentMessage", text: "Coordinator received the worker report." } });
         notify("turn/completed", { turn: { ...turn, status: "completed" } });
       } else if (text.includes("Coordinate this goal with contr_workers.")) {
-        await orchestrate();
-        emit({ id: "approval", method: "item/commandExecution/requestApproval", params: { threadId: "test-thread", command: "pwd" } });
+        if (await orchestrate()) {
+          emit({ id: "approval", method: "item/commandExecution/requestApproval", params: { threadId: "test-thread", command: "pwd" } });
+        } else {
+          notify("item/completed", { item: { id: `mcp-denied-${turning}`, type: "agentMessage", text: "Worker tool approval declined." } });
+          notify("turn/completed", { turn: { ...turn, status: "completed" } });
+        }
       } else {
         notify("item/completed", { item: { id: "first-reply", type: "agentMessage", text: "Ready to coordinate." } });
         notify("turn/completed", { turn: { ...turn, status: "completed" } });

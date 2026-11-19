@@ -215,9 +215,12 @@ function Approval({ card }: { card: Extract<CardData, { kind: "approval" }> }) {
   // The first answer is picked (screens.html `.opt.is-picked`): Enter sends it.
   useKeys((k) => (k === "1" || k === "Enter" ? void press(true) : k === "2" ? void press(false) : undefined));
   return (
-    <section aria-label="Approval" className={cardBox}>
+    <section aria-label="Approval" className={card.details ? `${cardBox} max-md:p-1.5!` : cardBox}>
       <AgentHead source={card.title || `${card.tool} wants to run`} />
       {card.command && <pre className="whitespace-pre-wrap px-3 pt-0.5 pb-2 font-mono text-[11.5px] leading-[17px] text-muted">{card.command}</pre>}
+      {card.details && (
+        <pre aria-label="Tool arguments" className="max-h-[clamp(17px,calc(45vh-199px),112px)] overflow-y-auto whitespace-pre-wrap wrap-anywhere px-3 font-mono text-[11.5px] leading-[17px] text-muted">{card.details}</pre>
+      )}
       <button type="button" disabled={off} aria-keyshortcuts="1 Enter" onClick={() => void press(true)} className={`${optionRow} bg-hover`}>
         <span className={keyMark}>1</span>
         <OptionLabel label="Allow once" />
