@@ -28,8 +28,10 @@ async function open(size?: [number, number]) {
 const jump = () => page.getByRole("button", { name: "Jump to the end" });
 const replyBox = () => page.getByRole("form", { name: "Reply" }).getByRole("textbox");
 
-test("the ↓ button shows away from the end, marks new rows, and goes back to the end", async () => {
-  const append = await open();
+test("the ↓ button marks new rows and reaches the exact end of a 636 px list", async () => {
+  const append = await open([1200, 818]);
+  const list = chatList().element();
+  expect(list.clientHeight).toBe(636);
   await expect.poll(() => jump().length).toBe(0);
 
   // Scrolled up: the button shows, with no mark.
@@ -54,12 +56,26 @@ test("the ↓ button shows away from the end, marks new rows, and goes back to t
   await shoot("jump-new");
 
   // A press goes to the end, and the button goes away.
+  // Make the scrollable content grow as the smooth scroll lands.
+  let grewAtEnd = false;
+  function growAtEnd() {
+    if (list.scrollHeight - list.clientHeight - list.scrollTop !== 0) return;
+    list.removeEventListener("scrollend", growAtEnd, true);
+    const spacer = document.createElement("div");
+    spacer.style.height = "2px";
+    requestAnimationFrame(() => {
+      list.append(spacer);
+      grewAtEnd = true;
+    });
+  }
+  list.addEventListener("scrollend", growAtEnd, true);
   await jump().click();
   await rowInViewport("r129");
   await chatSettled();
-  const list = chatList().element();
-  expect(list.scrollHeight - list.clientHeight - list.scrollTop).toBeLessThan(2);
+  expect(grewAtEnd).toBe(true);
+  await expect.poll(() => list.scrollHeight - list.clientHeight - list.scrollTop).toBe(0);
   await expect.poll(() => jump().length).toBe(0);
+  await shoot("jump-end-636");
 
   await chatRow("r40");
   await expect.element(jump()).toBeVisible();
