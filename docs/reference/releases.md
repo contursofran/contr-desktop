@@ -16,7 +16,8 @@ to `main` (or by hand, `workflow_dispatch`). It:
    names do not change between releases: `contr-mac-universal.dmg`,
    `contr-mac-universal.zip` and `contr-linux-x86_64.AppImage`. The Update
    button finds the `.zip` and the `.dmg` of the newest release by these names.
-   The release also has `release.json` (see The release file).
+   The publish job calculates the SHA-256 of the exact ZIP it uploads and
+   includes it in `release.json` (see The release file).
 
 ## Release notes
 
@@ -39,16 +40,18 @@ the pull request's head.
 
 ## The release file
 
-With `--json release.json --assets dist`, `scripts/release-notes.mjs` also
+With `--json release.json --assets dist --sha256 <zip hash>`, `scripts/release-notes.mjs` also
 writes `release.json`, and the publish job uploads it with the other files:
 
 ```json
 { "schema": 1, "version": "0.1.30", "tag": "build-…", "sha": "…", "date": "<ISO time>",
   "assets": ["contr-linux-x86_64.AppImage", "contr-mac-universal.dmg", "contr-mac-universal.zip"],
+  "sha256": "4f7a2ce9aa3b40ef19766a53b1f3d8c0a817c2ef3cedfe51decbacbbb8d30084",
   "releases": [{ "version": "0.1.30", "tag": "build-…", "date": "2026-11-18", "changes": ["…"] }] }
 ```
 
-`assets` are the file names in `dist`. `releases` is the change log of the
+`assets` lists the file names in `dist`. `sha256` gives the ZIP hash as 64
+lowercase hexadecimal digits. `releases` is the change log of the
 newest 10 releases, this one first. The older ones come from the API list
 (the workflow has a token), sorted by `published_at`, parsed as the app's
 `changelog.ts` does: drafts and releases with no version are left out. The
@@ -227,20 +230,27 @@ the foot's Settings button a dot. A check while a download runs or a new app
 is ready keeps that download: a newer release does not replace the ready app.
 
 When the folder of the running `contr.app` is writable and the release has
-`contr-mac-universal.zip`, a press downloads the `.zip` with progress and
-unpacks it with `ditto` into a temp folder. The app checks that the
+`contr-mac-universal.zip`, a press downloads the ZIP with progress. The app
+requires a valid SHA-256 from `release.json` and checks it before it calls
+`ditto`. A missing or different hash shows an error in Settings. An older
+release or an API fallback can still give the version and change log.
+After extraction, the app checks that the
 `Info.plist` version is the release version and that `codesign --verify`
 passes (ad-hoc is fine). Then Settings shows "Restart to update". A press
 starts a detached swap script and quits. The script waits for the app's pid
 to end, moves the old app to `contr.app.old`, copies the new one in, removes
 quarantine (`xattr -dr com.apple.quarantine`) and opens it. It removes the old
 copy only after the new app runs. On any failure it puts the old app back and
-opens it.
+opens it. The app removes the archive folder after the download and
+unpack attempt. It removes the unpacked folder on validation failure or
+normal quit without a swap. The swap script removes that folder after the swap
+or rollback.
 
 When the folder is not writable or the release has no `.zip`, a press
 downloads the `.dmg` into Downloads and opens it; the owner drags contr to
-Applications. Settings then says "Opened contr-mac-universal.dmg. Drag contr
-to Applications." (the file name, not its folder); the next check that takes a
+Applications. The file name includes the release version, for example
+`contr-mac-universal-0.1.30.dmg`, so downloads of different releases can stay
+in Downloads. Settings shows the file name. The next check that takes a
 release removes that line. A failed check or download shows its message. After
 a failed check, Settings shows the failure in place of "Checked …", the last
 known version (never "Up to date") or "Unknown" when no check passed yet, and
@@ -250,12 +260,12 @@ states.
 
 Dev and e2e builds show "Development build" and check nothing. The e2e test of
 the `.zip` install builds its `.zip` with electron-builder and
-`electron-builder.yml`, so a change to the signing options shows there. e2e tests set
-`CONTR_UPDATE_URL` (a fake API release JSON), `CONTR_RELEASE_FILE_URL` (a
-fake `release.json`; with no such switch e2e reads no release file) and `CONTR_DOWNLOADS` (a scratch
-folder) and `CONTR_INSTALL_DIR` (a scratch folder in place of the running
-app's folder, never `/Applications`); with `CONTR_E2E=1` nothing is opened,
-swapped or quit.
+`electron-builder.yml`, so a change to the signing options shows there.
+Only with `CONTR_E2E=1` does the app read `CONTR_UPDATE_URL` (fake API
+release), `CONTR_RELEASES_URL` (fake API change log),
+`CONTR_RELEASE_FILE_URL` (fake `release.json`), `CONTR_DOWNLOADS` (scratch
+Downloads folder) and `CONTR_INSTALL_DIR` (scratch install folder).
+In this mode, the updater skips opening the DMG, swapping the app and quitting.
 
 ## PATH in the packaged app
 

@@ -81,8 +81,8 @@ test("one read of release.json gives the newest release and the change log; the 
   await expect(log.getByRole("listitem", { name: "contr 0.1.30" }).getByRole("listitem")).toHaveText(["Updates: read a release file, not the rate-limited API (#130)"]);
   await expect(log.getByRole("listitem", { name: "contr 0.1.24" }).getByLabel("Mark")).toHaveText("Installed");
   await view.getByRole("button", { name: "Update" }).click();
-  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal.dmg. Drag contr to Applications.");
-  expect(readFileSync(path.join(downloads, "contr-mac-universal.dmg")).equals(DMG)).toBe(true);
+  await expect(view.getByRole("status")).toHaveText("Opened contr-mac-universal-0.1.30.dmg. Drag contr to Applications.");
+  expect(readFileSync(path.join(downloads, "contr-mac-universal-0.1.30.dmg")).equals(DMG)).toBe(true);
   expect(paths.filter((p) => p.startsWith("/api/"))).toEqual([]);
   await app.close();
   server.close();
