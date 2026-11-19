@@ -54,7 +54,7 @@ test("Settings opens from the foot, sets the theme from the tokens and closes wh
   const agent = project.getByRole("button", { name: /Chat panel usability audit/ });
   await agent.click();
   await expect.element(view).not.toBeInTheDocument();
-  await expect.element(page.getByText("Run it with:")).toBeVisible();
+  await expect.element(page.getByText("Sign-in retry handoff")).toBeVisible();
   await shot("settings-chat-light");
 
   await button.click();
@@ -62,7 +62,7 @@ test("Settings opens from the foot, sets the theme from the tokens and closes wh
   await expect.poll(canvas).toBe("rgb(20, 21, 24)");
   await agent.click();
   await expect.element(view).not.toBeInTheDocument();
-  await expect.element(page.getByText("Run it with:")).toBeVisible();
+  await expect.element(page.getByText("Sign-in retry handoff")).toBeVisible();
   await shot("settings-chat-dark");
 });
 
