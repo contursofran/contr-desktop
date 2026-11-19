@@ -7,7 +7,6 @@ import { contrFake } from "./contrFake";
 import { renderApp } from "./renderApp";
 
 const rows: FeedRow[] = transcript.trim().split("\n").map((line) => JSON.parse(line));
-const initial: FeedEvent = { type: "splice", at: 0, rows, agent: "claude", model: "claude-opus-5-5" };
 const working: FeedEvent = { type: "working", working: { text: "Hashing…", detail: "35s · ↓ 1.2k tokens" } };
 
 export const replyState: ReplyInfo = {
@@ -33,17 +32,19 @@ export function deferred<T>() {
 type SendResult = Awaited<ReturnType<ContrApi["send"]>>;
 
 export async function mountReply({
-  card = null, holdFeed = false, workers = true, info = {},
+  card = null, holdFeed = false, initialRows = rows, workers = true, info = {},
   sends = [], overrides = {},
 }: {
   card?: Card | null;
   holdFeed?: boolean;
+  initialRows?: FeedRow[];
   workers?: boolean;
   info?: Partial<ReplyInfo>;
   sends?: (SendResult | Promise<SendResult>)[];
   overrides?: Partial<ContrApi>;
 } = {}) {
-  const defaults = contrFake(rows, card);
+  const initial: FeedEvent = { type: "splice", at: 0, rows: initialRows, agent: "claude", model: "claude-opus-5-5" };
+  const defaults = contrFake(initialRows, card);
   const sidebar = await defaults.sidebar();
   const agents = sidebar.projects[0].agents;
   const root = agents[0];
@@ -102,7 +103,7 @@ export async function mountReply({
     calls,
     send,
     firstFeed,
-    append: (row: FeedRow) => emit({ type: "splice", at: rows.length, rows: [row] }),
+    append: (row: FeedRow) => emit({ type: "splice", at: initialRows.length, rows: [row] }),
     sent: () => calls.map(({ text }) => text),
   };
 }
