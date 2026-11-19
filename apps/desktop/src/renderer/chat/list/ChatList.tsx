@@ -1,7 +1,9 @@
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
 import { ArrowDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FeedRow } from "../../../shared/api";
+import { ChatDigests, digestRanges, useDigestReads, type DigestRead } from "../blocks/digestRead";
+import { lastDigestOffset } from "../markdown/ChatMarkdown";
 import { Row } from "../rows/Row";
 import { Spinner } from "../rows/Spinner";
 
@@ -27,7 +29,14 @@ function ChatRowGap() {
 // changes height (Markdown, tables, open tool chips).
 // While the owner reads older rows, a round ↓ button (as herdr-contr's chat) goes back to the end. Its arrow
 // takes the accent color when a new row came in after the owner scrolled up.
-export function ChatList({ rows }: { rows: FeedRow[] }) {
+export function ChatList({ rows, savedDigests, saveDigest }: {
+  rows: FeedRow[];
+  savedDigests: Map<string, DigestRead> | undefined;
+  saveDigest: (id: string, read: DigestRead) => void;
+}) {
+  const digests = useMemo(() => digestRanges(rows, lastDigestOffset), [rows]);
+  const reads = useDigestReads(digests.lastKey, savedDigests, saveDigest);
+  const digestData = useMemo(() => ({ ranges: digests.ranges, reads }), [digests, reads]);
   const list = useRef<LegendListRef>(null);
   const box = useRef<HTMLDivElement>(null);
   // At the end until the owner scrolls up. Read on scroll, before a resize changes it.
@@ -86,6 +95,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
         className="flex-1 px-4 md:px-14 [scrollbar-gutter:stable_both-edges] [mask-image:linear-gradient(to_bottom,transparent_0,#000_64px)]"
         ListHeaderComponent={<div className="h-12" />}
         data={rows}
+        extraData={digestData}
         keyExtractor={(row) => row.id}
         ItemSeparatorComponent={ChatRowGap}
         ListFooterComponent={<div className="h-4" />}
@@ -110,7 +120,9 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
             data-row-id={item.id}
             className="mx-auto flow-root w-full max-w-read"
           >
-            <Row row={item} />
+            <ChatDigests.Provider value={digestData}>
+              <Row row={item} />
+            </ChatDigests.Provider>
           </div>
         )}
       />

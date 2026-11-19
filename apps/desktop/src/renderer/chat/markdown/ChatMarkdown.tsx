@@ -1,6 +1,9 @@
 import type { Element } from "hast";
 import { ImageOff } from "lucide-react";
-import { useMemo, useState, type ComponentProps, type ReactNode } from "react";
+import { Children, isValidElement, useMemo, useState, type ComponentProps, type ReactNode } from "react";
+import { DigestBlock } from "../blocks/DigestBlock";
+import { DigestRow } from "../blocks/digestRead";
+import { parseDigest } from "../blocks/parse";
 import { diagramFor } from "../blocks/Diagram";
 import { MarkdownCodeBlock, extractFenceLanguage } from "./MarkdownCodeBlock";
 import { contrBlock } from "../blocks/contrBlock";
@@ -19,13 +22,19 @@ function textOf(node: Element | undefined): string {
     .join("");
 }
 
-function Pre({ node, children }: WithNode<"pre">) {
+function fence(node: Element | undefined) {
   const codeNode = node?.children.find((c): c is Element => c.type === "element" && c.tagName === "code");
   const className = codeNode?.properties.className;
   const language = extractFenceLanguage(Array.isArray(className) ? className.join(" ") : undefined);
   const code = textOf(codeNode);
   const meta = codeNode?.properties.dataCodeMeta;
-  const block = contrBlock(language, code, typeof meta === "string" ? meta : undefined);
+  return { language, code, meta: typeof meta === "string" ? meta : undefined };
+}
+
+function Pre({ node, children }: WithNode<"pre">) {
+  const { language, code, meta } = fence(node);
+  if (language === "contr-digest" && parseDigest(code)) return <DigestBlock offset={node?.position?.start.offset} />;
+  const block = contrBlock(language, code, meta);
   if (block) return block;
   const diagram = diagramFor(language, code);
   if (diagram) return diagram;
@@ -116,8 +125,36 @@ const render = createMarkdownRenderer({
   urlTransform,
 });
 
+function renderMarkdown(text: string) {
+  const element = render(text);
+  render.remember(text, element);
+  return element;
+}
+
+/** Use the same parsed fences as the view, including fences in lists and quotes. */
+export function lastDigestOffset(text: string): number | undefined {
+  if (!text.includes("contr-digest")) return undefined;
+  let last: number | undefined;
+  const visit = (children: ReactNode) => Children.forEach(children, (child) => {
+    if (!isValidElement<{ node?: Element; children?: ReactNode }>(child)) return;
+    if (child.type === Pre) {
+      const { node } = child.props;
+      const { language, code } = fence(node);
+      if (language === "contr-digest" && parseDigest(code)) last = node?.position?.start.offset;
+    } else {
+      visit(child.props.children);
+    }
+  });
+  visit(renderMarkdown(text));
+  return last;
+}
+
 /** An agent's Markdown text, as t3code's chat shows it. `answer`: the chat's type (markdown.css, `.chat-answer`). */
-export function ChatMarkdown({ text, answer }: { text: string; answer?: boolean }) {
-  const element = useMemo(() => render(text), [text]);
-  return <div className={answer ? "chat-markdown chat-answer" : "chat-markdown"}>{element}</div>;
+export function ChatMarkdown({ text, answer, rowId }: { text: string; answer?: boolean; rowId?: string }) {
+  const element = useMemo(() => renderMarkdown(text), [text]);
+  return (
+    <div className={answer ? "chat-markdown chat-answer" : "chat-markdown"}>
+      <DigestRow.Provider value={rowId}>{element}</DigestRow.Provider>
+    </div>
+  );
 }
