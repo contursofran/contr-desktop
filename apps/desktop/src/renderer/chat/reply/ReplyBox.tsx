@@ -144,7 +144,7 @@ export function ReplyBox({ terminal, title, draft, keyboard, focusFrom }: {
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}
         onPaste={(event) => void onPaste(event)}
-        className="w-full resize-none bg-transparent text-[13px] leading-[18px] rounded-sm text-foreground placeholder:text-faint outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+        className="w-full resize-none bg-transparent text-[13px] leading-[18px] text-foreground placeholder:text-faint outline-none"
       />
       {error && (
         <p role="alert" className="-mt-2 text-xs text-error">
