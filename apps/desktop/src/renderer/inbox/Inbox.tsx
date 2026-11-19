@@ -70,7 +70,7 @@ function DoneEnd({ id, onSaved }: { id: string; onSaved: (n: string) => void }) 
   return (
     <span className="flex items-center gap-2">
       {error && <span role="alert" className="text-xs text-blocked">{error}</span>}
-      <button type="button" disabled={off} onClick={() => void done()} className={`${endText} rounded px-1 hover:text-ink-100 disabled:opacity-50`}>Done</button>
+      <button type="button" disabled={off} onClick={() => void done()} className={`${endText} rounded pl-2 hover:text-ink-100 disabled:opacity-50`}>Done</button>
     </span>
   );
 }

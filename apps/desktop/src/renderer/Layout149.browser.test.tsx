@@ -8,6 +8,12 @@ const edges = (element: Element) => {
   const { left, right } = bounds(element);
   return [left, right];
 };
+const textBounds = (element: Element) => {
+  const text = document.createRange();
+  text.selectNodeContents(element);
+  return text.getBoundingClientRect();
+};
+const textRight = (element: Element) => textBounds(element).right;
 
 test("usage meter tracks align when one value is stale", async () => {
   await renderCards(null, {
@@ -30,7 +36,7 @@ test("usage meter tracks align when one value is stale", async () => {
 test("the Inbox header, open card and blocked row share the centered reading width", async () => {
   const sidebar = structuredClone(fixtureSidebar);
   sidebar.projects[0].agents[1].state = "blocked";
-  await renderCards(null, { ...ownerFake(["D7"]).api, sidebar: async () => sidebar });
+  await renderCards(null, { ...ownerFake().api, sidebar: async () => sidebar });
   await page.viewport(1920, 900);
   await page.getByRole("button", { name: /^Inbox/ }).click();
 
@@ -47,6 +53,23 @@ test("the Inbox header, open card and blocked row share the centered reading wid
   expect(edges(header)).toEqual(edges(card.element()));
   expect(edges(row)).toEqual(edges(card.element()));
   expect(bounds(card.element()).left - pane.left).toBeCloseTo(pane.right - bounds(card.element()).right, 0);
+
+  const idLeft = bounds(inbox.getByText("D8", { exact: true }).element()).left;
+  for (const id of ["D9", "T3", "T4"]) {
+    expect(bounds(inbox.getByText(id, { exact: true }).element()).left).toBeCloseTo(idLeft, 1);
+  }
+  // screens.html gives the open card a 1 px border, -8 px body margin and 12 px text padding.
+  for (const text of ["D7", "Which items show first in the inbox?"]) {
+    const left = textBounds(card.getByText(text, { exact: true }).element()).left;
+    expect(left - idLeft).toBeCloseTo(5, 1);
+  }
+  const end = textRight(blocked.getByText("Open chat", { exact: true }).element());
+  for (const label of ["2 answers", "1 answer"]) {
+    expect(textRight(inbox.getByText(label, { exact: true }).element())).toBeCloseTo(end, 1);
+  }
+  const done = inbox.getByRole("button", { name: "Done", exact: true }).elements();
+  expect(done).toHaveLength(2);
+  for (const button of done) expect(textRight(button)).toBeCloseTo(end, 1);
 
   // A change to the reading width must apply to the whole Inbox.
   const style = (inbox.element() as HTMLElement).style;
@@ -71,5 +94,14 @@ test("Settings groups stay in a centered 640 px column at a wide viewport", asyn
     const group = settings.getByRole("heading", { name, exact: true }).element().parentElement!;
     expect(edges(group)).toEqual([column.left, column.right]);
   }
+  const right = textRight(settings.getByLabelText("Current version").element());
+  for (const label of ["Newest version", "Core version", "Newest core version"]) {
+    expect(textRight(settings.getByLabelText(label).element())).toBeCloseTo(right, 1);
+  }
+  const copy = settings.getByRole("button", { name: "Copy path" }).element();
+  const icon = bounds(copy.querySelector("svg")!);
+  expect(bounds(copy).width).toBe(22);
+  expect(icon.right).toBeCloseTo(right, 1);
+  expect(textRight(settings.getByLabelText("Helper path").element())).toBeLessThan(icon.left);
   await shoot("149-settings");
 });
