@@ -47,8 +47,8 @@ test("PR and issue numbers show their state, check marks, selection and links", 
   expect(row.querySelector(`td [data-ref-state] ${label}`)?.textContent).toBe("#14");
   expect(row.querySelector("code[data-inline-code]")?.textContent).toBe("#12");
   expect(row.querySelectorAll("pre [data-ref-state]")).toHaveLength(0);
-  expect(row.querySelector('a[href="https://example.com/x"]')?.textContent).toBe("#12");
-  await expect.element(page.elementLocator(row).getByText(/#99 is not known/)).toBeVisible();
+  expect(row.querySelector('td a[href="https://github.com/o/r/pull/12"]')?.textContent).toBe("#12");
+  await expect.element(page.elementLocator(row).getByText(/Support mentioned #99/)).toBeVisible();
 
   const color = (n: number) => getComputedStyle(all[n].querySelector("svg")!).color;
   expect([0, 1, 3, 6].map(color)).toEqual(["rgb(171, 125, 248)", "rgb(63, 185, 80)", "rgb(145, 152, 161)", "rgb(145, 152, 161)"]);
@@ -61,7 +61,7 @@ test("PR and issue numbers show their state, check marks, selection and links", 
   const selection = getSelection()!;
   selection.removeAllRanges();
   selection.addRange(range);
-  expect(selection.toString()).toContain("Merged in #12, open in #14, a draft in #15, and #20 was closed.");
+  expect(selection.toString()).toContain("The first retry fix shipped in #12. The regression fix is open in #14. The guide update is still a draft in #15, and the old form rewrite was closed in #20.");
   selection.removeAllRanges();
   await page.elementLocator(all[0]).click();
   expect(openRef.mock.calls).toEqual([["https://github.com/o/r/pull/12"]]);

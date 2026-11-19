@@ -53,7 +53,7 @@ test("Retry on a helper error starts the feed again through IPC", async () => {
   // The restarted feed supplies chat rows when the helper is back.
   rmSync(flag);
   await expect(alert).toHaveCount(0);
-  await expect(page.getByRole("list", { name: "Chat" })).toContainText("Run it with:");
+  await expect(page.getByRole("list", { name: "Chat" })).toContainText("Sign-in retry handoff");
   await app.close();
 });
 

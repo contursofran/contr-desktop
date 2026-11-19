@@ -112,6 +112,16 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Put the keyboard ring on the padded tab so it clears the title and the row's scroll edge. */
+[data-tab-row] > :has(> [role="tab"]:focus-visible) {
+  outline: 1px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+[data-tab-row] > * > [role="tab"]:focus-visible {
+  outline: none;
+}
+
 /* The status glyph (ui/StatusGlyph.tsx): working turns, waiting and blocked pulse. */
 @keyframes status-braille {
   0% { content: "⠋"; } 10% { content: "⠙"; } 20% { content: "⠹"; } 30% { content: "⠸"; } 40% { content: "⠼"; }

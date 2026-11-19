@@ -25,7 +25,7 @@ test("the window shows the helper's rows", async () => {
   const sendLog = path.join(mkdtempSync(path.join(os.tmpdir(), "contr-e2e-")), "send.jsonl");
   const app = await launch({ FAKE_HELPER_SEND_LOG: sendLog });
   const page = await app.firstWindow();
-  await expect(await chatRow(page, "u1")).toContainText("The login form loses the email");
+  await expect(await chatRow(page, "u1")).toContainText("After a rejected sign-in, the login form clears the email");
 
   expect(await page.evaluate(() => window.contr.send("hello"))).toEqual({ ok: true });
   expect(JSON.parse(readFileSync(sendLog, "utf8"))).toEqual({ terminal: "t7", text: "hello" });

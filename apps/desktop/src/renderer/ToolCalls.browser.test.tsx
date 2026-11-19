@@ -26,7 +26,7 @@ test("tool calls fold into one line that opens to one line per call; the footer 
   ]);
   await expect.element(calls.nth(2).getByRole("img", { name: "failed" })).toBeVisible();
   const footer = await chatRow("f-a3");
-  await expect.element(page.elementLocator(footer)).toHaveTextContent("14:06 · Worked 1m 0s · 6 tools");
+  await expect.element(page.elementLocator(footer)).toHaveTextContent("14:06 · Worked 1m 0s · 7 tools");
   const compacted = await chatRow("st-1");
   await expect.element(page.elementLocator(compacted)).toHaveTextContent("Context compacted");
 
