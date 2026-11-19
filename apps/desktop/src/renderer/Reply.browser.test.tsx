@@ -71,7 +71,7 @@ test("the reply box shows the model, effort, context and branch, and the menu se
   await expect.element(model()).toHaveTextContent("Opus 5.5medium");
   await expect.element(page.getByLabelText("Context 37%")).toHaveTextContent("37%");
   await expect.element(page.getByText(/tok\/s/)).not.toBeInTheDocument();
-  await expect.element(page.getByLabelText("Branch")).toHaveTextContent("agent/11-reply-menu");
+  await expect.element(page.getByRole("img", { name: /^Branch: / })).toHaveTextContent("agent/11-reply-menu");
   await replyForm().screenshot({ path: "../../../../tmp/shots/browser/reply-foot-dark.png" });
 
   await model().click();

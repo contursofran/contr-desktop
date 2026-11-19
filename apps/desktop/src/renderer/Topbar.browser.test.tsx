@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { cdp, page, userEvent } from "vitest/browser";
+import { cdp, commands, page, userEvent } from "vitest/browser";
 import { sidebar } from "../../test/275-sidebar";
-import { rows, selectable, shoot, transcript } from "../../test/281-shell";
+import { rows, selectable, shoot, shot, transcript } from "../../test/281-shell";
 import { renderApp } from "../../test/renderApp";
 
 const names = ["Chat panel usability audit", "Install health check", "Release notes draft"];
@@ -40,8 +40,8 @@ test("opened tabs use the topbar layout and show full titles on hover", async ()
   await expect.element(page.getByRole("tooltip")).toHaveTextContent(names[0]);
   await tab(names[0]).unhover();
 
-  expect(tabs.element().querySelectorAll("[data-tab-close]")).toHaveLength(1);
-  await expect.element(tabs.getByRole("button", { name: `Close ${names[1]}` })).toBeVisible();
+  expect(tabs.element().querySelectorAll("[data-tab-close]")).toHaveLength(0);
+  await expect.element(page.getByRole("button", { name: `Close ${names[1]}` })).toBeVisible();
   const [first, second] = names.map((name) => item(name).getBoundingClientRect());
   expect(first.height).toBe(28);
   expect(first.x - tabs.element().parentElement!.parentElement!.getBoundingClientRect().x).toBe(10);
@@ -51,7 +51,7 @@ test("opened tabs use the topbar layout and show full titles on hover", async ()
   expect(getComputedStyle(item(names[1])).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
   const { width, height } = plus.element().getBoundingClientRect();
   expect([width, height]).toEqual([26, 26]);
-  await shoot("282-topbar", bar());
+  await shoot("148-tabs-after", bar());
 });
 
 test("the scroll row is the named tab list and the new-tab button is outside it", async () => {
@@ -61,6 +61,42 @@ test("the scroll row is the named tab list and the new-tab button is outside it"
   expect(titles()).toEqual([names[0]]);
   await expect.element(plus).toBeVisible();
   await expect.element(tabs.getByRole("button", { name: "New tab" })).not.toBeInTheDocument();
+});
+
+test("keyboard focus leaves room for the selected tab's ellipsis and uses the theme ring", async () => {
+  await renderApp(transcript, null, selectable(sidebar).overrides);
+  const [first, name, last] = names;
+  await open(name);
+  await open(last);
+  await open(name);
+  await document.fonts.ready;
+  const focused = tab(name).element() as HTMLButtonElement;
+  const wrapper = item(name);
+  const title = focused.querySelector<HTMLElement>("[data-title]")!;
+
+  for (const [width, height] of [[640, 480], [1400, 900]] as const) {
+    await page.viewport(width, height);
+    (tab(first).element() as HTMLElement).focus();
+    const titleWidth = title.getBoundingClientRect().width;
+    await userEvent.keyboard("{ArrowRight}");
+    await expect.element(tab(name)).toHaveFocus();
+    expect(focused.matches(":focus-visible")).toBe(true);
+    expect(title.getBoundingClientRect().width).toBe(titleWidth);
+    expect(title.scrollWidth).toBeGreaterThan(title.clientWidth);
+    expect(title).toHaveStyle({ textOverflow: "ellipsis", overflow: "hidden" });
+    expect(wrapper.getBoundingClientRect().width).toBeLessThanOrEqual(180);
+
+    for (const [scheme, color] of [["dark", "rgba(255, 255, 255, 0.5)"], ["light", "rgba(0, 0, 0, 0.45)"]] as const) {
+      await commands.colorScheme(scheme);
+      const ring = getComputedStyle(wrapper);
+      const ringInside = -Number.parseFloat(ring.outlineOffset);
+      expect(wrapper.getBoundingClientRect().right - title.getBoundingClientRect().right).toBeGreaterThan(ringInside);
+      expect(ring.outlineStyle).toBe("solid");
+      expect(ring.outlineColor).toBe(color);
+      expect(getComputedStyle(focused).outlineStyle).toBe("none");
+      await shot(`313-tab-${width}-${scheme}`, bar());
+    }
+  }
 });
 
 test("arrows, Home and End move tab focus, and Enter and Space select the focused tab", async () => {
@@ -205,7 +241,7 @@ test("in a narrow window the shown tab scrolls into view above a thin scrollbar"
   await page.viewport(700, 600);
   expect(window.innerWidth).toBe(700);
   await expect.poll(inView).toBe(true);
-  await tabs.getByRole("button", { name: "Close Virtual list" }).click();
+  await page.getByRole("button", { name: "Close Virtual list" }).click();
   await expect.poll(() => titles().length).toBe(5);
   await expect.poll(inView).toBe(true);
 });

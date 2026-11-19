@@ -1,4 +1,4 @@
-import type { Element } from "hast";
+import type { Element, Root } from "hast";
 import { ImageOff } from "lucide-react";
 import { Children, isValidElement, useMemo, useState, type ComponentProps, type ReactNode } from "react";
 import { DigestBlock } from "../blocks/DigestBlock";
@@ -15,10 +15,9 @@ import "./markdown.css";
 
 type WithNode<T extends keyof React.JSX.IntrinsicElements> = ComponentProps<T> & { node?: Element };
 
-function textOf(node: Element | undefined): string {
-  if (!node) return "";
-  return node.children
-    .map((child) => (child.type === "text" ? child.value : child.type === "element" ? textOf(child) : ""))
+function textOf(children: Element["children"] = []): string {
+  return children
+    .map((child) => (child.type === "text" ? child.value : child.type === "element" ? textOf(child.children) : ""))
     .join("");
 }
 
@@ -26,7 +25,7 @@ function fence(node: Element | undefined) {
   const codeNode = node?.children.find((c): c is Element => c.type === "element" && c.tagName === "code");
   const className = codeNode?.properties.className;
   const language = extractFenceLanguage(Array.isArray(className) ? className.join(" ") : undefined);
-  const code = textOf(codeNode);
+  const code = textOf(codeNode?.children);
   const meta = codeNode?.properties.dataCodeMeta;
   return { language, code, meta: typeof meta === "string" ? meta : undefined };
 }
@@ -117,10 +116,32 @@ function urlTransform(url: string): string {
   return SAFE_URL.test(url) || !/^[a-z][a-z0-9+.-]*:/i.test(url) ? url : "";
 }
 
+/** Name the disabled GFM checkbox from its own paragraph, without nested tasks. */
+function rehypeTaskNames() {
+  return (tree: Root) => {
+    const visit = (node: Root | Element) => {
+      if (node.type === "element" && node.tagName === "li") {
+        const first = node.children.find((child) => child.type === "element");
+        const line = first?.tagName === "p" ? first.children : node.children;
+        const checkbox = line.find((child) => child.type === "element");
+        if (checkbox?.tagName === "input" && checkbox.properties.type === "checkbox") {
+          const end = line.findIndex((child) => child.type === "element" && ["ul", "ol"].includes(child.tagName));
+          const label = textOf(end < 0 ? line : line.slice(0, end)).trim();
+          checkbox.properties.ariaLabel = label || "Task";
+        }
+      }
+      for (const child of node.children) {
+        if (child.type === "element") visit(child);
+      }
+    };
+    visit(tree);
+  };
+}
+
 /** Element to component map. */
 const render = createMarkdownRenderer({
   remarkPlugins: CHAT_MARKDOWN_REMARK_PLUGINS,
-  rehypePlugins: CHAT_MARKDOWN_REHYPE_PLUGINS,
+  rehypePlugins: [...CHAT_MARKDOWN_REHYPE_PLUGINS, rehypeTaskNames],
   components: { pre: Pre, a: Link, img: Img, table: Table, blockquote: Blockquote, "contr-ref": Ref },
   urlTransform,
 });

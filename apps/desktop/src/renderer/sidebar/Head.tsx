@@ -10,12 +10,12 @@ const icon = "flex size-[26px] items-center justify-center rounded-lg text-dim h
 /** The machine the app reads agents of. */
 const MACHINE = "This computer";
 
-const inert = "flex size-[26px] items-center justify-center rounded-lg text-faint [-webkit-app-region:no-drag]";
+const inert = "flex size-[26px] items-center justify-center rounded-lg text-ink-42 [-webkit-app-region:no-drag]";
 
 /**
 * The sidebar head (docs/design/redesign, `.side-top`): one 40 px row with the app name, the machine switch, search and the
  * sidebar toggle. A long machine name is cut with "…"; its tooltip and its label have the full name (owner, D142). The toggle hides the sidebar (`onHide`); the top bar then has the
- * toggle that shows it. Search and "Add machine…" are inert: `aria-disabled`, `faint`, "(not yet)".
+ * toggle that shows it. Search and "Add machine…" are inert and have a "(not yet)" tooltip.
  * The app reads agents of this computer only, so the other machines are inert as "Add machine…", with "(not yet)",
  * and the label stays "This computer": a picked machine over this computer's agents would be wrong data.
  */
@@ -53,7 +53,7 @@ export function Head({ onHide }: { onHide: () => void }) {
           </MenuContent>
         </Menu>
         <span className="flex-1" />
-        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" className={inert}><Search aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
+        <Tip label="Search (not yet)"><button type="button" aria-label="Search" aria-disabled="true" tabIndex={-1} className={inert}><Search aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
         <Tip label="Hide sidebar"><button type="button" aria-label="Hide sidebar" onClick={onHide} className={icon}><PanelLeft aria-hidden strokeWidth={1.6} className="size-3.5" /></button></Tip>
       </div>
     </header>

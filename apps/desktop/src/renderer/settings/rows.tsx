@@ -55,7 +55,7 @@ export function PathValue({ label, path }: { label: string; path: string }) {
       </Tip>
       {path && (
         <Tip label={copyLabel}>
-          <button type="button" onClick={() => copy(path)} aria-label={copyLabel} className="grid size-[22px] shrink-0 place-items-center rounded-lg text-dim hover:bg-hover hover:text-foreground">
+          <button type="button" onClick={() => copy(path)} aria-label={copyLabel} className="grid size-[22px] shrink-0 items-center justify-items-end rounded-lg text-dim hover:bg-hover hover:text-foreground">
             {copied ? <CheckIcon aria-hidden className="size-3.5" /> : <CopyIcon aria-hidden className="size-3.5" />}
           </button>
         </Tip>
