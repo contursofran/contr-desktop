@@ -46,7 +46,7 @@ test("the helper error aligns with the reply box, disables it and clears on Retr
 
 test("an empty sidebar and main area say how an agent shows", async () => {
   await renderApp(transcript, null, { sidebar: async () => ({ selected: "", projects: [] }) });
-  const empty = page.getByRole("status", { name: "No agent" });
+  const empty = page.getByRole("note", { name: "No agent" });
   await expect.element(empty).toHaveTextContent("No agents yetAn agent that runs in an hc terminal shows here.");
   await expect.element(page.getByRole("navigation", { name: "Projects" }).getByText("No agents", { exact: true })).toBeVisible();
   await shoot("no-agents");

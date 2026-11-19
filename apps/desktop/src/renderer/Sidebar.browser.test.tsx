@@ -62,7 +62,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   expect(send).toHaveBeenCalledWith("hello");
 
   // The closed project row shows its agents’ marks.
-  await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
+  await desktop.getByRole("button", { name: "Collapse contr-desktop" }).click();
   await expect.poll(() => desktop.getByRole("listitem").elements().length).toBe(0);
   await expect.poll(() => count("[data-state]", desktop)).toBe(2);
   const name = css("[data-name]", desktop);
@@ -75,7 +75,7 @@ test("the sidebar lists projects, agents and workers, and a click switches the c
   await shot("project-shut-dark");
   await commands.colorScheme("light");
   await shot("project-shut-light");
-  await desktop.getByRole("button", { name: "Open contr-desktop" }).click();
+  await desktop.getByRole("button", { name: "Expand contr-desktop" }).click();
   await expect.poll(() => desktop.getByRole("listitem").elements().length).toBe(5);
 });
 
@@ -91,10 +91,10 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
   const dot = notes.getByRole("img", { name: "unread", exact: true });
   for (const scheme of ["dark", "light"] as const) {
     await commands.colorScheme(scheme);
-    // An idle worker and an idle agent have ⠶ in ink-30; a working one ⠋; a done agent no glyph (#217).
+    // An idle worker and an idle agent have ⠶ in ink-42; a working one ⠋; a done agent no glyph (#217).
     const idle = desktop.getByRole("button", { name: /Virtual list/ }).getByRole("img", { name: "Idle" });
     await expect.element(idle).toHaveAttribute("aria-label", "Idle");
-    await expect.element(idle).toHaveStyle({ "color": color("--ink-30") });
+    await expect.element(idle).toHaveStyle({ "color": color("--ink-42") });
     expect(getComputedStyle(idle.element(), "::before").content).toBe('"⠶"');
     await expect.poll(() => count('[data-state="idle"]', herdr.getByRole("button", { name: /Install health check/ }))).toBe(1);
     await expect.poll(() => count('[data-state="working"]', desktop.getByRole("button", { name: /Flow and sequence diagrams/ }))).toBe(1);
@@ -111,12 +111,12 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
     // Each project name is ink-85, the shown agent's project too.
     expect(getComputedStyle(css("[data-name]", desktop)).color).toBe(color("--ink-85"));
     expect(getComputedStyle(css("[data-name]", herdr)).color).toBe(color("--ink-85"));
-    // The chevron is the text "▼", 9 px, ink-35, 10 px wide.
-    const chev = desktop.getByRole("button", { name: "Shut contr-desktop" });
+    // The chevron is the text "▼", 9 px, ink-42, 10 px wide.
+    const chev = desktop.getByRole("button", { name: "Collapse contr-desktop" });
     await expect.element(chev).toHaveTextContent("▼");
     await expect.element(chev).toHaveStyle({ fontSize: "9px" });
     await expect.element(chev).toHaveStyle({ "width": "10px" });
-    await expect.element(chev).toHaveStyle({ "color": color("--ink-35") });
+    await expect.element(chev).toHaveStyle({ "color": color("--ink-42") });
     // The Projects "+" is ink-50.
     await expect.element(nav.getByRole("button", { name: "Add project" })).toHaveStyle({ "color": color("--ink-50") });
     // Under the 40 px head (#241, screens.html): the Inbox row 2 px down (`.nav` margin-top), the Projects label 6 px under it.
@@ -129,8 +129,8 @@ test("the sidebar's glyphs, rows and project head are the mock's (#227)", async 
   await notes.click();
   await expect.element(notes).toHaveAttribute("aria-current", "true");
   await expect.poll(() => dot.elements().length).toBe(0);
-  await desktop.getByRole("button", { name: "Shut contr-desktop" }).click();
-  await expect.element(desktop.getByRole("button", { name: "Open contr-desktop" })).toHaveTextContent("▶\uFE0E");
+  await desktop.getByRole("button", { name: "Collapse contr-desktop" }).click();
+  await expect.element(desktop.getByRole("button", { name: "Expand contr-desktop" })).toHaveTextContent("▶\uFE0E");
 });
 
 test("a worker's chat: the reply box names it as its tab does, and the chat, model, context and status line are its own (#90)", async () => {

@@ -38,6 +38,11 @@ describe("StatusGlyph", () => {
     expect(out).toContain("text-blocked");
     expect(css).toMatch(/\.status-glyph\[data-state="blocked"\]::before \{ content: "⠿"; animation: status-pulse/);
   });
+  it("done: ⠿, still and muted", () => {
+    expect(renderToStaticMarkup(<StatusGlyph state="done" />)).toContain("text-ink-42");
+    expect(rule("done")).toContain('content: "⠿"');
+    expect(rule("done")).not.toContain("animation");
+  });
   it("stops moving when the system asks for reduced motion", () => {
     expect(css).toMatch(/prefers-reduced-motion: reduce\) \{\s*\.status-glyph::before \{ animation: none !important; \}/);
   });

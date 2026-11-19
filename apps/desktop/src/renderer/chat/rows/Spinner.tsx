@@ -17,7 +17,7 @@ export function Spinner({ size, className = "" }: { size: number; className?: st
   return (
     <span
       aria-label="running"
-      role="status"
+      role="img"
       className={`inline-flex shrink-0 items-center justify-center font-mono leading-none ${className}`}
       style={{ width: size, height: size, fontSize: size }}
     >

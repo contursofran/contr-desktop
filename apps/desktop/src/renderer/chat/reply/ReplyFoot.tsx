@@ -123,7 +123,7 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
   const filled = (Math.min(100, Math.max(0, context.percent)) / 100) * length;
   return (
     <Tip label={contextTip(context.percent)} side="top">
-      <span tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 font-mono text-[11px] outline-none ${context.warn ? "text-ink-100" : "text-dim"}`}>
+      <span role="img" tabIndex={0} aria-label={`Context ${context.percent}%`} className={`flex items-center gap-1 font-mono rounded-sm text-[11px] outline-hidden focus-visible:ring-2 focus-visible:ring-focus ${context.warn ? "text-ink-100" : "text-dim"}`}>
       <svg aria-hidden viewBox="0 0 16 16" className="size-3.5 -rotate-90">
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" className="stroke-meter-track" />
         <circle cx="8" cy="8" r={r} fill="none" strokeWidth="2" stroke="currentColor" strokeDasharray={`${filled} ${length}`} />
@@ -138,7 +138,7 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
 export function Branch({ branch }: { branch: string | null }) {
   if (!branch) return null;
   return (
-    <span aria-label="Branch" className="min-w-[4ch] max-w-48 shrink-[10] truncate font-mono text-[11px] text-dim">
+    <span role="img" aria-label={`Branch: ${branch}`} className="min-w-[4ch] max-w-48 shrink-[10] truncate font-mono text-[11px] text-dim">
       {branch}
     </span>
   );
