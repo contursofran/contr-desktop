@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { commands, page, userEvent, type Locator } from "vitest/browser";
+import workerTranscript from "../../e2e/fixtures/workers/b-40.jsonl?raw";
 import { sidebar } from "../../test/275-sidebar";
 import { ownerFake, questionCard, renderCards } from "../../test/280-browser";
 import { replyInfo, selectable, shot, shoot, transcript } from "../../test/281-shell";
@@ -104,8 +105,8 @@ function contrast(colors: string[], foreground: string, opacity = 1) {
 test.each(["dark", "light"] as const)("sidebar marks and the tab scrollbar reach 3:1 in %s", async (scheme) => {
   const data = structuredClone(sidebar);
   const workers = data.projects[0].agents[0].workers;
-  workers.push({ ...workers[2], terminal: "idle", title: "Idle worker", state: "idle" });
-  await renderApp(transcript, null, selectable(data).overrides);
+  workers.push({ ...workers[2], terminal: "idle", title: "Idle worker", name: "b-51", state: "idle" });
+  await renderApp(workerTranscript, null, selectable(data).overrides);
   const tabs = page.getByRole("tablist", { name: "Tabs" });
   const agent = (name: string) => page.getByRole("button", { name: new RegExp(`^${name}`) });
   for (const name of ["Install health check", "Release notes draft", "Cards for prompts and questions"]) {
