@@ -9,7 +9,7 @@ import { terminalDisplay } from "../../shared/terminal-display";
 import { appChildren } from "../children";
 import { chatTerminal } from "../helper";
 import { codexThreadId } from "../../shared/codex";
-import { codexSession, newCodexChat } from "../codex/session";
+import { newCodexChat } from "../codex/session";
 import { HcAttach } from "./hc-attach";
 
 const sessions = new Map<number, HcAttach>();
@@ -21,40 +21,17 @@ export function registerTerminalIpc(): void {
     for (const session of sessions.values()) session.setDisplay(display);
   });
   ipcMain.handle("terminal:start", (_event, kind: unknown, cwd: unknown) => startTab(kind, cwd));
-  const attaching = new WeakMap<WebContents, symbol>();
-  const watched = new WeakSet<WebContents>();
-  ipcMain.handle("terminal:attach", async (e, cols: number, rows: number) => {
-    const tab = chatTerminal();
-    const wc = e.sender;
-    sessions.get(wc.id)?.close();
-    sessions.delete(wc.id);
-    if (!watched.has(wc)) {
-      watched.add(wc);
-      wc.once("destroyed", () => { sessions.get(wc.id)?.close(); sessions.delete(wc.id); });
-    }
-    const attachId = Symbol();
-    attaching.set(e.sender, attachId);
-    let terminal = tab;
-    if (codexThreadId(tab)) {
-      try {
-        const session = await codexSession(tab);
-        if (!session.resumable) return { terminal: tab, error: "Send a message in Chat before opening the Codex terminal." };
-        session.companion ??= runTerminal([session.rpc.binary, "resume", "--remote", session.rpc.endpoint, session.threadId], session.cwd)
-          .then((result) => {
-            if ("error" in result) throw new Error(result.error);
-            return result.terminal;
-          }).catch((error: unknown) => {
-            session.companion = undefined;
-            throw error;
-          });
-        terminal = await session.companion;
-      } catch (error) { return { terminal: tab, error: (error as Error).message }; }
-      if (e.sender.isDestroyed() || tab !== chatTerminal() || attaching.get(e.sender) !== attachId) return { terminal };
-    }
+  ipcMain.handle("terminal:attach", (e, cols: number, rows: number) => {
+    const terminal = chatTerminal();
+    if (codexThreadId(terminal)) return { terminal, error: "This Codex thread uses Chat." };
+    const wc: WebContents = e.sender;
+    const old = sessions.get(wc.id);
+    old?.close();
     const a = new HcAttach({ terminal, session: process.env.CONTR_HC_SESSION, hc: process.env.CONTR_HC }, cols, rows, appDisplay(), {
       data: (bytes) => { if (!wc.isDestroyed()) wc.send("terminal:data", bytes); },
       end: (reason) => { if (!wc.isDestroyed()) wc.send("terminal:end", reason); },
     });
+    if (!old) wc.once("destroyed", () => { sessions.get(wc.id)?.close(); sessions.delete(wc.id); });
     sessions.set(wc.id, a);
     return { terminal };
   });

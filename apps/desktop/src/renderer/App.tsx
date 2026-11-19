@@ -32,7 +32,7 @@ export function App() {
   const [digestReads] = useState(() => new Map<string, Map<string, DigestRead>>());
   const [sidebar, setSidebar] = useState<SidebarData>({ projects: [], selected: "" });
   useEffect(() => {
-    void window.contr.sidebar().then(setSidebar);
+    void window.contr.sidebar(readTabs()).then(setSidebar);
     return window.contr.onSidebar(setSidebar);
   }, []);
   // The open tabs. Selecting an agent anywhere opens its tab.
@@ -106,7 +106,6 @@ export function App() {
   const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
   const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
     if (kind === "shell") setSide("terminal");
-    if (kind === "codex") setSide("chat");
     select(terminalId);
   }, [select]);
   const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
@@ -123,6 +122,7 @@ export function App() {
   };
   const onMenuClose = useEffectEvent(closeShownTab);
   useEffect(() => window.contr.onCloseTab?.(() => onMenuClose()), []);
+  const chatOnly = Boolean(codexThreadId(view.selected)) || findAgent(view, view.selected)?.kind === "codex";
   const showSide = (next: Side) => {
     if (next === "chat") setReplyFocus({ terminal: sidebar.selected, from: document.activeElement });
     setSide(next);
@@ -133,7 +133,7 @@ export function App() {
   useShortcut(nativeCloseTab ? undefined : hotkey("CLOSE_TAB", platform), closeShownTab);
   useShortcut(hotkey("TOGGLE_CHAT_TERMINAL", platform), () => {
     showSide(side === "chat" ? "terminal" : "chat");
-  }, { when: () => Boolean(view.selected) });
+  }, { when: () => Boolean(view.selected) && !chatOnly });
   const move = (step: -1 | 1) => {
     const next = adjacentAgent(view, step);
     if (next) select(next);
@@ -148,7 +148,7 @@ export function App() {
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
-        {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={showSide} />}
+        {!inbox && !settings && sidebar.selected && !chatOnly && <Switch side={side} onSide={showSide} />}
         {settings ? <SettingsView />
           : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />
           : !sidebar.selected && sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />}
@@ -158,7 +158,7 @@ export function App() {
             <div key={terminal} role="tabpanel" id={panelId(terminal)} aria-labelledby={tabId(terminal)} hidden={!shown} className={shown ? "flex min-h-0 flex-1 flex-col" : undefined}>
               {shown && (
                 <ChipNavigation value={{ workers: findAgent(sidebar, terminal)?.workers, select, openInbox }}>
-                  <Chat terminal={terminal} title={tabLabel(sidebar, terminal, titles)} side={side} digestReads={digestReads} focusFrom={replyFocus?.terminal === terminal ? replyFocus.from : null} />
+                  <Chat terminal={terminal} title={tabLabel(sidebar, terminal, titles)} side={chatOnly ? "chat" : side} digestReads={digestReads} focusFrom={replyFocus?.terminal === terminal ? replyFocus.from : null} />
                 </ChipNavigation>
               )}
             </div>

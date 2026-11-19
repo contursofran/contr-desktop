@@ -24,7 +24,7 @@ const api: ContrApi = {
   replyInfo: () => ipcRenderer.invoke(REPLY_INFO_CHANNEL),
   setTier: (terminal, tier) => ipcRenderer.invoke(SET_TIER_CHANNEL, terminal, tier),
   branch: () => ipcRenderer.invoke(BRANCH_CHANNEL),
-  sidebar: () => ipcRenderer.invoke(SIDEBAR_CHANNEL),
+  sidebar: (openTabs) => ipcRenderer.invoke(SIDEBAR_CHANNEL, openTabs),
   onSidebar(listener) {
     const handler = (_event: unknown, sidebar: Sidebar) => listener(sidebar);
     ipcRenderer.on(SIDEBAR_EVENT, handler);

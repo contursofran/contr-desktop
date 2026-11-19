@@ -1,4 +1,4 @@
-import type { Sidebar } from "../../shared/api";
+import type { Sidebar, SidebarAgent } from "../../shared/api";
 import { readTitle } from "../helper/title";
 import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, runRead, type HcTerminal } from "./agents";
 import { faviconUrl, gitState } from "./git";
@@ -20,7 +20,7 @@ export interface ReaderOptions {
 
 export interface SidebarReader {
   /** Reads the list. `hc get` runs only for a terminal that is new, changed in `hc ls` or marked; git only for a new project or when due. */
-  read(): Promise<Omit<Sidebar, "selected">>;
+  read(codex?: SidebarAgent[]): Promise<Omit<Sidebar, "selected">>;
   /** An `hc events` line: marks the terminal it names, so the next read gets it again. */
   event(line: string): void;
   /** The next read reads git again for each shown project. */
@@ -72,7 +72,7 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
   };
   const favicons = new Map<string, string | null>();
 
-  const read = async () => {
+  const read = async (codex: SidebarAgent[] = []) => {
     const hcList = await exec(hc, ["ls", "--json"]);
     const { terms, error: hcError } = readHcList(hcList.out, hcList.error);
     if (hcError) {
@@ -83,7 +83,7 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
       gits.clear();
       favicons.clear();
       gitAll = false;
-      return { projects: [], hcError };
+      if (codex.length === 0) return { projects: [], hcError };
     }
 
     const live = terms.filter((t): t is HcTerminal & { address: string } => typeof t.address === "string");
@@ -92,7 +92,7 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
     for (const a of marked) if (!addresses.has(a)) marked.delete(a);
     const todo = live.filter((t) => got.get(t.address)?.key !== changeKey(t) || marked.has(t.address));
     const [orchOut] = await Promise.all([
-      exec(orch(), ["agents", "ls", "--all", "--json"]),
+      hcError ? { out: "" } : exec(orch(), ["agents", "ls", "--all", "--json"]),
       eachLimited(todo, GET_LIMIT, async (t) => {
         marked.delete(t.address);
         const r = await exec(hc, ["get", "--json", t.address]);
@@ -107,11 +107,11 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
       if (g.title) titles.set(a, g.title);
       if (g.folder) folders.set(a, g.folder);
     }
-    const cwds = new Set([...live.map((t) => t.cwd), ...folders.values()].filter((c): c is string => typeof c === "string" && c !== ""));
+    const cwds = new Set([...live.map((t) => t.cwd), ...folders.values(), ...codex.map((chat) => chat.cwd)].filter((c): c is string => typeof c === "string" && c !== ""));
     for (const c of projects.keys()) if (!cwds.has(c)) projects.delete(c);
     const names = new Map<string, string>();
     await Promise.all([...cwds].map(async (c) => names.set(c, await projectOf(c))));
-    const built = buildProjects({ hc: hcList.out, orch: orchOut.out, titles, folders, projectOf: (c) => names.get(c) ?? c });
+    const built = buildProjects({ hc: hcList.out, orch: orchOut.out, titles, folders, codex, projectOf: (c) => names.get(c) ?? c });
     const shown = new Set(built.map((p) => p.cwd));
     for (const c of gits.keys()) if (!shown.has(c)) gits.delete(c);
     for (const c of favicons.keys()) if (!shown.has(c)) favicons.delete(c);
@@ -124,7 +124,7 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
         return { ...p, ...gits.get(p.cwd)!, favicon: favicons.get(p.cwd)! };
       }),
     );
-    return { projects: list };
+    return { projects: list, ...(hcError ? { hcError } : {}) };
   };
 
   const event = (line: string) => {

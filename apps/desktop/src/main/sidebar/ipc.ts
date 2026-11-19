@@ -6,6 +6,7 @@ import { orchPath } from "../board/board";
 import { chatTerminal, selectTerminal } from "../helper";
 import { setBlockedCount } from "../owner/ipc";
 import { blockedAgents } from "../../shared/inbox";
+import { codexAgents, onCodexSidebarChange, restoreCodexTabs } from "../codex/session";
 import { sidebarReader } from "./reader";
 import { lineSplitter, readScheduler } from "./schedule";
 
@@ -26,7 +27,7 @@ export function registerSidebarIpc(appRoot: string): void {
 
   const refresh = readScheduler(
     () =>
-      reader.read().then((s) => {
+      reader.read(codexAgents()).then((s) => {
         last = { ...s, selected: chatTerminal() };
         setBlockedCount(blockedAgents(s.projects).length);
         for (const w of BrowserWindow.getAllWindows()) w.webContents.send(SIDEBAR_EVENT, last);
@@ -44,6 +45,7 @@ export function registerSidebarIpc(appRoot: string): void {
     events.on("error", () => undefined);
     events.on("close", () => setInterval(refresh, POLL_MS));
   };
+  onCodexSidebarChange(refresh);
   follow();
   refresh();
   setInterval(() => {
@@ -52,7 +54,8 @@ export function registerSidebarIpc(appRoot: string): void {
   }, GIT_POLL_MS);
 
   // A read while hc failed (Retry) reads the list again at once; the new list comes as an event.
-  ipcMain.handle(SIDEBAR_CHANNEL, () => {
+  ipcMain.handle(SIDEBAR_CHANNEL, (_event, openTabs: unknown) => {
+    if (Array.isArray(openTabs)) restoreCodexTabs(openTabs.filter((tab): tab is string => typeof tab === "string"));
     if (last.hcError) refresh();
     return { ...last, selected: chatTerminal() };
   });
