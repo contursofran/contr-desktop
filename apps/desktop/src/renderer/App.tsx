@@ -97,17 +97,23 @@ export function App() {
     setInbox({ item });
     setSettings(false);
   };
-  const select = useCallback((terminal: string) => {
+  const [projectFolder, setProjectFolder] = useState<string>();
+  const showAgent = useCallback((terminal: string) => {
     setReplyFocus({ terminal, from: document.activeElement });
     setInbox(null);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
   }, []);
-  const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
+  const select = useCallback((terminal: string) => {
+    setProjectFolder(undefined);
+    showAgent(terminal);
+  }, [showAgent]);
+  const cwd = projectFolder || findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
+  const emptyProject = view.projects.find((p) => p.cwd === cwd && p.agents.length === 0);
   const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
     if (kind === "shell") setSide("terminal");
-    select(terminalId);
-  }, [select]);
+    showAgent(terminalId);
+  }, [showAgent]);
   const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
   const tabState = useRef({ tabs, selected: sidebar.selected });
   useLayoutEffect(() => { tabState.current = { tabs, selected: sidebar.selected }; }, [tabs, sidebar.selected]);
@@ -167,7 +173,7 @@ export function App() {
   useShortcut(hotkey("NEXT_AGENT", platform), () => move(1), { when: canMove });
   return (
     <div className="flex h-screen bg-canvas text-foreground">
-      {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox !== null && !settings} onInbox={() => openInbox()} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
+      {!hidden && <Sidebar data={view} onSelect={select} projectFolder={projectFolder} onProject={setProjectFolder} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox !== null && !settings} onInbox={() => openInbox()} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={(terminal) => void close(terminal)} onReorder={setTabs} onStart={start} starting={starting} closing={closing} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
@@ -175,7 +181,7 @@ export function App() {
         {!inbox && !settings && sidebar.selected && !chatOnly && <Switch side={side} onSide={showSide} />}
         {settings ? <SettingsView />
           : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />
-          : !sidebar.selected && sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />}
+          : !sidebar.selected && (sidebar.projects.length === 0 || emptyProject) && <Empty hcError={sidebar.hcError} project={emptyProject?.name} />}
         {openTab(tabs, view.selected).map((terminal) => {
           const shown = terminal === view.selected;
           const agent = shown ? findAgent(sidebar, terminal) : undefined;

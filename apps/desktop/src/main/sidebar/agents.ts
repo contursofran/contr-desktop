@@ -22,6 +22,8 @@ interface OrchAgent {
   issue?: unknown;
 }
 
+interface ProjectLocation { key: string; name: string }
+
 function str(v: unknown): string | null {
   return typeof v === "string" && v !== "" ? v : null;
 }
@@ -52,8 +54,9 @@ export interface ListInput {
   /** Each agent's session folder (`readSessionFolder`), by address. Without one, the terminal's `cwd` is used. */
   folders?: Map<string, string>;
   /** The project of a working folder. */
-  projectOf: (cwd: string) => string;
+  projectOf: (cwd: string) => ProjectLocation;
   codex?: SidebarAgent[];
+  savedFolders?: readonly string[];
 }
 
 /**
@@ -62,7 +65,7 @@ export interface ListInput {
  * A live worker (`liveWorkerParents`, the status line's rule) whose parent is listed shows under it, with or without a `status`;
  * the orchestration tool gives its name and work.
  */
-export function buildProjects({ hc, orch, titles, folders, projectOf, codex = [] }: ListInput): SidebarProject[] {
+export function buildProjects({ hc, orch, titles, folders, projectOf, codex = [], savedFolders = [] }: ListInput): SidebarProject[] {
   const parents = liveWorkerParents(hc, orch);
   const allTerms = parseList<HcTerminal>(hc, "terminals");
   const terms = allTerms.filter((t) => isLiveAgent(t) || parents.has(t.address as string));
@@ -95,28 +98,33 @@ export function buildProjects({ hc, orch, titles, folders, projectOf, codex = []
   for (const chat of codex) {
     agents.set(chat.terminal, { ...chat, parent: null, agent: true, cwd: chat.cwd ?? "", workers: [] });
   }
-  const projects = new Map<string, SidebarAgent[]>();
-  const cwds = new Map<string, string>();
+  const projects = new Map<string, SidebarProject>();
+  const project = (cwd: string) => {
+    const { key, name } = cwd ? projectOf(cwd) : { key: "", name: "Other" };
+    let entry = projects.get(key);
+    if (!entry) {
+      entry = { name, cwd, agents: [], branch: null, ahead: 0, behind: 0, favicon: null };
+      projects.set(key, entry);
+    }
+    return entry;
+  };
   for (const a of agents.values()) {
     const parent = a.parent ? agents.get(aliases.get(a.parent) ?? a.parent) : undefined;
     if (parent) parent.workers.push(a);
-    else if (a.agent) {
-      const p = a.cwd ? projectOf(a.cwd) : "Other";
-      projects.set(p, [...(projects.get(p) ?? []), a]);
-      if (!cwds.has(p)) cwds.set(p, a.cwd);
-    }
+    else if (a.agent) project(a.cwd).agents.push(a);
   }
+  for (const cwd of savedFolders) project(cwd).cwd = cwd;
   const clean = (a: SidebarAgent): SidebarAgent => ({
     terminal: a.terminal, cwd: a.cwd, title: a.title, name: a.name, state: a.state, kind: a.kind, issue: a.issue, workers: a.workers.map(clean),
   });
-  return [...projects].map(([name, list]) => ({ name, agents: list.map(clean), cwd: cwds.get(name) ?? "", branch: null, ahead: 0, behind: 0, favicon: null }));
+  return [...projects.values()].map((p) => ({ ...p, agents: p.agents.map(clean) }));
 }
 
-/** The project of a folder: the checkout that holds its git common dir (so a worktree goes under its checkout), else the folder's name. */
-export function projectFromCommonDir(cwd: string, commonDir: string | null): string {
-  if (!commonDir) return path.basename(cwd);
+/** Use the common Git directory to group worktrees. Use a plain project's full folder path. */
+export function projectFromCommonDir(cwd: string, commonDir: string | null): ProjectLocation {
+  if (!commonDir) return { key: cwd, name: path.basename(cwd) || cwd };
   const dir = path.resolve(cwd, commonDir);
-  return path.basename(path.basename(dir) === ".git" ? path.dirname(dir) : dir.replace(/\.git$/, ""));
+  return { key: dir, name: path.basename(path.basename(dir) === ".git" ? path.dirname(dir) : dir.replace(/\.git$/, "")) || cwd };
 }
 
 /** An agent's session folder from `hc get --json`: the folder of the program in front (`foreground.cwd`, the agent itself), which a `cd` in its shell does not move; null when hc gives none. */

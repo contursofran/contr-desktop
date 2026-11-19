@@ -76,6 +76,7 @@ export interface ContrApi {
   branch(): Promise<string | null>;
   /** The Projects list and the selected agent. */
   sidebar(openTabs?: string[]): Promise<Sidebar>;
+  addProject(): Promise<{ cwd: string } | { canceled: true } | { error: string }>;
   /** Listens to changes of the Projects list. Returns a function that stops listening. */
   onSidebar(listener: (sidebar: Sidebar) => void): () => void;
   /** Makes this terminal's agent the chat's agent; "" shows none and stops the feed. Returns the selected terminal. */
@@ -152,11 +153,13 @@ export interface SidebarAgent {
   workers: SidebarAgent[];
 }
 
-/** A project: the repository of its agents' folder. */
+/** A project folder chosen by the owner or found from running agents. */
 export interface SidebarProject {
+  /** The Git common directory or the full folder path. */
+  key?: string;
   name: string;
   agents: SidebarAgent[];
-  /** The folder of its first agent: git and the favicon look here. */
+  /** The chosen folder, else the folder of its first agent. */
   cwd: string;
   /** The current branch; null on a detached HEAD or with no git. */
   branch: string | null;
@@ -296,6 +299,7 @@ export const CODEX_OPTION_CHANNEL = "contr:codex-option";
 export const SET_TIER_CHANNEL = "contr:set-tier";
 export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";
+export const ADD_PROJECT_CHANNEL = "contr:add-project";
 export const SIDEBAR_EVENT = "contr:sidebar-event";
 export const SELECT_CHANNEL = "contr:select";
 export const USAGE_CHANNEL = "contr:usage";

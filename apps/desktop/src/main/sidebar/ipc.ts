@@ -1,7 +1,9 @@
 import { appChildren } from "../children";
 import { spawn } from "node:child_process";
-import { BrowserWindow, ipcMain } from "electron";
-import { SELECT_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, type Sidebar } from "../../shared/api";
+import { realpath, stat } from "node:fs/promises";
+import path from "node:path";
+import { app, BrowserWindow, dialog, ipcMain, type OpenDialogOptions } from "electron";
+import { ADD_PROJECT_CHANNEL, SELECT_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, type Sidebar } from "../../shared/api";
 import { orchPath } from "../board/board";
 import { chatTerminal, selectTerminal } from "../helper";
 import { setBlockedCount } from "../owner/ipc";
@@ -9,6 +11,7 @@ import { blockedAgents } from "../../shared/inbox";
 import { codexAgents, onCodexSidebarChange, restoreCodexTabs } from "../codex/session";
 import { sidebarReader } from "./reader";
 import { lineSplitter, readScheduler } from "./schedule";
+import { readSettings, writeSetting } from "../settings/file";
 
 /** Without hc events (hc gone or too old), the list is read again every 10 s. While `hc events` runs, there is no poll for hc. */
 const POLL_MS = 10_000;
@@ -23,11 +26,14 @@ const GIT_POLL_MS = 30_000;
 export function registerSidebarIpc(appRoot: string): void {
   const hc = process.env.CONTR_HC ?? "hc";
   const reader = sidebarReader({ hc, git: process.env.CONTR_GIT ?? "git", orch: () => orchPath(appRoot) });
+  const settings = path.join(app.getPath("userData"), "settings.json");
+  const stored = readSettings(settings).projectFolders;
+  let savedFolders = Array.isArray(stored) ? stored.filter((cwd): cwd is string => typeof cwd === "string" && path.isAbsolute(cwd)) : [];
   let last: Sidebar = { projects: [], selected: chatTerminal() };
 
   const refresh = readScheduler(
     () =>
-      reader.read(codexAgents()).then((s) => {
+      reader.read(codexAgents(), savedFolders).then((s) => {
         last = { ...s, selected: chatTerminal() };
         setBlockedCount(blockedAgents(s.projects).length);
         for (const w of BrowserWindow.getAllWindows()) w.webContents.send(SIDEBAR_EVENT, last);
@@ -52,6 +58,25 @@ export function registerSidebarIpc(appRoot: string): void {
     reader.gitDue();
     refresh();
   }, GIT_POLL_MS);
+
+  ipcMain.handle(ADD_PROJECT_CHANNEL, async (event) => {
+    try {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      const options: OpenDialogOptions = { title: "Add project", buttonLabel: "Add project", properties: ["openDirectory"] };
+      const result = await (window ? dialog.showOpenDialog(window, options) : dialog.showOpenDialog(options));
+      const folder = result.filePaths[0];
+      if (result.canceled || !folder) return { canceled: true };
+      const cwd = await realpath(folder);
+      if (!(await stat(cwd)).isDirectory()) return { error: "Choose a folder." };
+      const next = [...savedFolders.filter((folder) => folder !== cwd), cwd];
+      writeSetting(settings, "projectFolders", next);
+      savedFolders = next;
+      refresh();
+      return { cwd };
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  });
 
   // A read while hc failed (Retry) reads the list again at once; the new list comes as an event.
   ipcMain.handle(SIDEBAR_CHANNEL, (_event, openTabs: unknown) => {

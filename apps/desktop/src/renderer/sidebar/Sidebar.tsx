@@ -112,7 +112,7 @@ function Agent({ agent, selected, since, onSelect }: { agent: SidebarAgent; sele
   );
 }
 
-/** The shut projects, by name, kept in localStorage `projects.closed` (as herdr-contr). */
+/** The closed project rows, kept in localStorage `projects.closed`. Older saves use project names. */
 const CLOSED_KEY = "projects.closed";
 function loadClosed(): Set<string> {
   try {
@@ -124,22 +124,22 @@ function loadClosed(): Set<string> {
 }
 
 /** A project row (docs/design/redesign, sidebar): chevron, favicon or folder, name, mono branch, and the commits ahead and behind. */
-function ProjectRow({ project, closed }: { project: SidebarProject; closed: boolean }) {
+function ProjectRow({ project, closed, selected, onSelect }: { project: SidebarProject; closed: boolean; selected: boolean; onSelect: () => void }) {
   return (
-    <div className="mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px]">
+    <div className={`mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px] ${selected ? SELECTED : ""}`}>
       <CollapsibleTrigger aria-label={`${closed ? "Expand" : "Collapse"} ${project.name}`} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-42 hover:text-muted">
         {/* The mock's text chevron. U+FE0E keeps ▶ a text glyph, not an emoji. */}
         <span aria-hidden>{closed ? "▶\uFE0E" : "▼"}</span>
       </CollapsibleTrigger>
-      {project.favicon ? (
-        <img data-icon="favicon" src={project.favicon} alt="" className="size-[15px] shrink-0 rounded opacity-70" />
-      ) : (
-        <Folder data-icon="folder" aria-hidden strokeWidth={1.6} className="size-[15px] shrink-0 text-dim" />
-      )}
-      {/* The name reads in full: the branch shrinks first (to nothing), then the marks, then the counts; the name truncates last. */}
-      {/* Its tooltip has the whole name. */}
       <Tip label={project.name} side="right">
-        <span data-name className="max-w-full shrink-[0.001] truncate font-medium text-ink-85">{project.name}</span>
+        <button type="button" aria-label={`Select project ${project.name}`} aria-description={project.cwd || undefined} aria-current={selected || undefined} disabled={!project.cwd} onClick={onSelect} className="flex min-w-0 shrink-[0.001] items-center gap-2 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-focus">
+          {project.favicon ? (
+            <img data-icon="favicon" src={project.favicon} alt="" className="size-[15px] shrink-0 rounded opacity-70" />
+          ) : (
+            <Folder data-icon="folder" aria-hidden strokeWidth={1.6} className="size-[15px] shrink-0 text-dim" />
+          )}
+          <span data-name dir="auto" className="truncate font-medium text-ink-85">{project.name}</span>
+        </button>
       </Tip>
       {/* A branch with no room wraps to a second line that the 16 px box hides. */}
       {project.branch && (
@@ -189,7 +189,7 @@ export function saveHidden(hidden: boolean): void {
 }
 
 /** The head, the Inbox row, the Projects list (one row per project, its agents under it, an orchestrator's workers under it) and the foot. */
-export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings, settingsShown, onHide }: { data: SidebarData; onSelect: (terminal: string) => void; inbox: number; inboxShown: boolean; onInbox: () => void; onSettings: () => void; settingsShown: boolean; onHide: () => void }) {
+export function Sidebar({ data, onSelect, projectFolder, onProject, inbox, inboxShown, onInbox, onSettings, settingsShown, onHide }: { data: SidebarData; onSelect: (terminal: string) => void; projectFolder?: string; onProject: (cwd: string) => void; inbox: number; inboxShown: boolean; onInbox: () => void; onSettings: () => void; settingsShown: boolean; onHide: () => void }) {
   const [changes, setChanges] = useState<Changes>(load);
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -207,13 +207,32 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
     return () => clearInterval(id);
   }, []);
   const [closed, setClosed] = useState(loadClosed);
-  const toggle = (name: string) =>
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string>();
+  const isClosed = (p: SidebarProject) => closed.has(p.key || p.name) || closed.has(p.name);
+  const toggle = (p: SidebarProject) =>
     setClosed((prev) => {
       const next = new Set(prev);
-      if (!next.delete(name)) next.add(name);
+      const key = p.key || p.name;
+      const wasClosed = next.delete(key);
+      if (!next.delete(p.name) && !wasClosed) next.add(key);
       localStorage.setItem(CLOSED_KEY, JSON.stringify([...next]));
       return next;
     });
+  async function addProject() {
+    if (adding) return;
+    setAdding(true);
+    setAddError(undefined);
+    try {
+      const result = await window.contr.addProject();
+      if ("cwd" in result) onProject(result.cwd);
+      if ("error" in result) setAddError(result.error);
+    } catch (error) {
+      setAddError((error as Error).message);
+    } finally {
+      setAdding(false);
+    }
+  }
   const age = useMemo(() => (terminal: string) => (changes[terminal] ? Math.max(0, now - changes[terminal].at) : null), [changes, now]);
   return (
     <aside className="flex w-[268px] shrink-0 flex-col border-r border-hairline bg-chrome">
@@ -222,18 +241,18 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
       <InboxRow count={inbox} shown={inboxShown} onOpen={onInbox} />
       <div className="mt-1.5 flex h-[34px] items-center pr-0 pl-2.5">
         <h2 className="flex-1 text-xs font-medium text-dim">Projects</h2>
-        {/* Add project does nothing yet. */}
-        <Tip label="Add project (not yet)" side="right">
-          <button type="button" aria-label="Add project" aria-disabled="true" tabIndex={-1} className="flex size-[26px] items-center justify-center rounded-lg text-dim">
+        <Tip label="Add project" side="right">
+          <button type="button" aria-label="Add project" aria-disabled={adding || undefined} onClick={() => void addProject()} className="flex size-[26px] items-center justify-center rounded-lg text-dim hover:bg-hover hover:text-muted">
             <Plus aria-hidden strokeWidth={1.6} className="size-3.5" />
           </button>
         </Tip>
       </div>
+      {addError && <p role="alert" className="px-2.5 py-1 text-xs text-error [overflow-wrap:anywhere]">Could not add the project. {addError}</p>}
       {/* 12 px `muted`, as the design's "N more projects, no agents" row. With hc down the list is unknown, not empty. */}
-      {data.projects.length === 0 && <p className="px-2.5 py-1 text-xs text-muted">{data.hcError ? "hc is not reachable" : "No agents"}</p>}
+      {(data.projects.length === 0 || data.hcError) && <p className="px-2.5 py-1 text-xs text-muted">{data.hcError ? "hc is not reachable" : "No agents"}</p>}
       {data.projects.map((p) => (
-        <Collapsible key={p.name} open={!closed.has(p.name)} onOpenChange={() => toggle(p.name)} render={<section aria-label={p.name} className="mb-1.5 flex flex-col gap-px" />}>
-          <ProjectRow project={p} closed={closed.has(p.name)} />
+        <Collapsible key={p.key || p.name} open={!isClosed(p)} onOpenChange={() => toggle(p)} render={<section aria-label={p.name} className="mb-1.5 flex flex-col gap-px" />}>
+          <ProjectRow project={p} closed={isClosed(p)} selected={p.cwd === projectFolder} onSelect={() => onProject(p.cwd)} />
           <CollapsiblePanel>
             <ul className="flex flex-col gap-px">
               {p.agents.map((a) => <Agent key={a.terminal} agent={a} selected={data.selected} since={age(a.terminal)} onSelect={onSelect} />)}
