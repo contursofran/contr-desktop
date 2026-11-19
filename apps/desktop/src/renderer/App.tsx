@@ -14,10 +14,11 @@ import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
+import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
 import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
-import type { Sidebar as SidebarData } from "../shared/api";
+import type { Sidebar as SidebarData, TerminalKind } from "../shared/api";
 
 const NO_ISSUES: number[] = [];
 
@@ -86,11 +87,17 @@ export function App() {
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
-  const select = (terminal: string) => {
+  const select = useCallback((terminal: string) => {
     setInbox(false);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
-  };
+  }, []);
+  const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
+  const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
+    if (kind === "shell") setSide("terminal");
+    select(terminalId);
+  }, [select]);
+  const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
   const close = (terminal: string) => {
     const next = nextAfterClose(tabs, terminal);
     setTabs((t) => t.filter((x) => x !== terminal));
@@ -103,7 +110,8 @@ export function App() {
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
         {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />}
         {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} />}
       </main>
