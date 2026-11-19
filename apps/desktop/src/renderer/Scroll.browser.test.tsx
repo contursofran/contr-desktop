@@ -1,6 +1,8 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import { page } from "vitest/browser";
+import transcript from "../../e2e/fixtures/claude-session.jsonl?raw";
 import { chatList, chatRow, chatSettled, findRow, renderFeed, rowInViewport, shoot } from "../../test/274-chat";
+import { renderApp } from "../../test/renderApp";
 import type { FeedRow } from "../shared/api";
 
 /** Rows of different heights: short user rows, Markdown with a table, and tool chips. */
@@ -59,18 +61,40 @@ test("the chat follows new rows at the end and stays put when scrolled up", asyn
 }, 60_000);
 
 test("chatRow finds a row while the list still pulls itself to its end", async () => {
-  await renderFeed(rows, 40);
+  await renderApp(transcript);
   const list = await chatList().findElement();
-  await rowInViewport("r39");
-  await chatSettled(list);
-  expect(findRow("r0", list)).toBeNull();
+  await expect.element(chatList().getByRole("listitem").first()).toBeVisible();
   // As Legend List does at start, a scroll away from the end goes back to the end on the next frame.
-  let pulls = 3;
+  const end = performance.now() + 3000;
   list.addEventListener("scroll", () => {
-    if (pulls === 0 || list.scrollTop >= list.scrollHeight - list.clientHeight - 1) return;
-    pulls--;
-    requestAnimationFrame(() => list.scrollTo({ top: list.scrollHeight }));
+    if (performance.now() < end) requestAnimationFrame(() => list.scrollTo({ top: list.scrollHeight }));
   });
-  await expect.element(await chatRow("r0")).toHaveTextContent("Question 0");
-  expect(pulls).toBe(0);
+  // sep-1 is the first row. It is in the DOM only near the top.
+  await expect.element(await chatRow("sep-1")).toHaveTextContent("14:05");
 }, 60_000);
+
+test("chatRow brings a row past the top clip after the first scroll", async ({ onTestFinished }) => {
+  await renderApp(transcript);
+  const list = await chatList().findElement();
+  await expect.element(chatList().getByRole("listitem").first()).toBeVisible();
+  await chatSettled(list);
+  list.scrollTop = 0;
+  await rowInViewport("sep-1");
+  const separator = findRow("sep-1", list)!.getBoundingClientRect();
+  const clipped = Math.round(separator.top - list.getBoundingClientRect().top - 8);
+
+  // Leave the first seek at a real scroll position inside the list's clip.
+  let displaced = false;
+  const scroll = vi.spyOn(list, "scrollTo").mockImplementation((position: number | ScrollToOptions) => {
+    const top = typeof position === "number" ? position : position.top;
+    if (top === 0 && !displaced) {
+      displaced = true;
+      list.scrollTop = clipped;
+    } else if (top !== undefined) {
+      list.scrollTop = top;
+    }
+  });
+  onTestFinished(() => scroll.mockRestore());
+  await expect.element(await chatRow("sep-1")).toHaveTextContent("14:05");
+  expect(displaced).toBe(true);
+}, 20_000);

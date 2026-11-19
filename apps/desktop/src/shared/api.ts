@@ -124,6 +124,8 @@ export interface ContrApi {
   checkCore(force?: boolean): Promise<void>;
   /** Calls the listener when the app menu's "Check for Updates…" asks to show Settings. Returns the unsubscribe. */
   onOpenSettings(listener: () => void): () => void;
+  /** Subscribes to File > Close Tab when the renderer has a native menu. */
+  onCloseTab?(listener: () => void): () => void;
   terminal: TerminalApi;
   /** The `contr-pr` card: one PR from gh (`gh pr view`) and its worker from the orchestration tool. null: gh gave no PR. */
   prCard(n: number): Promise<PrCard | null>;
@@ -416,6 +418,7 @@ export interface ChangeLog {
 }
 /** Main to renderer: show the Settings view (the app menu's "Check for Updates…"). */
 export const OPEN_SETTINGS_EVENT = "contr:open-settings";
+export const CLOSE_TAB_EVENT = "contr:close-tab";
 
 /** One check of a PR's head (gh's rollup). Times are ms; a check that runs has no `completedAt`, a queued one no `startedAt`. */
 export interface PrCheck {
