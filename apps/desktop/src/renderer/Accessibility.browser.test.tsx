@@ -48,7 +48,7 @@ test("task checkboxes have names and a running tool has no live region", async (
 
 test("inert controls stay out of the tab order and tabs name their panels", async () => {
   await renderApp(transcript, null, selectable(sidebar).overrides);
-  for (const name of ["Search", "Add machine"]) {
+  for (const name of ["Search", "Add machine", "Add project"]) {
     const button = page.getByRole("button", { name, exact: true });
     await expect.element(button).toBeDisabled();
     await expect.element(button).toHaveAttribute("tabindex", "-1");
@@ -97,25 +97,50 @@ function contrast(colors: string[], foreground: string, opacity = 1) {
   return (Math.max(ink, background) + 0.05) / (Math.min(ink, background) + 0.05);
 }
 
-test.each(["dark", "light"] as const)("worker icon and tab scrollbar reach 3:1 in %s", async (scheme) => {
-  await renderApp(transcript, null, selectable(sidebar).overrides);
-  const worker = page.getByRole("button", { name: /^Cards for prompts and questions/ });
+test.each(["dark", "light"] as const)("sidebar marks and the tab scrollbar reach 3:1 in %s", async (scheme) => {
+  const data = structuredClone(sidebar);
+  const workers = data.projects[0].agents[0].workers;
+  workers.push({ ...workers[2], terminal: "idle", title: "Idle worker", state: "idle" });
+  await renderApp(transcript, null, selectable(data).overrides);
   const tabs = page.getByRole("tablist", { name: "Tabs" });
-  for (const locator of [worker, page.getByRole("button", { name: /^Install health check/ })]) {
-    await locator.click();
+  const agent = (name: string) => page.getByRole("button", { name: new RegExp(`^${name}`) });
+  for (const name of ["Install health check", "Release notes draft", "Cards for prompts and questions"]) {
+    await agent(name).click();
   }
   await page.viewport(550, 600);
   await commands.resetPointer();
   await commands.colorScheme(scheme);
   await expect.poll(() => matchMedia(`(prefers-color-scheme: ${scheme})`).matches).toBe(true);
 
-  const row = worker.element();
-  const path = row.querySelector('[data-icon="claude-code"] path')!;
-  const picture = path.closest("[data-icon]")!.parentElement!;
-  const side = getComputedStyle(row.closest("aside")!).backgroundColor;
-  const iconRatio = contrast([side, getComputedStyle(row).backgroundColor], getComputedStyle(path).fill,
-    Number(getComputedStyle(picture).opacity));
-  expect.soft(iconRatio, "worker icon contrast").toBeGreaterThanOrEqual(3);
+  const cards = agent("Cards for prompts and questions");
+  const side = getComputedStyle(cards.element().closest("aside")!).backgroundColor;
+  const background = (row: Locator) => [side, getComputedStyle(row.element()).backgroundColor];
+  for (const name of ["Cards for prompts and questions", "Release notes draft", "Virtual list"]) {
+    const row = agent(name);
+    const icon = row.element().querySelector("[data-icon]")!;
+    const path = icon.querySelector("path[fill]");
+    const ink = path ? getComputedStyle(path).fill : getComputedStyle(icon).color;
+    const opacity = Number(getComputedStyle(icon.parentElement!).opacity);
+    expect.soft(contrast(background(row), ink, opacity), `${name} icon`).toBeGreaterThanOrEqual(3);
+  }
+
+  for (const [row, state, shape] of [
+    [cards, "Needs you", "⠿"],
+    [agent("Flow and sequence diagrams"), "Working", null],
+    [agent("Idle worker"), "Idle", "⠶"],
+  ] as const) {
+    const glyph = row.getByRole("img", { name: state });
+    if (state === "Needs you") {
+      const pulse = glyph.element().getAnimations({ subtree: true })[0];
+      pulse.pause();
+      pulse.currentTime = Number(pulse.effect?.getTiming().duration) / 2;
+    }
+    const paint = getComputedStyle(glyph.element(), "::before");
+    if (shape) expect(paint.content).toBe(`"${shape}"`);
+    expect.soft(contrast(background(row), paint.color, Number(paint.opacity)), state).toBeGreaterThanOrEqual(3);
+  }
+  const unread = agent("Release notes draft").getByRole("img", { name: "unread" });
+  expect(contrast([side], getComputedStyle(unread.element().firstElementChild!).backgroundColor)).toBeGreaterThanOrEqual(3);
 
   const strip = tabs.element();
   expect(strip.scrollWidth).toBeGreaterThan(strip.clientWidth);
@@ -123,5 +148,5 @@ test.each(["dark", "light"] as const)("worker icon and tab scrollbar reach 3:1 i
   const track = getComputedStyle(strip, "::-webkit-scrollbar-track").backgroundColor;
   const thumb = getComputedStyle(strip, "::-webkit-scrollbar-thumb").backgroundColor;
   expect(contrast([getComputedStyle(bar).backgroundColor, track], thumb), "tab scrollbar contrast").toBeGreaterThanOrEqual(3);
-  await shot(`148-icon-contrast-${scheme}`);
+  await shot(`148-sidebar-contrast-${scheme}`);
 });

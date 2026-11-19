@@ -12,6 +12,14 @@ import { StatusGlyph } from "../ui/StatusGlyph";
 
 const TINT: Record<string, string> = { working: "var(--color-working)", done: "var(--color-done)", blocked: "var(--color-blocked)" };
 
+/** Projects and their agents in sidebar order, with each worker after its parent. */
+export function adjacentAgent({ projects, selected }: SidebarData, step: -1 | 1): string | undefined {
+  const ordered = (agent: SidebarAgent): string[] => [agent.terminal, ...agent.workers.flatMap(ordered)];
+  const terminals = projects.flatMap((project) => project.agents.flatMap(ordered));
+  const index = terminals.indexOf(selected);
+  return index < 0 ? undefined : terminals[index + step];
+}
+
 /** The program picture or a one-color glyph in the agent state's ink. */
 function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
   return (
@@ -22,7 +30,7 @@ function AgentIcon({ agent, size }: { agent: SidebarAgent; size: number }) {
 }
 
 /**
- * The status glyph (docs/design/redesign, sidebar): working ⠋, idle ⠶ in ink-30, blocked ⠿ in red.
+ * The status glyph (docs/design/redesign, sidebar): working ⠋, idle ⠶ in ink-42, blocked ⠿ in red.
  * A done agent outside the shown chat has an ink-100 unread dot (#246, D144 and D145).
  * hc and the orchestration tool map their `waiting` state to blocked.
  */
@@ -119,7 +127,7 @@ function loadClosed(): Set<string> {
 function ProjectRow({ project, closed }: { project: SidebarProject; closed: boolean }) {
   return (
     <div className="mt-1.5 flex h-[30px] items-center gap-2 overflow-hidden rounded-lg pr-2.5 pl-2 text-[13px]">
-      <CollapsibleTrigger aria-label={`${closed ? "Expand" : "Collapse"} ${project.name}`} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-35 hover:text-muted">
+      <CollapsibleTrigger aria-label={`${closed ? "Expand" : "Collapse"} ${project.name}`} className="flex w-2.5 shrink-0 justify-center text-[9px] text-ink-42 hover:text-muted">
         {/* The mock's text chevron. U+FE0E keeps ▶ a text glyph, not an emoji. */}
         <span aria-hidden>{closed ? "▶\uFE0E" : "▼"}</span>
       </CollapsibleTrigger>
@@ -214,9 +222,9 @@ export function Sidebar({ data, onSelect, inbox, inboxShown, onInbox, onSettings
       <InboxRow count={inbox} shown={inboxShown} onOpen={onInbox} />
       <div className="mt-1.5 flex h-[34px] items-center pr-0 pl-2.5">
         <h2 className="flex-1 text-xs font-medium text-dim">Projects</h2>
-        {/* Add project does nothing yet: inert as the top bar's +. */}
+        {/* Add project does nothing yet. */}
         <Tip label="Add project (not yet)" side="right">
-          <button type="button" aria-label="Add project" aria-disabled="true" className="flex size-[26px] items-center justify-center rounded-lg text-dim">
+          <button type="button" aria-label="Add project" aria-disabled="true" tabIndex={-1} className="flex size-[26px] items-center justify-center rounded-lg text-dim">
             <Plus aria-hidden strokeWidth={1.6} className="size-3.5" />
           </button>
         </Tip>

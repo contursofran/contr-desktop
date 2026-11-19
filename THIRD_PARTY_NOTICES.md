@@ -10,6 +10,8 @@
   `apps/desktop/test/renderApp.tsx`.
 - Scroll settling at `5b265f8eb7db05df055b2e882d4c10d332076d6b`: adapted
   `settleListScroll` in `apps/desktop/src/renderer/chat/list/ChatList.tsx`.
+- Editable focus at `5b265f8eb7db05df055b2e882d4c10d332076d6b`:
+  `apps/desktop/src/renderer/hotkeys/editableFocus.ts`.
 - Copied files: each copied file names its source path and pinned commit in a
   header, and says what we changed. This section lists the copied files by
   folder.
@@ -339,7 +341,7 @@ THE SOFTWARE.
 
 - Source: https://github.com/ParadevAI/Paradev
 - Pinned commit: `ff9b0c7eea1d9f9cda9150fa2d9193aceae4846d`.
-- Adapted code: the renderer hotkey registry, new-tab menu, session launcher, and `apps/desktop/src/renderer/terminal/webgl.ts`.
+- Adapted code: the hotkey registry in `apps/desktop/src/shared/hotkeys.ts`, the new-tab menu, the session launcher, and `apps/desktop/src/renderer/terminal/webgl.ts`.
 - Adapted clipboard chords and tests in `terminal/clipboard-shortcuts.ts` and `terminal/clipboard-shortcuts.test.ts` under `apps/desktop/src/renderer`.
 - License: MIT.
 

@@ -12,3 +12,17 @@ describe("HOTKEYS_REGISTRY", () => {
     expect(hotkey("NEW_TERMINAL", platform)).toBeUndefined();
   });
 });
+
+describe("agent shortcuts", () => {
+  it.each([
+    ["TOGGLE_CHAT_TERMINAL", "meta+j"],
+    ["PREVIOUS_AGENT", "meta+alt+arrowup"],
+    ["NEXT_AGENT", "meta+alt+arrowdown"],
+    ["CLOSE_TAB", "meta+w"],
+  ] as const)("binds %s only on macOS", (id, chord) => {
+    expect(hotkey(id, "darwin")).toBe(chord);
+    for (const platform of ["win32", "linux", "freebsd"]) {
+      expect(hotkey(id, platform)).toBeUndefined();
+    }
+  });
+});

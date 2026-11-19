@@ -119,7 +119,7 @@ body {
 }
 @keyframes status-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
+  50% { opacity: var(--status-pulse-floor, 0.25); }
 }
 .status-glyph[data-state="working"]::before { content: "⠋"; animation: status-braille 0.9s steps(1, end) infinite; }
 .status-glyph[data-state="waiting"]::before,
@@ -130,6 +130,9 @@ body {
   .status-glyph::before { animation: none !important; }
 }
 
+/* Keep status marks visible even at the low point of the pulse on a selected row. */
+aside { --status-pulse-floor: 0.8; }
+aside .status-glyph[data-state="idle"] { color: var(--color-ink-42); }
 
 .sidebar-program-icon [data-icon="claude-code"] path {
   fill: var(--color-claude);
