@@ -1,9 +1,15 @@
+// Jump settling adapted from pingdotgg/t3code apps/web/src/components/chat/useTimelinePositionRestore.ts
+// (5b265f8eb7db05df055b2e882d4c10d332076d6b). Correct the chat's measured DOM offset directly.
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
 import { ArrowDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { FeedRow } from "../../../shared/api";
 import { Row } from "../rows/Row";
 import { Spinner } from "../rows/Spinner";
+
+const SETTLE_MAX_FRAMES = 60;
+// Chromium can deliver the final scroll event after the virtual list resolves its jump.
+const SETTLE_STABLE_FRAMES = 4;
 
 /** The chat before the helper's first answer (issue #141): the braille loader and a short muted text, not a blank area. */
 export function ChatLoading() {
@@ -57,6 +63,27 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
     return () => observer.disconnect();
   }, []);
 
+  async function jumpToEnd() {
+    const target = list.current;
+    if (!target) return;
+    await target.scrollToEnd({ animated: true });
+    // Row measurements can change the browser's scroll range after the animation.
+    let stableFrames = 0;
+    for (let frame = 0; frame < SETTLE_MAX_FRAMES && stableFrames < SETTLE_STABLE_FRAMES; frame++) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      if (list.current !== target || !target.getState().isFollowingEnd) return;
+      const element = target.getScrollableNode();
+      if (!element) return;
+      const end = element.scrollHeight - element.clientHeight;
+      if (element.scrollTop === end) {
+        stableFrames++;
+      } else {
+        stableFrames = 0;
+        element.scrollTo({ top: end, behavior: "instant" });
+      }
+    }
+  }
+
   return (
     <div ref={box} className="relative flex min-h-0 flex-1 flex-col">
       {/* Before the rows in the DOM, so Tab reaches it right after the reply box (App renders that first) and
@@ -68,7 +95,7 @@ export function ChatList({ rows }: { rows: FeedRow[] }) {
             aria-label="Jump to the end"
             aria-description={fresh ? "New messages" : undefined}
             data-fresh={fresh || undefined}
-            onClick={() => void list.current?.scrollToEnd({ animated: true })}
+            onClick={() => void jumpToEnd()}
             className={`pointer-events-auto flex size-[34px] items-center justify-center rounded-full border border-border bg-raised shadow-sm hover:bg-hover ${fresh ? "text-accent" : "text-foreground"}`}
           >
             <ArrowDown size={15} aria-hidden />

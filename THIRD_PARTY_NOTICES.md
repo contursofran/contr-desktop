@@ -8,6 +8,8 @@
   Chromium project in `apps/desktop/vite.config.ts`, pointer reset in
   `apps/desktop/test/browserSetup.ts`, and the render pattern in
   `apps/desktop/test/renderApp.tsx`.
+- Scroll settling at `5b265f8eb7db05df055b2e882d4c10d332076d6b`: adapted
+  `settleListScroll` in `apps/desktop/src/renderer/chat/list/ChatList.tsx`.
 - Copied files: each copied file names its source path and pinned commit in a
   header, and says what we changed. This section lists the copied files by
   folder.
