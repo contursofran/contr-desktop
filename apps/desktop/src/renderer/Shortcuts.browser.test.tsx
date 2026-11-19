@@ -79,8 +79,7 @@ test("Command+Option+Up and Down follow sidebar order, including workers", async
   await userEvent.keyboard(next);
   await expect.element(shown()).toHaveTextContent(worker);
   await expect.element(nav.getByRole("button", { name: new RegExp(worker) })).toHaveAttribute("aria-current", "true");
-  await expect.element(replyBox()).toHaveFocus();
-  (await shown().findElement()).focus();
+  await expect.element(tab(audit)).toHaveFocus();
   await userEvent.keyboard(previous);
   await expect.element(shown()).toHaveTextContent(audit);
 });
