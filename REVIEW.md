@@ -22,8 +22,8 @@ Paths are in `apps/desktop/` unless they start with `.github/` or
    - Trigger: a change of focus, `tabIndex`, key handlers or card keys
      (`renderer/chat/reply/`, `renderer/chat/card/`,
      `renderer/chat/owner/`, `renderer/App.tsx`, `renderer/topbar/`).
-   - Check: run `focus.spec.ts`, `attach.spec.ts`, `topbar.spec.ts`,
-     `small-texts.spec.ts`, `keys.spec.ts` and `cards.spec.ts` 20 times
+   - Check: run `Focus.browser.test.tsx`, `attach.spec.ts`, `topbar.spec.ts`,
+     `small-texts.spec.ts`, `cards.spec.ts` and `Keys.browser.test.tsx` (run `pnpm test:browser Focus.browser.test.tsx Keys.browser.test.tsx` in a fresh process each time) 20 times
      each. All runs pass.
    - From: #155 (three specs then failed at random).
 2. A new or changed e2e spec
@@ -38,7 +38,7 @@ Paths are in `apps/desktop/` unless they start with `.github/` or
 3. The chat column, the list or the reply area
    - Trigger: a change of `renderer/chat/list/`, `renderer/chat/reply/`,
      a width class (`max-w-*`) or `scrollbar-gutter`.
-   - Check: `column.spec.ts` and `jump.spec.ts` pass; they force a 15 px
+   - Check: `Column.browser.test.tsx` and `Jump.browser.test.tsx` pass; they force a 15 px
      classic scrollbar, as on the CI runner. On macOS also look at a
      screenshot with the overlay scrollbar. The rows, the status line and
      the reply box have the same edges.
@@ -46,7 +46,7 @@ Paths are in `apps/desktop/` unless they start with `.github/` or
 4. The `Chat` block of `App.tsx` or a card
    - Trigger: a change of the `Chat` block of `renderer/App.tsx`,
      `renderer/chat/card/` or `renderer/chat/owner/OwnerCards.tsx`.
-   - Check: `stacked-cards.spec.ts` passes: three stacked cards at
+   - Check: `StackedCards.browser.test.tsx` passes: three stacked cards at
      640x480 keep the reply box in the window and the chat list visible.
    - From: #139 (H4), fixed in #152.
 5. A narrow window
@@ -65,7 +65,7 @@ Paths are in `apps/desktop/` unless they start with `.github/` or
 7. Text from an agent or the owner
    - Trigger: a new element that shows message text
      (`renderer/chat/markdown/`, `renderer/chat/rows/`).
-   - Check: it has `dir="auto"`; `rtl.spec.ts` passes.
+   - Check: it has `dir="auto"`; `Rtl.browser.test.tsx` passes.
    - From: H12 (#147), fixed in #158.
 
 ## Main process
