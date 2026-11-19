@@ -46,7 +46,21 @@ export function contrFake(rows: FeedRow[], card: Card | null, overrides: Partial
     digest: unsupported,
     replyInfo: async () => ({
       agent: "claude", model: "claude-opus-5-5", effort: "high", tier: null, tiers: [], speed: null,
-      context: { percent: 37, text: "37%", warn: false }, models: [], efforts: [],
+      context: { percent: 37, text: "37%", warn: false },
+      // Built-in Claude Code choices from the helper's /model command.
+      models: [
+        { value: "claude-fable-5-2", label: "Fable 5.2" },
+        { value: "claude-opus-5-5", label: "Opus 5.5" },
+        { value: "claude-sonnet-5-5", label: "Sonnet 5.5" },
+        { value: "claude-haiku-5-5", label: "Haiku 5.5" },
+        { value: "claude-fable-5-1", label: "Fable 5.1" },
+        { value: "default", label: "The recommended model" },
+        { value: "fable", label: "The latest Fable" },
+        { value: "opus", label: "The latest Opus" },
+        { value: "sonnet", label: "The latest Sonnet" },
+        { value: "haiku", label: "The latest Haiku" },
+      ],
+      efforts: [],
     }),
     setTier: unsupported,
     branch: async () => "main",

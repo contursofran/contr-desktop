@@ -14,18 +14,13 @@ describe("WorkerChip", () => {
     ["working", 'data-state="working"'],
     ["blocked", 'data-state="blocked"'],
     ["idle", 'data-state="idle"'],
+    ["done", 'data-state="done"'],
   ] as const)("draws a %s worker with its glyph", (state, glyph) => {
     const out = renderToStaticMarkup(<WorkerChip name="b-31" state={state} />);
     expect(out).toContain(`aria-label="Worker b-31, ${state}"`);
     expect(out).toContain(glyph);
     expect(out).toContain(NEUTRAL);
     expect(out).toMatch(/<\/span>b-31<\/span>$/);
-  });
-
-  it("draws a done worker with no glyph", () => {
-    const out = renderToStaticMarkup(<WorkerChip name="b-31" state="done" />);
-    expect(out).toContain('aria-label="Worker b-31, done"');
-    expect(out).not.toContain("status-glyph");
   });
 });
 

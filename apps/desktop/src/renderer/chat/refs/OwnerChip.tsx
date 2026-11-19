@@ -1,6 +1,8 @@
 import { CircleQuestionMarkIcon, SquareIcon } from "lucide-react";
+import { useContext } from "react";
 import type { OwnerQuestion, OwnerTodo } from "../../../shared/api";
 import { ChipBox, NEUTRAL_OUTLINE } from "./ContextChip";
+import { ChipNavigation } from "./navigation";
 
 /** Red only means "needs you": the `--blocked` token at 35 % (rich-parts.html, `.chip.is-you`). */
 const OPEN_OUTLINE = "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--blocked)_35%,transparent)]";
@@ -10,6 +12,7 @@ const OPEN_OUTLINE = "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--blocked)_3
  * or a to-do. The outline is red while the item is open, else neutral.
  */
 export function OwnerChip({ item, open }: { item: OwnerQuestion | OwnerTodo; open: boolean }) {
+  const navigation = useContext(ChipNavigation);
   const question = "question" in item;
   const Icon = question ? CircleQuestionMarkIcon : SquareIcon;
   const kind = question ? "Question" : "To-do";
@@ -19,6 +22,7 @@ export function OwnerChip({ item, open }: { item: OwnerQuestion | OwnerTodo; ope
       aria-label={`${kind} ${item.id}${question ? `, ${item.title}` : ""}, ${open ? "open" : "closed"}`}
       data-owner-item={item.id}
       data-open={open}
+      onActivate={open && navigation ? () => navigation.openInbox(item.id) : undefined}
     >
       <Icon aria-hidden />
       {item.id}

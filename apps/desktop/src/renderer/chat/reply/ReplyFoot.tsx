@@ -73,12 +73,12 @@ export function ModelButton({ info, send, setTier }: {
   const button = (
     <>
       {info.agent ? <AgentIcon kind={ICON_KINDS[info.agent] ?? info.agent} size={15} color="var(--color-dim)" /> : <Sparkle aria-hidden className="size-3.5" />}
-      <span className="text-ink-85">{label}</span>
+      <span className="truncate text-ink-85">{label}</span>
       {effort && <span>{effort}</span>}
       {tierLabel && <span className="text-accent">{tierLabel}</span>}
     </>
   );
-  const buttonClass = "-mx-1.5 flex shrink-0 items-center whitespace-nowrap gap-2 rounded-md px-1.5 py-0.5 text-xs text-dim hover:bg-hover";
+  const buttonClass = "-mx-1.5 flex min-w-0 items-center whitespace-nowrap gap-2 rounded-md px-1.5 py-0.5 text-xs text-dim hover:bg-hover [&>svg]:shrink-0";
   if (!hasMenu) {
     return <Tip label={tip} side="top"><button type="button" aria-label="Model" className={buttonClass}>{button}</button></Tip>;
   }
@@ -138,7 +138,7 @@ export function ContextRing({ context }: { context: ReplyInfo["context"] }) {
 export function Branch({ branch }: { branch: string | null }) {
   if (!branch) return null;
   return (
-    <span aria-label="Branch" className="max-w-48 truncate font-mono text-[11px] text-dim">
+    <span aria-label="Branch" className="min-w-[4ch] max-w-48 shrink-[10] truncate font-mono text-[11px] text-dim">
       {branch}
     </span>
   );

@@ -14,6 +14,7 @@ import { HelperError } from "./chat/HelperError";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
 import type { DigestRead } from "./chat/blocks/digestRead";
 import { useBoard } from "./chat/blocks/useBoard";
+import { ChipNavigation } from "./chat/refs/navigation";
 import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
@@ -78,7 +79,7 @@ export function App() {
     if (hcDown) setTitles((m) => Object.fromEntries(Object.entries(m).filter(([, title]) => title !== "")));
   }, [hcDown]);
   // The Inbox in the main pane (D95) until an agent is selected.
-  const [inbox, setInbox] = useState(false);
+  const [inbox, setInbox] = useState<{ item: string | null } | null>(null);
   // The Settings view in the main pane, from the sidebar foot.
   const [settings, setSettings] = useState(false);
   // The app menu's "Check for Updates…" shows Settings too.
@@ -90,8 +91,12 @@ export function App() {
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
+  const openInbox = (item: string | null = null) => {
+    setInbox({ item });
+    setSettings(false);
+  };
   const select = useCallback((terminal: string) => {
-    setInbox(false);
+    setInbox(null);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
   }, []);
@@ -129,12 +134,19 @@ export function App() {
   useShortcut(hotkey("NEXT_AGENT", platform), () => move(1), { when: canMove });
   return (
     <div className="flex h-screen bg-canvas text-foreground">
-      {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
+      {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox !== null && !settings} onInbox={() => openInbox()} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
         <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
         {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
         {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />}
-        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} />}
+        {settings ? <SettingsView />
+          : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} initialItem={inbox.item} />
+          : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} />
+          : (
+            <ChipNavigation value={{ workers: findAgent(sidebar, sidebar.selected)?.workers, select, openInbox }}>
+              <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} />
+            </ChipNavigation>
+          )}
       </main>
     </div>
   );

@@ -12,14 +12,14 @@ import { useBoard } from "./useBoard";
 
 const WORKER_LABEL = { working: "working", done: "done", blocked: "blocked", idle: "idle" } as const;
 
-/** The worker's glyph. The status glyph has no done state: the mock's done glyph is ⠿ in ink-42, still. */
+/** The worker's glyph with its tooltip. */
 function Glyph({ state }: { state: WorkerState | undefined }) {
   if (!state) return <span className="w-3.5" />;
   const label = WORKER_LABEL[state];
   return (
     <Tip label={label} side="top">
       <span tabIndex={0} aria-label={label} className="inline-flex w-3.5 justify-center">
-        {state === "done" ? <span aria-hidden data-state="done" className="font-mono text-[15px] leading-4 text-ink-42">⠿</span> : <StatusGlyph state={state} />}
+        <StatusGlyph state={state} />
       </span>
     </Tip>
   );
