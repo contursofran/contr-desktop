@@ -24,19 +24,7 @@ if (process.env.FAKE_HC_DOWN && existsSync(process.env.FAKE_HC_DOWN)) {
   process.stderr.write("fake hc: the core is not running\n");
   process.exit(1);
 }
-if (cmd === "connect" && ["1", "bad-hello"].includes(process.env.FAKE_HC_CONNECT)) connect();
-else if (cmd === "run") {
-  // FAKE_HC_RUN_ERROR: stderr from a failed run. FAKE_HC_RUN_LOG: JSON Lines with each run's full CLI args.
-  if (process.env.FAKE_HC_RUN_ERROR) {
-    process.stderr.write(`${process.env.FAKE_HC_RUN_ERROR}\n`);
-    process.exit(1);
-  }
-  const argvAt = args.indexOf("--");
-  const program = argvAt < 0 ? "shell" : args[argvAt + 1];
-  const address = `t-new-${program}-${randomUUID()}`;
-  if (process.env.FAKE_HC_RUN_LOG) appendFileSync(process.env.FAKE_HC_RUN_LOG, `${JSON.stringify({ address, args })}\n`);
-  process.stdout.write(`${JSON.stringify({ address })}\n`);
-}
+if (cmd === "connect") connect();
 else if (cmd === "get") {
   // FAKE_HC_GONE: a comma list of addresses hc does not list; `get` fails for them.
   if ((process.env.FAKE_HC_GONE ?? "").split(",").includes(terminal)) process.exit(1);
@@ -69,7 +57,8 @@ else if (cmd === "get") {
 } else process.exit(1);
 
 /**
- * FAKE_HC_CONNECT=1: `connect` answers as hc does (main/terminal/hc-attach.ts): the `hello` line, then framed JSON-RPC.
+ * `connect` accepts a plain `terminal.run` request (FAKE_HC_RUN_LOG records its params, FAKE_HC_RUN_ERROR sets its error).
+ * FAKE_HC_CONNECT=1: it also accepts the `hello` line, then framed JSON-RPC.
  * `terminal.attach` opens channel 1 and writes one line into it. The process ends when the app closes stdin.
  * FAKE_HC_CONNECT=bad-hello: the `hello` answer is a line that is not JSON.
  */
@@ -87,7 +76,21 @@ function connect() {
     if (!framed) {
       const nl = buf.indexOf(10);
       if (nl < 0) return;
+      const request = JSON.parse(buf.subarray(0, nl).toString());
       buf = buf.subarray(nl + 1);
+      if (request.method === "terminal.run") {
+        const { id, params } = request;
+        const error = process.env.FAKE_HC_RUN_ERROR;
+        if (error) {
+          process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, error: { message: error } })}\n`);
+          return;
+        }
+        const address = `t-new-${params.argv[0] ?? "shell"}-${randomUUID()}`;
+        if (process.env.FAKE_HC_RUN_LOG) appendFileSync(process.env.FAKE_HC_RUN_LOG, `${JSON.stringify({ address, params })}\n`);
+        process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, result: { address } })}\n`);
+        return;
+      }
+      if (!["1", "bad-hello"].includes(process.env.FAKE_HC_CONNECT)) process.exit(1);
       framed = true;
       const ok = JSON.stringify({ jsonrpc: "2.0", id: 0, result: {} });
       process.stdout.write(`${process.env.FAKE_HC_CONNECT === "bad-hello" ? "warning: not JSON" : ok}\n`);

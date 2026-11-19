@@ -12,8 +12,7 @@ const project = {
   FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
   CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
 };
-const runArgs = (cwd: string, ...argv: string[]) => ["run", "--bg", "--json", "--no-parent", "--cwd", cwd, ...argv];
-const launches = (log: string) => readFileSync(log, "utf8").trim().split("\n").map((line) => JSON.parse(line) as { address: string; args: string[] });
+const launches = (log: string) => readFileSync(log, "utf8").trim().split("\n").map((line) => JSON.parse(line) as { address: string; params: object });
 
 test("the new-tab menu starts an agent in the selected worker's folder and keeps the tab over restart", async () => {
   const info = test.info();
@@ -34,7 +33,7 @@ test("the new-tab menu starts an agent in the selected worker's folder and keeps
     await expect(tabs.getByRole("tab").last()).toHaveText("Claude Code");
     await expect(tabs.getByRole("tab").last()).toHaveAttribute("aria-selected", "true");
     const [launch] = launches(log);
-    expect(launch.args).toEqual(runArgs("/work/contr-desktop-wt/agent/30", "--", "claude"));
+    expect(launch.params).toMatchObject({ cwd: "/work/contr-desktop-wt/agent/30", argv: ["claude"], no_parent: true });
     await expect.poll(() => page.evaluate(() => localStorage.getItem("tabs.open"))).toContain(launch.address);
   } finally {
     await app.close();
@@ -49,19 +48,23 @@ test("the new-tab menu starts an agent in the selected worker's folder and keeps
   }
 });
 
-test("Codex starts in the first project when no tab is selected", async () => {
+test("Codex starts in the first project with the app's light palette", async () => {
   const log = test.info().outputPath("hc-run.jsonl");
   mkdirSync(path.dirname(log), { recursive: true });
   const app = await launchApp({ ...project, FAKE_HC_RUN_LOG: log });
   try {
     const page = await app.firstWindow();
     await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Chat panel usability audit" }).waitFor();
+    await page.evaluate(() => window.contr.setTheme("light"));
     await page.getByRole("button", { name: /Inbox/ }).click();
     await expect(page.getByRole("tab", { selected: true })).toHaveCount(0);
     await page.getByRole("button", { name: "New tab" }).click();
     await page.getByRole("menuitem", { name: "Codex" }).click();
     await expect(page.getByRole("tab", { name: "Codex", selected: true })).toBeVisible();
-    expect(launches(log).map((launch) => launch.args)).toEqual([runArgs("/work/contr-desktop", "--", "codex")]);
+    expect(launches(log).map((launch) => launch.params)).toEqual([{
+      cwd: "/work/contr-desktop", argv: ["codex"], no_parent: true,
+      display: { bg: "#eff0f2", fg: "#2c2c2d", cursor: "#1e1e1e" },
+    }]);
   } finally {
     await app.close();
   }
@@ -73,11 +76,17 @@ test("Shell starts in the home folder without a project and shows the terminal",
   const app = await launchApp({ CONTR_TERMINAL: "", FAKE_HC_RUN_LOG: log, FAKE_HC_CONNECT: "1" });
   try {
     const page = await app.firstWindow();
-    await page.getByRole("button", { name: "New tab" }).click();
+    const newTab = page.getByRole("button", { name: "New tab" });
+    await newTab.waitFor();
+    await page.evaluate(() => window.contr.setTheme("dark"));
+    await newTab.click();
     await page.getByRole("menuitem", { name: "Shell" }).click();
     await expect(page.getByRole("tab", { name: "Shell", selected: true })).toBeVisible();
     await expect(page.getByRole("radio", { name: "Terminal" })).toBeChecked();
-    expect(launches(log).map((launch) => launch.args)).toEqual([runArgs(homedir())]);
+    expect(launches(log).map((launch) => launch.params)).toEqual([{
+      cwd: homedir(), argv: [], no_parent: true,
+      display: { bg: "#141518", fg: "#d5d5d5", cursor: "#e9e9ea" },
+    }]);
     await expect(page.locator(".xterm-rows").getByText(/fake terminal t-new-shell-/)).toBeVisible();
     await page.screenshot({ path: path.join(shots, "262-new-tab-shell.png") });
   } finally {
@@ -85,7 +94,7 @@ test("Shell starts in the home folder without a project and shows the terminal",
   }
 });
 
-test("the launch IPC returns hc stderr", async () => {
+test("the launch IPC returns the hc error message", async () => {
   const app = await launchApp({ ...project, FAKE_HC_RUN_ERROR: "fake hc: cannot start program" });
   try {
     const page = await app.firstWindow();

@@ -1,7 +1,8 @@
 import { EventEmitter } from "node:events";
 import { PassThrough, Writable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { decodeAll, encode, KIND_DATA, KIND_RESIZE, resizePayload } from "./frames";
+import { terminalDisplay } from "../../shared/terminal-display";
+import { decodeAll, encode, KIND_DATA, KIND_FACTS, KIND_RESIZE, resizePayload } from "./frames";
 
 // A fake `hc connect`: an event emitter with fake streams. Its stdin keeps each write; `broken` makes a write fail with EPIPE.
 class FakeProc extends EventEmitter {
@@ -29,7 +30,7 @@ const reply = (m: object) => encode(0, KIND_DATA, Buffer.from(JSON.stringify(m))
 
 function attach() {
   const on = { data: vi.fn(), end: vi.fn() };
-  const a = new HcAttach({ terminal: "t7" }, 80, 24, on);
+  const a = new HcAttach({ terminal: "t7" }, 80, 24, terminalDisplay("dark"), on);
   return { a, on };
 }
 
@@ -98,6 +99,27 @@ describe("HcAttach", () => {
     expect(proc.writes.slice(2)).toEqual([
       encode(1, KIND_RESIZE, resizePayload(100, 30)),
       encode(1, KIND_RESIZE, resizePayload(100, 31)),
+    ]);
+  });
+
+  it("reports the current display on attach and sends changes on the open channel", async () => {
+    const { a } = attach();
+    const light = terminalDisplay("light");
+    const dark = terminalDisplay("dark");
+    a.setDisplay(light);
+    proc.stdout.write(hello);
+    const [request] = decodeAll(proc.writes[1]!).frames;
+    expect(JSON.parse(request!.payload.toString()).params.display).toEqual(light);
+
+    a.setDisplay(dark);
+    expect(proc.writes).toHaveLength(2);
+    proc.stdout.write(reply({ jsonrpc: "2.0", id: 1, result: { channel: 1 } }));
+    await tick();
+    a.setDisplay(dark);
+    a.setDisplay(light);
+    expect(proc.writes.slice(2)).toEqual([
+      encode(1, KIND_FACTS, Buffer.from(JSON.stringify(dark))),
+      encode(1, KIND_FACTS, Buffer.from(JSON.stringify(light))),
     ]);
   });
 
