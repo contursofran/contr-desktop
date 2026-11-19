@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { ANSWER_CHANNEL, APPROVE_CHANNEL, BOARD_CHANNEL, DIGEST_CHANNEL, FEED_CHANNEL, OPEN_REF_CHANNEL, REFS_CHANNEL, FEED_READY_CHANNEL, PASTE_IMAGE_CHANNEL, PICK_IMAGE_CHANNEL, SEND_CHANNEL, TAB_TITLE_CHANNEL, REPLY_INFO_CHANNEL, SET_TIER_CHANNEL, BRANCH_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, SELECT_CHANNEL, USAGE_CHANNEL, USAGE_EVENT, MACHINES_CHANNEL, OWNER_CHANNEL, OWNER_EVENT, OWNER_ANSWER_CHANNEL, OWNER_DONE_CHANNEL, OWNER_ERROR_CHANNEL, OWNER_ERROR_EVENT, SETTINGS_CHANNEL, THEME_CHANNEL, UPDATE_CHANNEL, UPDATE_EVENT, UPDATE_DOWNLOAD_CHANNEL, UPDATE_RESTART_CHANNEL, UPDATE_CHECK_CHANNEL, CHANGELOG_CHANNEL, OPEN_SETTINGS_EVENT, CORE_CHANNEL, CORE_EVENT, CORE_CHECK_CHANNEL, type CoreState, type UpdateState, type OwnerItems, type Sidebar, type UsageRow, type ContrApi, type FeedEvent } from "../shared/api";
 import { terminalApi } from "./terminal";
-import { PR_CARD_CHANNEL } from "../shared/api";
+import { CODEX_HEALTH_CHANNEL, PR_CARD_CHANNEL } from "../shared/api";
 
 const api: ContrApi = {
   platform: process.platform,
@@ -53,6 +53,7 @@ const api: ContrApi = {
     return () => ipcRenderer.off(OWNER_ERROR_EVENT, handler);
   },
   settings: () => ipcRenderer.invoke(SETTINGS_CHANNEL),
+  checkCodexHealth: () => ipcRenderer.invoke(CODEX_HEALTH_CHANNEL),
   setTheme: (theme) => ipcRenderer.invoke(THEME_CHANNEL, theme),
   update: () => ipcRenderer.invoke(UPDATE_CHANNEL),
   onUpdate(listener) {
