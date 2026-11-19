@@ -13,6 +13,7 @@ import { registerFootIpc } from "./foot/ipc";
 import { inboxBadge, registerOwnerIpc } from "./owner/ipc";
 import { windowTitle } from "./owner/owner";
 import { registerSettingsIpc } from "./settings/ipc";
+import { registerHealthIpc } from "./settings/health-ipc";
 import { registerUpdateIpc } from "./update/ipc";
 import { setAppMenu } from "./menu";
 import { registerTerminalIpc } from "./terminal/ipc";
@@ -57,6 +58,7 @@ void app.whenReady().then(async () => {
   registerFootIpc(app.getAppPath());
   registerOwnerIpc(app.getAppPath());
   registerSettingsIpc(app.getAppPath());
+  registerHealthIpc(app.getAppPath(), core);
   setAppMenu(registerUpdateIpc().check, e2e);
   registerCoreIpc(app.getAppPath(), core);
   registerPrCardIpc(app.getAppPath(), chatTerminal);
