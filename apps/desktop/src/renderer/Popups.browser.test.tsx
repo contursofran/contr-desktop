@@ -77,7 +77,7 @@ test("the sidebar and top bar tooltips show on hover and focus, and Escape or le
   await tabs.getByRole("tab", { name: "Chat panel usability audit" }).hover();
   await expect.element(tip).toHaveTextContent("Chat panel usability audit");
   await page.getByRole("button", { name: "New tab" }).hover();
-  await expect.element(tip).toHaveTextContent("New tab");
+  await expect.element(tip).toHaveTextContent(/^New tab$/);
   await shoot("topbar-tooltip");
 
   const search = page.getByRole("button", { name: "Search" });
