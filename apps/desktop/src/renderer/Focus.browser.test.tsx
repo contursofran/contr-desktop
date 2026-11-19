@@ -88,24 +88,38 @@ test("a late first answer leaves the focus on a button that took it while the ch
   await shoot("focus-late-button");
 });
 
-test("a late first answer gives the keyboard to the reply box when nothing has the focus", async () => {
+test("the first answer gives the keyboard to the reply box when the page body has focus", async () => {
   const { firstFeed } = await mountReply({ holdFeed: true });
   await expect.element(loading()).toBeVisible();
-  (await page.getByRole("button", { name: "Attach image" }).findElement() as HTMLElement).focus();
-  blur();
-  await expect.element(loading()).toBeVisible();
+  expect(document.activeElement).toBe(document.body);
   firstFeed();
   await expect.element(loading()).not.toBeInTheDocument();
   await expect.element(replyBox()).toHaveFocus();
 });
 
-test("a late first answer gives the keyboard to the reply box when the focus has not moved since the window became active", async () => {
+test("the first answer gives the reply box focus after the owner selects an agent in the sidebar", async () => {
   const { firstFeed } = await mountReply({ holdFeed: true });
+  await notes().click();
+  await expect.element(replyBox()).toHaveAccessibleName("Reply to Release notes draft");
   await expect.element(loading()).toBeVisible();
-  (await notes().findElement() as HTMLElement).focus();
-  activate();
-  await expect.element(loading()).toBeVisible();
+  await expect.element(notes()).toHaveFocus();
   firstFeed();
-  await expect.element(loading()).not.toBeInTheDocument();
   await expect.element(replyBox()).toHaveFocus();
 });
+
+test.each(["tab", "sidebar button"] as const)(
+  "the first answer leaves focus on the %s after the window becomes active",
+  async (control) => {
+    const { firstFeed } = await mountReply({ holdFeed: true });
+    await expect.element(loading()).toBeVisible();
+    const target = control === "tab"
+      ? page.getByRole("tab", { name: "Chat panel usability audit" })
+      : notes();
+    (await target.findElement() as HTMLElement).focus();
+    activate();
+    await expect.element(target).toHaveFocus();
+    firstFeed();
+    await expect.element(loading()).not.toBeInTheDocument();
+    await expect.element(target).toHaveFocus();
+  },
+);
