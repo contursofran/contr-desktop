@@ -1,10 +1,14 @@
 import type { Terminal } from "@xterm/xterm";
+import { isActiveTabShortcut } from "../topbar/tab-navigation";
 import { clipboardShortcut } from "./clipboard-shortcuts";
 
 export function wireTerminalClipboard(term: Terminal, isMac: boolean) {
   const isWindows = navigator.platform.startsWith("Win");
   term.attachCustomKeyEventHandler((event) => {
-    if (event.type !== "keydown" || event.isComposing) return true;
+    if (event.isComposing) return true;
+    // Returning false leaves the event for the app's shortcut handler without sending it to hc.
+    if (isActiveTabShortcut(event)) return false;
+    if (event.type !== "keydown") return true;
     const action = clipboardShortcut(event, {
       isMac,
       isWindows,

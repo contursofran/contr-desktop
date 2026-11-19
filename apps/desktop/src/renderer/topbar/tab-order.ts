@@ -37,8 +37,8 @@ export const tabOrder = definePrimitive({
         const at = order.indexOf(key);
         const rtl = isRTL(event.currentTarget as HTMLElement);
         const step = (event.key === "ArrowRight") !== rtl ? 1 : -1;
-        const to = event.key === "Home" ? 0 : event.key === "End" ? order.length - 1 : at + step;
-        reorder.moveTo(Math.max(0, Math.min(order.length - 1, to)));
+        const to = event.key === "Home" ? 0 : event.key === "End" ? order.length - 1 : (at + step + order.length) % order.length;
+        reorder.moveTo(to);
         reorder.drop(event);
       },
     };
