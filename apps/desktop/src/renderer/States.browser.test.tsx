@@ -68,7 +68,7 @@ test("with more tabs than fit, the scrollbar is below the tabs", async () => {
   const bar = row.closest(".h-10")!.getBoundingClientRect();
   expect(row.scrollWidth).toBeGreaterThan(row.clientWidth);
   // Playwright hides the native scrollbar in headless Chromium. Read its styled height
-  // and check the clearance below the tab. Electron's topbar spec measures the native gutter.
+  // and check the clearance below the tab.
   const scrollbar = Number.parseFloat(getComputedStyle(row, "::-webkit-scrollbar").height);
   expect(scrollbar).toBeGreaterThan(0);
   expect(box.bottom - scrollbar - tab.bottom).toBeGreaterThanOrEqual(2);

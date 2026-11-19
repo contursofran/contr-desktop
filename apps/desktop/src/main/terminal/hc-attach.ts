@@ -39,10 +39,15 @@ export class HcAttach {
   private ended = false;
   /** Keys typed before the attach reply: sent when the channel opens. */
   private pending: string[] = [];
+  /** Last size sent, or the initial size that terminal.attach will send. */
+  private size: { cols: number; rows: number };
+  /** Latest size while terminal.attach is still opening. */
+  private pendingSize?: { cols: number; rows: number };
   /** hc's own words when it exits with an error. */
   private stderr = "";
 
   constructor(target: AttachTarget, cols: number, rows: number, private on: AttachEvents) {
+    this.size = { cols, rows };
     const args = ["connect", ...(target.session ? ["--session", target.session] : [])];
     this.proc = spawn(target.hc ?? "hc", args, { stdio: "pipe" });
     this.proc.on("error", (e) => this.finish(`hc: ${e.message}`));
@@ -51,7 +56,7 @@ export class HcAttach {
     this.proc.stdin.on("error", () => undefined);
     // `close`, not `exit`: an error line on stdout or stderr is read before the end.
     this.proc.on("close", () => this.finish(this.stderr.trim() ? `hc closed the connection: ${this.stderr.trim()}` : "hc closed the connection"));
-    this.proc.stdout.on("data", (d: Buffer) => this.read(d, target.terminal, cols, rows));
+    this.proc.stdout.on("data", (d: Buffer) => this.read(d, target.terminal));
     this.rpc(0, "hello", { generation: 1, framed: true }, true);
   }
 
@@ -63,7 +68,13 @@ export class HcAttach {
 
   resize(cols: number, rows: number): void {
     if (this.ended) return;
-    if (this.channel) this.proc.stdin.write(encode(this.channel, KIND_RESIZE, resizePayload(cols, rows)));
+    const changed = cols !== this.size.cols || rows !== this.size.rows;
+    if (!this.channel) {
+      this.pendingSize = changed ? { cols, rows } : undefined;
+    } else if (changed) {
+      this.size = { cols, rows };
+      this.proc.stdin.write(encode(this.channel, KIND_RESIZE, resizePayload(cols, rows)));
+    }
   }
 
   /** Detach. The terminal keeps running. */
@@ -79,7 +90,7 @@ export class HcAttach {
     this.proc.stdin.write(line ? `${msg}\n` : encode(0, KIND_DATA, Buffer.from(msg)));
   }
 
-  private read(d: Buffer, terminal: string, cols: number, rows: number): void {
+  private read(d: Buffer, terminal: string): void {
     if (this.ended) return;
     this.buf = Buffer.concat([this.buf, d]);
     if (!this.framed) {
@@ -91,7 +102,7 @@ export class HcAttach {
       if (hello.error) return this.finish(hello.error.message);
       this.framed = true;
       // history: the scrollback that is shown first, so the owner can scroll back at once.
-      this.rpc(1, "terminal.attach", { terminal, cols, rows, history: 1000 });
+      this.rpc(1, "terminal.attach", { terminal, ...this.size, history: 1000 });
     }
     const { frames, rest } = decodeAll(this.buf);
     this.buf = rest;
@@ -102,6 +113,9 @@ export class HcAttach {
         if (m.id !== 1) continue;
         if (m.error || !m.result) return this.finish(m.error?.message ?? "attach failed");
         this.channel = m.result.channel;
+        const size = this.pendingSize;
+        this.pendingSize = undefined;
+        if (size) this.resize(size.cols, size.rows);
         for (const text of this.pending.splice(0)) this.input(text);
       } else if (f.channel === this.channel) {
         if (f.kind === KIND_DATA) this.on.data(f.payload);

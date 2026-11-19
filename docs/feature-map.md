@@ -31,14 +31,14 @@ When the code changes a feature, update its row in the same PR.
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `topbar` |
-| Focus a tab | Focuses a tab, then moves within the list | Left, Right, Home, End | `tablist "Tabs" > tab` | Left and Right move focus and wrap at the ends. Home and End focus the first and last tabs. The chat stays on the selected tab. | `topbar` |
-| Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `topbar` |
+| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `Topbar.browser.test.tsx`, `topbar` |
+| Focus a tab | Focuses a tab, then moves within the list | Left, Right, Home, End | `tablist "Tabs" > tab` | Left and Right move focus and wrap at the ends. Home and End focus the first and last tabs. The chat stays on the selected tab. | `Topbar.browser.test.tsx` |
+| Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `Topbar.browser.test.tsx`, `topbar` |
 | Close a tab | Clicks the × of the shown tab | Click | `button "Close Install health check"` | The tab closes; the app reads that agent's feed no more | `topbar`, `helper-calls` |
-| Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
-| New tab | Hovers the + | — | `button "New tab"` | Disabled, tooltip "New tab (not yet)" | `topbar`, `Popups.browser.test.tsx` |
+| Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `Topbar.browser.test.tsx`, `topbar` |
+| New tab | Opens the + and picks a program | Click, ⌘T, Enter to start, Escape to close | `button "New tab"`, `menu "New tab" > menuitem` | Claude Code has focus first, then Codex and Shell. The new tab opens last and is selected. A failed start shows the hc error. | `NewTab.browser.test.tsx`, `new-tab`, `Topbar.browser.test.tsx`, `Popups.browser.test.tsx` |
 | Chat or Terminal | Clicks the switch at the top right of the work area, under the tab bar | Click | `radiogroup "Chat or Terminal" > radio "Terminal"` | The work area shows the agent's terminal; the pick stays over a restart | `fake-terminal`, `restart` |
-| Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `States.browser.test.tsx` |
+| Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `Topbar.browser.test.tsx`, `States.browser.test.tsx` |
 
 ## Chat
 
@@ -110,6 +110,7 @@ When the code changes a feature, update its row in the same PR.
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Terminal view | Clicks Terminal | Click | `radio "Terminal"` | The agent's hc terminal (xterm.js) with no frame, in JetBrains Mono 13/20; keys go to it | `terminal`, `fake-terminal`, `TerminalError.browser.test.tsx`, `terminal-error` |
+| Terminal resize and renderer recovery | Resizes the work area or loses the WebGL context | Window resize | `data-testid="terminal"` | The first fit and each changed grid size reach hc, including the final size. If WebGL cannot start or its context is lost, xterm displays output in the DOM. After context loss it stays on the DOM renderer until the window reloads. | `TerminalResize.browser.test.tsx`, `terminal` |
 | Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | One centered note with no box: "The connection to hc ended.", hc's words in mono, Retry; Retry attaches when the file is gone; when the sidebar's "hc is not reachable" clears, the terminal attaches again with no Retry; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `TerminalError.browser.test.tsx`, `terminal-error`, `hc-outage` |
 
 ## Inbox
