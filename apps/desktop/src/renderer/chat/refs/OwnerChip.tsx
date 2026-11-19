@@ -9,7 +9,7 @@ const OPEN_OUTLINE = "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--blocked)_3
  * An owner item (D7, T3) from the orchestration tool (`owner open --json`): a question with its title,
  * or a to-do. The outline is red while the item is open, else neutral.
  */
-export function OwnerChip({ item, open }: { item: OwnerQuestion | OwnerTodo; open: boolean }) {
+export function OwnerChip({ item, open, showTitle = true }: { item: OwnerQuestion | OwnerTodo; open: boolean; showTitle?: boolean }) {
   const question = "question" in item;
   const Icon = question ? CircleQuestionMarkIcon : SquareIcon;
   const kind = question ? "Question" : "To-do";
@@ -22,7 +22,7 @@ export function OwnerChip({ item, open }: { item: OwnerQuestion | OwnerTodo; ope
     >
       <Icon aria-hidden />
       {item.id}
-      {question && item.title && <span className="ms-[5px] font-sans text-ink-85">{item.title}</span>}
+      {showTitle && question && item.title && <span className="ms-[5px] font-sans text-ink-85">{item.title}</span>}
     </ChipBox>
   );
 }

@@ -7,7 +7,7 @@ const CHECKS = "commits(last: 1) { nodes { commit { statusCheckRollup { state co
 /** One `gh api graphql` query for many numbers of the repository in gh's folder. */
 export function refsQuery(numbers: number[]): string {
   const fields = numbers.map(
-    (n) => `n${n}: issueOrPullRequest(number: ${n}) { __typename ... on PullRequest { state isDraft url ${CHECKS} } ... on Issue { state stateReason url } }`,
+    (n) => `n${n}: issueOrPullRequest(number: ${n}) { __typename ... on PullRequest { state isDraft url mergedAt ${CHECKS} } ... on Issue { state stateReason url } }`,
   );
   return `query($owner: String!, $repo: String!) { repository(owner: $owner, name: $repo) { ${fields.join(" ")} } }`;
 }
@@ -18,6 +18,7 @@ interface GhItem {
   isDraft?: boolean;
   stateReason?: string | null;
   url?: string;
+  mergedAt?: string | null;
   commits?: { nodes?: { commit?: { statusCheckRollup?: GhRollup | null } }[] };
 }
 
@@ -60,7 +61,10 @@ function toState(item: GhItem | null | undefined): RefState | null {
   if (item.__typename === "PullRequest") {
     const state = item.state === "MERGED" ? "merged" : item.state === "CLOSED" ? "closed" : item.isDraft ? "draft" : "open";
     const checks = toChecks(item.commits?.nodes?.at(-1)?.commit?.statusCheckRollup);
-    return checks ? { kind: "pr", state, url: item.url, checks } : { kind: "pr", state, url: item.url };
+    const ref: RefState = { kind: "pr", state, url: item.url };
+    if (checks) ref.checks = checks;
+    if (state === "merged" && item.mergedAt) ref.mergedAt = item.mergedAt;
+    return ref;
   }
   if (item.__typename === "Issue") {
     const state = item.state === "OPEN" ? "open" : item.stateReason === "NOT_PLANNED" ? "not-planned" : "closed";

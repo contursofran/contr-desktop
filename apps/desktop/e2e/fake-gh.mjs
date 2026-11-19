@@ -31,7 +31,7 @@ const table = {
   50: issue(50, "OPEN"),
   51: pr(51, "OPEN", false, rollup("FAILURE", { SUCCESS: 5, FAILURE: 1 })),
   60: issue(60, "OPEN"),
-  70: pr(70, "MERGED"),
+  70: pr(70, "MERGED", false, { mergedAt: "2026-11-18T14:00:00Z" }),
 };
 const args = process.argv.slice(2);
 if (args[0] === "pr" && args[1] === "list") {

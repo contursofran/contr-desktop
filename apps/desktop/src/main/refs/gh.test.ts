@@ -6,7 +6,7 @@ const answer = JSON.stringify({
     repository: {
       n1: { __typename: "PullRequest", state: "OPEN", isDraft: false, url: "https://github.com/o/r/pull/1" },
       n2: { __typename: "PullRequest", state: "OPEN", isDraft: true, url: "u2" },
-      n3: { __typename: "PullRequest", state: "MERGED", isDraft: false, url: "u3" },
+      n3: { __typename: "PullRequest", state: "MERGED", isDraft: false, url: "u3", mergedAt: "2026-11-18T14:00:00Z" },
       n4: { __typename: "PullRequest", state: "CLOSED", isDraft: false, url: "u4" },
       n5: { __typename: "Issue", state: "OPEN", stateReason: null, url: "u5" },
       n6: { __typename: "Issue", state: "CLOSED", stateReason: "COMPLETED", url: "u6" },
@@ -40,6 +40,12 @@ describe("gh refs", () => {
 
   it("asks for the head's check rollup and its counts", () => {
     expect(refsQuery([12])).toContain("statusCheckRollup { state contexts { totalCount checkRunCountsByState");
+  });
+
+  it("asks for the merge time with the PR and keeps it on a merged PR", () => {
+    expect(refsQuery([3])).toContain("... on PullRequest { state isDraft url mergedAt");
+    expect(readRefs(answer, [3, 4]).get(3)).toMatchObject({ mergedAt: "2026-11-18T14:00:00Z" });
+    expect(readRefs(answer, [4]).get(4)).not.toHaveProperty("mergedAt");
   });
 
   it("reads a PR's checks: passed, failed and all, from check runs and status contexts", () => {

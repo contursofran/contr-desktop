@@ -1,7 +1,7 @@
 import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
-import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
+import { ChatOwnerItems, OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
 import { SettingsView } from "./settings/SettingsView";
 import { blockedAgents } from "../shared/inbox";
@@ -177,7 +177,12 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
       </div>
       {/* The chat list keeps at least 120 px: the cards block gives way first. */}
       {/* The loader covers the empty list until the first answer: the list mounts as before, with no rows. */}
-      <div className="relative flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}{!feed.error && !feed.loaded && <ChatLoading />}</div>
+      <div className="relative flex min-h-[120px] flex-1 flex-col">
+        {feed.error ? <HelperError error={feed.error} onRetry={retry} /> : (
+          <ChatOwnerItems.Provider value={owner}><ChatList rows={feed.rows} /></ChatOwnerItems.Provider>
+        )}
+        {!feed.error && !feed.loaded && <ChatLoading />}
+      </div>
     </>
   );
 }

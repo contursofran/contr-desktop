@@ -14,6 +14,16 @@ describe("parseStatus", () => {
 });
 
 describe("parseQueue", () => {
+  it("reads an explicit owner item while keeping prose and PR refs in the note", () => {
+    expect(parseQueue("#41 Queue block -- waits for #31, and for your answer | owner: D7")).toEqual([
+      { number: 41, label: "Queue block", note: "waits for #31, and for your answer", ownerId: "D7" },
+    ]);
+    expect(parseQueue("#41 Queue block -- D7 waits")).toEqual([
+      { number: 41, label: "Queue block", note: "D7 waits" },
+    ]);
+    expect(parseQueue("#41 Queue block -- waits for a question | owner: X7")).toBeNull();
+  });
+
   it("reads the steps in order, with the dependency note", () => {
     expect(parseQueue("#656 Rows and badge\n#665 Fewer lines -- waits for #656")).toEqual([
       { number: 656, label: "Rows and badge", note: null },
