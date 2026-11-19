@@ -31,15 +31,15 @@ When the code changes a feature, update its row in the same PR.
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `topbar` |
-| Focus a tab | Focuses a tab, then moves within the list | Left, Right, Home, End | `tablist "Tabs" > tab` | Left and Right move focus and wrap at the ends. Home and End focus the first and last tabs. The chat stays on the selected tab. | `topbar` |
-| Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `topbar` |
-| Close a tab | Clicks × or closes the shown tab by key or menu | Click, ⌘W, File > Close Tab | `button "Close Install health check"`, `tablist "Tabs" > tab` | The shown tab closes even when the reply or terminal has focus. When no tab is shown, ⌘W does nothing. ⇧⌘W closes the window. | `topbar`, `helper-calls`, `Shortcuts.browser.test.tsx`, `shortcuts` |
-| Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `topbar` |
-| New tab | Opens the + and picks a program | Click, ⌘T, Enter to start, Escape to close | `button "New tab"`, `menu "New tab" > menuitem` | Claude Code has focus first, then Codex and Shell. The new tab opens last and is selected. A failed start shows the hc error. | `NewTab.browser.test.tsx`, `new-tab`, `topbar`, `Popups.browser.test.tsx` |
+| Tabs | Opens agents from the sidebar | — | `tablist "Tabs" > tab` | One tab per opened agent, the shown one selected, at most 180 px wide: a longer title is cut with "…" and the tooltip has it whole | `Topbar.browser.test.tsx`, `topbar` |
+| Focus a tab | Focuses a tab, then moves within the list | Left, Right, Home, End | `tablist "Tabs" > tab` | Left and Right move focus and wrap at the ends. Home and End focus the first and last tabs. The chat stays on the selected tab. | `Topbar.browser.test.tsx` |
+| Switch by tab | Clicks a tab or selects the focused tab | Click, Enter, Space | `tab "Install health check"` | The chat switches | `Topbar.browser.test.tsx`, `topbar` |
+| Close a tab | Clicks × or closes the shown tab by key or menu | Click, ⌘W, File > Close Tab | `button "Close Install health check"`, `tablist "Tabs" > tab` | The shown tab closes even when the reply or terminal has focus. The feed for the closed tab stops. When no tab is shown, ⌘W does nothing. ⇧⌘W closes the window. | `topbar`, `helper-calls`, `Shortcuts.browser.test.tsx`, `shortcuts` |
+| Move a tab | Drags a tab, or presses keys on it | Alt+Left, Alt+Right, Alt+Home, Alt+End | `tab "<title>"` | The tab moves; the order stays over a restart | `Topbar.browser.test.tsx`, `topbar` |
+| New tab | Opens the + and picks a program | Click, ⌘T, Enter to start, Escape to close | `button "New tab"`, `menu "New tab" > menuitem` | Claude Code has focus first, then Codex and Shell. The new tab opens last and is selected. A failed start shows the hc error. | `NewTab.browser.test.tsx`, `new-tab`, `Topbar.browser.test.tsx`, `Popups.browser.test.tsx` |
 | Chat or Terminal | Changes the shown agent's view | Click, ⌘J | `radiogroup "Chat or Terminal" > radio "Terminal"` | The focus moves to the terminal input or reply box when its view opens. The pick stays over a restart. | `fake-terminal`, `restart`, `Shortcuts.browser.test.tsx` |
 | Previous or next agent | Moves from the shown agent to its neighbor | ⌘⌥↑, ⌘⌥↓ | `navigation "Projects" button[aria-current=true]`, `tablist "Tabs" > tab[aria-selected=true]` | Selects the adjacent agent in project and worker order. At either end or with no shown agent, nothing changes. Editors and xterm keep their arrow keys. | `Shortcuts.browser.test.tsx` |
-| Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `topbar`, `States.browser.test.tsx` |
+| Many tabs | Opens more tabs than fit | `size=640x480` | `tablist "Tabs"` | The row scrolls; the shown tab scrolls into view; a thin scrollbar below the tabs | `Topbar.browser.test.tsx`, `States.browser.test.tsx` |
 
 ## Chat
 

@@ -80,7 +80,13 @@ parts; when the design has no answer, ask.
   `pnpm test` (unit) and `pnpm e2e` (Playwright on the Electron app, with
   the fake helper). `pnpm dev` runs the app with hot reload. The e2e
   screenshots go to `tmp/shots/`.
-- `pnpm test:browser` runs renderer tests in headless Chromium.
+- `pnpm test:browser` runs renderer tests in headless Chromium. Put a new
+  test of the renderer's DOM, layout, theme, keys or focus there, not in
+  Electron (`docs/decisions/272-browser-tests.md`).
+- Locally, run `pnpm typecheck`, `pnpm lint`, `pnpm test`,
+  `pnpm test:browser`, and only the e2e specs that cover the change:
+  `pnpm e2e --workers=2 e2e/<spec>.spec.ts`. Run the checks one after
+  another, not at the same time. The `CI` check runs the full e2e suite.
 - To run, drive and look at the app, use the `verify` skill
   (`.claude/skills/verify/SKILL.md`), not a new launch script;
   `docs/feature-map.md` lists each feature with its keys, selector,
@@ -88,7 +94,8 @@ parts; when the design has no answer, ask.
 - e2e runs must never show a window, take the owner's focus or input: every spec launches
   through `apps/desktop/e2e/launch.ts` (`CONTR_E2E=1`), and tests use no
   OS-level keys or mouse.
-- All must pass, and the `CI` check on the PR, before you report done.
+- These checks and the `CI` check on the PR must pass before you report
+  done.
 - The first PR sets these scripts up; until then, say which checks exist.
 - A test that fails at random: find the cause. Do not run it again to get
   a green check, and add no sleep and no retry. If you cannot find the
