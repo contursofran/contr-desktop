@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs";
 import type { Sidebar } from "../../shared/api";
 import { readTitle } from "../helper/title";
 import { buildProjects, projectFromCommonDir, readHcList, readSessionFolder, runRead, type HcTerminal } from "./agents";
@@ -73,7 +74,16 @@ export function sidebarReader({ hc, git, orch, exec = runRead, favicon = favicon
   const favicons = new Map<string, string | null>();
 
   const read = async () => {
-    const [hcList, orchOut] = await Promise.all([exec(hc, ["ls", "--json"]), exec(orch(), ["agents", "ls", "--all", "--json"])]);
+    const trace = (stage: string, error?: string | null) => {
+      const file = process.env.FAKE_HC_DOWN;
+      if (file) appendFileSync(file + ".trace", JSON.stringify([Date.now(), stage, error]) + "\n");
+    };
+    trace("read");
+    const hcRead = exec(hc, ["ls", "--json"]).then((r) => { trace("hc exit", r.error); return r; });
+    trace("hc spawn returned");
+    const orchRead = exec(orch(), ["agents", "ls", "--all", "--json"]).then((r) => { trace("orch exit", r.error); return r; });
+    trace("orch spawn returned");
+    const [hcList, orchOut] = await Promise.all([hcRead, orchRead]);
     // hc failed: no agents, and the renderer shows why.
     const { terms, error: hcError } = readHcList(hcList.out, hcList.error);
     const live = terms.filter((t): t is HcTerminal & { address: string } => typeof t.address === "string");

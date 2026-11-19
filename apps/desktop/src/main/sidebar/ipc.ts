@@ -1,5 +1,6 @@
+import { appendFileSync } from "node:fs";
 import { spawn } from "node:child_process";
-import { BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { SELECT_CHANNEL, SIDEBAR_CHANNEL, SIDEBAR_EVENT, type Sidebar } from "../../shared/api";
 import { orchPath } from "../board/board";
 import { chatTerminal, selectTerminal } from "../helper";
@@ -7,6 +8,11 @@ import { setBlockedCount } from "../owner/ipc";
 import { blockedAgents } from "../../shared/inbox";
 import { sidebarReader } from "./reader";
 import { lineSplitter, readScheduler } from "./schedule";
+
+function trace(stage: string, value?: unknown) {
+  const file = process.env.FAKE_HC_DOWN;
+  if (file) appendFileSync(file + ".trace", JSON.stringify([Date.now(), stage, value]) + "\n");
+}
 
 /** Without hc events (hc gone or too old), the list is read again every 10 s. While `hc events` runs, there is no poll for hc. */
 const POLL_MS = 10_000;
@@ -19,6 +25,13 @@ const GIT_POLL_MS = 30_000;
 
 /** The Projects list: agents from `hc ls --json`, each under the project of its session folder (`hc get --json`), workers' names from the orchestration tool, read again on each `hc events` burst (`reader.ts`). */
 export function registerSidebarIpc(appRoot: string): void {
+  trace("register");
+  if (process.env.FAKE_HC_DOWN) {
+    app.once("browser-window-created", (_event, window) => {
+      trace("window created");
+      window.webContents.once("dom-ready", () => trace("window DOM ready"));
+    });
+  }
   const hc = process.env.CONTR_HC ?? "hc";
   const reader = sidebarReader({ hc, git: process.env.CONTR_GIT ?? "git", orch: () => orchPath(appRoot) });
   let last: Sidebar = { projects: [], selected: chatTerminal() };
@@ -26,6 +39,7 @@ export function registerSidebarIpc(appRoot: string): void {
   const refresh = readScheduler(
     () =>
       reader.read().then((s) => {
+        trace("publish", [s.hcError, s.projects.length]);
         last = { ...s, selected: chatTerminal() };
         setBlockedCount(blockedAgents(s.projects).length);
         for (const w of BrowserWindow.getAllWindows()) w.webContents.send(SIDEBAR_EVENT, last);
@@ -34,16 +48,23 @@ export function registerSidebarIpc(appRoot: string): void {
     MAX_WAIT_MS,
   );
   const follow = () => {
+    trace("events spawn start");
     const events = spawn(hc, ["events", "--json"], { stdio: ["ignore", "pipe", "ignore"] });
+    trace("events spawn returned");
     const lines = lineSplitter((line) => reader.event(line));
     events.stdout.on("data", (d: Buffer) => {
+      trace("events data");
       lines(d);
       refresh();
     });
     events.on("error", () => undefined);
-    events.on("close", () => setInterval(refresh, POLL_MS));
+    events.on("close", () => {
+      trace("events close");
+      setInterval(refresh, POLL_MS);
+    });
   };
   follow();
+  trace("queue startup read");
   refresh();
   setInterval(() => {
     reader.gitDue();
@@ -52,6 +73,7 @@ export function registerSidebarIpc(appRoot: string): void {
 
   // A read while hc failed (Retry) reads the list again at once; the new list comes as an event.
   ipcMain.handle(SIDEBAR_CHANNEL, () => {
+    trace("reply", [last.hcError, last.projects.length]);
     if (last.hcError) refresh();
     return { ...last, selected: chatTerminal() };
   });

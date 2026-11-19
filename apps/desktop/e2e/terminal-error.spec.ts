@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { launchApp } from "./launch";
@@ -55,17 +55,42 @@ test("main handles a bad hc hello without an uncaught error", async () => {
 
 test("Retry after an hc outage reads the project list again", async () => {
   const down = hcDown();
+  const stages: [string, number][] = [];
+  const mark = (stage: string) => {
+    const at = Date.now();
+    stages.push([stage, at]);
+    console.log("300 stage", stage, at);
+  };
+  mark("launch start");
   const app = await launchApp({ ...env(down), CONTR_TERMINAL: "" });
-  const page = await app.firstWindow();
-  const note = page.getByRole("alert", { name: "hc error" });
-  const projects = page.getByRole("navigation", { name: "Projects" });
-  await expect(note.locator("p")).toHaveText("hc is not reachable.");
-  await expect(note.locator("pre")).toHaveText("fake hc: the core is not running");
+  mark("launch returned");
+  try {
+    const page = await app.firstWindow();
+    mark("window returned");
+    const note = page.getByRole("alert", { name: "hc error" });
+    const projects = page.getByRole("navigation", { name: "Projects" });
+    mark("expect startup alert");
+    await expect(note.locator("p")).toHaveText("hc is not reachable.");
+    mark("startup alert seen");
+    console.log("300 renderer", await page.evaluate(() => (window as Window & { sidebarTrace?: unknown[] }).sidebarTrace));
+    await expect(note.locator("pre")).toHaveText("fake hc: the core is not running");
+    mark("startup error detail seen");
 
-  rmSync(down);
-  await note.getByRole("button", { name: "Retry" }).click();
-  // Sooner than the 10 s poll: Retry made the read.
-  await expect(projects.getByRole("region", { name: "contr-desktop" })).toBeVisible({ timeout: 4000 });
-  await expect(note).toBeHidden();
-  await app.close();
+    rmSync(down);
+    mark("retry click start");
+    await note.getByRole("button", { name: "Retry" }).click();
+    mark("retry click returned");
+    // Sooner than the 10 s poll: Retry made the read.
+    await expect(projects.getByRole("region", { name: "contr-desktop" })).toBeVisible({ timeout: 4000 });
+    mark("region seen");
+    await expect(note).toBeHidden();
+    mark("alert hidden");
+    mark("close start");
+    await app.close();
+    mark("close returned");
+  } finally {
+    console.log("300 stages", JSON.stringify(stages));
+    const trace = down + ".trace";
+    console.log("300 main", existsSync(trace) ? readFileSync(trace, "utf8") : "no main trace");
+  }
 });

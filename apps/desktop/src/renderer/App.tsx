@@ -27,8 +27,13 @@ export function App() {
   const [digestReads] = useState(() => new Map<string, Map<string, DigestRead>>());
   const [sidebar, setSidebar] = useState<SidebarData>({ projects: [], selected: "" });
   useEffect(() => {
-    void window.contr.sidebar().then(setSidebar);
-    return window.contr.onSidebar(setSidebar);
+    const trace = (stage: string, sidebar?: SidebarData) => {
+      const data = window as Window & { sidebarTrace?: unknown[] };
+      (data.sidebarTrace ??= []).push([Date.now(), stage, sidebar?.hcError, sidebar?.projects.length]);
+    };
+    trace("mount");
+    void window.contr.sidebar().then((sidebar) => { trace("reply", sidebar); setSidebar(sidebar); });
+    return window.contr.onSidebar((sidebar) => { trace("event", sidebar); setSidebar(sidebar); });
   }, []);
   // The open tabs. Selecting an agent anywhere opens its tab.
   const [tabs, setTabs] = useState<string[]>(readTabs);
