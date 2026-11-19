@@ -1,13 +1,17 @@
-import { expect, onTestFinished, test, vi } from "vitest";
+import { afterEach, expect, onTestFinished, test, vi } from "vitest";
 import { commands, page, userEvent, type Locator } from "vitest/browser";
 import transcript from "../../e2e/fixtures/claude-session.jsonl?raw";
 import { chatRow, rowInViewport, shoot } from "../../test/274-chat";
 import { renderApp } from "../../test/renderApp";
 import type { FeedRow } from "../shared/api";
+import { saveDraft } from "./chat/reply/drafts";
 
 const row = async (id: string) => page.elementLocator(await chatRow(id));
 const text = (locator: Locator) => expect.poll(() => locator.query()?.textContent?.replace(/\s+/g, " ").trim());
 const box = () => page.getByRole("textbox", { name: "Reply to Chat panel usability audit" });
+
+// The reply draft stays in memory across app mounts in this browser file.
+afterEach(() => saveDraft("t7", { text: "", images: [] }));
 
 test("the transcript opens at the end and renders messages, tools and working status", async () => {
   const rows: FeedRow[] = transcript.trim().split("\n").map((line) => JSON.parse(line));
