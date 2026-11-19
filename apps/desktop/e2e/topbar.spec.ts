@@ -14,6 +14,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
     CONTR_TERMINAL: "t7",
     CONTR_HC: path.join(e2e, "fake-hc.mjs"),
     FAKE_HC_AGENTS: "1",
+    FAKE_HC_CONNECT: "1",
     CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
     CONTR_GIT: path.join(e2e, "fake-git.mjs"),
   });
@@ -44,6 +45,13 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   // The Chat / Terminal switch still works.
   const sw = page.getByRole("radiogroup", { name: "Chat or Terminal" });
   await sw.getByRole("radio", { name: "Terminal" }).click();
+  await expect(sw.getByRole("radio", { name: "Terminal" })).toBeChecked();
+  await expect(page.locator(".xterm-rows").getByText(/fake terminal t7/)).toBeVisible();
+  await page.locator(".xterm-helper-textarea").focus();
+  await page.keyboard.press("Control+Tab");
+  await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Install health check");
+  await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
+  await page.keyboard.press("Control+Shift+Tab");
   await expect(sw.getByRole("radio", { name: "Terminal" })).toBeChecked();
   await sw.getByRole("radio", { name: "Chat" }).click();
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();

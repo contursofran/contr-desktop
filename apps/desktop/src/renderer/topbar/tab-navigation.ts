@@ -1,5 +1,15 @@
-import { registerShortcut } from "@ui-sdk/react/shortcuts";
+import { matchesShortcut } from "@ui-sdk/core";
+import { registerShortcut, shortcuts } from "@ui-sdk/react/shortcuts";
 import { useEffect, useRef, type WheelEvent as ReactWheelEvent } from "react";
+
+const SWITCH_TAB = "Switch tab";
+
+/** Let the app handle a tab chord ahead of xterm only when it has a target. */
+export function isActiveTabShortcut(event: KeyboardEvent): boolean {
+  if (!event.ctrlKey && !event.metaKey && !event.altKey) return false;
+  const mac = window.contr.platform === "darwin";
+  return shortcuts.list().some(({ keys, description }) => description === SWITCH_TAB && matchesShortcut(event, keys, mac));
+}
 
 function adjacentTab(tabs: string[], selected: string, step: -1 | 1): string | undefined {
   const index = tabs.indexOf(selected);
@@ -26,7 +36,7 @@ export function useTabNavigation(tabs: string[], selected: string, select: (tab:
       tabs.slice(0, 9).forEach((tab, index) => bindings.push([`${mac ? "meta" : "ctrl"}+${index + 1}`, tab]));
     }
     const off = bindings.flatMap(([key, tab]) =>
-      tab && tab !== selected ? [registerShortcut(key, () => select(tab))] : [],
+      tab && tab !== selected ? [registerShortcut(key, () => select(tab), { description: SWITCH_TAB })] : [],
     );
     return () => off.forEach((remove) => remove());
   }, [tabs, selected, select, mac]);
