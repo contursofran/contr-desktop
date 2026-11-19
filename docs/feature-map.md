@@ -110,6 +110,7 @@ When the code changes a feature, update its row in the same PR.
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
 | Terminal view | Clicks Terminal | Click | `radio "Terminal"` | The agent's hc terminal (xterm.js) with no frame, in JetBrains Mono 13/20; keys go to it | `terminal`, `fake-terminal`, `TerminalError.browser.test.tsx`, `terminal-error` |
+| Terminal resize and renderer recovery | Resizes the work area or loses the WebGL context | Window resize | `data-testid="terminal"` | The first fit and each changed grid size reach hc, including the final size. If WebGL cannot start or its context is lost, xterm displays output in the DOM. After context loss it stays on the DOM renderer until the window reloads. | `TerminalResize.browser.test.tsx`, `terminal` |
 | Terminal error | Opens Terminal when hc cannot attach | `FAKE_HC_CONNECT=1 FAKE_HC_DOWN=<a file that exists>` | `alert "Terminal error"`, `button "Retry"` | One centered note with no box: "The connection to hc ended.", hc's words in mono, Retry; Retry attaches when the file is gone; when the sidebar's "hc is not reachable" clears, the terminal attaches again with no Retry; `FAKE_HC_CONNECT=bad-hello` shows a plain note | `TerminalError.browser.test.tsx`, `terminal-error`, `hc-outage` |
 
 ## Inbox

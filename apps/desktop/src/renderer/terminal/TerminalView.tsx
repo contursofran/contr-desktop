@@ -5,8 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { useColorScheme } from "../chat/markdown/useColorScheme";
 import type { Sidebar } from "../../shared/api";
 import { terminalProblem } from "./problem";
+import { createResizeScheduler } from "./resize-scheduler";
 import { TerminalNotice } from "./TerminalNotice";
 import { terminalTheme } from "./theme";
+import { loadTerminalWebgl } from "./webgl";
 
 // The design's terminal type: JetBrains Mono (`--font-mono`, bundled) 13/20.
 const MONO = '"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace';
@@ -67,13 +69,17 @@ export function TerminalView() {
     attach();
     term.onData((d) => api.input(d));
     term.onResize(({ cols, rows }) => api.resize(cols, rows));
-    const ro = new ResizeObserver(() => fit.fit());
+    const resize = createResizeScheduler(() => fit.fit());
+    const ro = new ResizeObserver(resize.schedule);
     ro.observe(el);
+    const offWebgl = api.webgl === false ? undefined : loadTerminalWebgl(term);
     term.focus();
     return () => {
       offData();
       offEnd();
       ro.disconnect();
+      resize.cancel();
+      offWebgl?.();
       term.dispose();
       shown.current = null;
     };

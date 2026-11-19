@@ -249,6 +249,8 @@ export type RefState =
 
 /** The Terminal side: the agent's hc terminal. */
 export interface TerminalApi {
+  /** False in hidden Electron tests, which read the DOM rows. */
+  webgl?: boolean;
   /** Attaches at this size. Returns the terminal, or an error to show. */
   attach(cols: number, rows: number): Promise<{ terminal?: string; error?: string }>;
   /** Keys and paste, as the terminal's bytes. */
