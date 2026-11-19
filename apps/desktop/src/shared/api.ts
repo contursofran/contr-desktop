@@ -67,8 +67,10 @@ export interface ContrApi {
   board(issues: number[]): Promise<Board>;
   /** The `contr-digest` counts: gh (merges, failed checks) and the orchestration tool (workers, owner items). */
   digest(): Promise<Digest>;
-  /** Model, effort, context and the menu's choices, from the helper (`model`, `status`, `commands`). */
+  /** Model, effort, speed tier, context, output speed and menu choices from the helper. */
   replyInfo(): Promise<ReplyInfo>;
+  /** Sets the speed tier of the active chat through the helper's `tier` command. */
+  setTier(terminal: string, tier: SpeedTier): Promise<{ ok: boolean; message?: string }>;
   /** The branch in the agent's cwd (`git branch --show-current`). null: not known. */
   branch(): Promise<string | null>;
   /** The Projects list and the selected agent. */
@@ -136,6 +138,8 @@ export type TabTitle = { title: string } | { gone: true } | { error: string };
 /** An agent row. An orchestrator has workers (hc `parent`). `name` is the worker's name, else hc's name. */
 export interface SidebarAgent {
   terminal: string;
+  /** The agent's session folder, when available. */
+  cwd?: string;
   title: string;
   name: string | null;
   state: WorkerState;
@@ -232,10 +236,16 @@ export interface Digest {
 }
 
 /** The reply box's data. A part the helper does not know is null (or empty). */
+export type SpeedTier = "standard" | "fast" | "ultrafast";
+export type AcceleratedTier = Exclude<SpeedTier, "standard">;
+
 export interface ReplyInfo {
   agent: string | null;
   model: string | null;
   effort: string | null;
+  tier: string | null;
+  tiers: AcceleratedTier[];
+  speed: string | null;
   context: { percent: number; text: string; warn: boolean } | null;
   models: { value: string; label: string }[];
   efforts: { value: string; label: string }[];
@@ -254,8 +264,15 @@ export type RefState =
   | { kind: "pr"; state: "open" | "draft" | "merged" | "closed"; url: string; checks?: CheckCounts }
   | { kind: "issue"; state: "open" | "closed" | "not-planned"; url: string };
 
+export type TerminalKind = "claude" | "codex" | "shell";
+export type TerminalStart = { terminal: string } | { error: string };
+
 /** The Terminal side: the agent's hc terminal. */
 export interface TerminalApi {
+  /** False in hidden Electron tests, which read the DOM rows. */
+  webgl?: boolean;
+  /** Starts a terminal in hc, with no parent. null uses the home folder. */
+  start?(kind: TerminalKind, cwd: string | null): Promise<TerminalStart>;
   /** Attaches at this size. Returns the terminal, or an error to show. */
   attach(cols: number, rows: number): Promise<{ terminal?: string; error?: string }>;
   /** Keys and paste, as the terminal's bytes. */
@@ -280,6 +297,7 @@ export const ANSWER_CHANNEL = "contr:answer";
 export const BOARD_CHANNEL = "contr:board";
 export const DIGEST_CHANNEL = "contr:digest";
 export const REPLY_INFO_CHANNEL = "contr:reply-info";
+export const SET_TIER_CHANNEL = "contr:set-tier";
 export const BRANCH_CHANNEL = "contr:branch";
 export const SIDEBAR_CHANNEL = "contr:sidebar";
 export const SIDEBAR_EVENT = "contr:sidebar-event";

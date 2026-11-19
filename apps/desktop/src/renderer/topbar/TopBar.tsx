@@ -1,6 +1,8 @@
-import { PanelLeft, Plus, Sparkle, X } from "lucide-react";
+import { Tabs, TabsList, TabsTab } from "@ui-sdk/react/tabs";
+import { PanelLeft, Sparkle, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import type { Sidebar, SidebarAgent } from "../../shared/api";
+import type { Sidebar, SidebarAgent, TerminalKind } from "../../shared/api";
+import { AddTabMenu } from "./AddTabMenu";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
 import { Tip } from "../ui/Tip";
 import { AgentIcon } from "../ui/AgentIcon";
@@ -52,7 +54,7 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
 
 /**
  * The tab bar (docs/design/redesign/chat-screen.html): the drag area of the hidden title bar, on the window fill.
- * Herdr's normal tab bar (its `tabs` mod): tabs from the left, then an inert + (new tab comes later).
+ * Herdr's normal tab bar (its `tabs` mod): tabs from the left, then + for a new terminal.
  * Drag a tab, or press Alt with Left, Right, Home or End on it, to move it (tab-order.ts).
  * The redesign (#180): an agent's tab has its program icon (ui/AgentIcon, Claude's pet in `--claude`),
  * then the title, then the status glyph while it works or needs the owner, or a 6 px dot in `done` while unread.
@@ -66,13 +68,15 @@ export function scrollToShow(row: { width: number; scroll: number }, item: { lef
  * With the sidebar hidden (`onShowSidebar`), the bar starts with the "Show sidebar" toggle, and on macOS it pads 76 px
  * at the left for the window buttons, as Herdr's bar and the sidebar head do.
  */
-export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onShowSidebar }: {
+export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onStart, starting, onShowSidebar }: {
   data: Sidebar;
   tabs: string[];
   titles: Record<string, string>;
   onSelect: (terminal: string) => void;
   onClose: (terminal: string) => void;
   onReorder: (tabs: string[]) => void;
+  onStart: (kind: TerminalKind) => void;
+  starting: boolean;
   onShowSidebar?: () => void;
 }) {
   const row = useRef<HTMLDivElement>(null);
@@ -92,7 +96,13 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
   }, [data.selected, tabs, titles]);
   const mac = window.contr.platform === "darwin";
   return (
-    <div className={`flex h-10 shrink-0 items-center gap-0.5 border-b border-hairline bg-canvas pr-2.5 [-webkit-app-region:drag] ${onShowSidebar && mac ? "pl-[76px]" : "pl-2.5"}`}>
+    <Tabs
+      value={data.selected || null}
+      activation="manual"
+      onValueChange={(terminal, details) => {
+        if (terminal && details.reason === "item-press") onSelect(terminal);
+      }}
+      className={`flex h-10 shrink-0 items-center gap-0.5 border-b border-hairline bg-canvas pr-2.5 [-webkit-app-region:drag] ${onShowSidebar && mac ? "pl-[76px]" : "pl-2.5"}`}>
       {onShowSidebar && (
         <Tip label="Show sidebar">
           <button type="button" aria-label="Show sidebar" onClick={onShowSidebar} className="flex size-[26px] shrink-0 items-center justify-center rounded-lg text-dim hover:bg-hover hover:text-muted [-webkit-app-region:no-drag]">
@@ -100,44 +110,43 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSho
           </button>
         </Tip>
       )}
-      <TabOrderRoot value={tabs} onValueChange={(order) => onReorder(order)} aria-label="Tabs" className="flex min-w-0 items-center self-stretch gap-0.5 [-webkit-app-region:no-drag]">
-        {(state) => (
-          <>
-            <div ref={row} data-tab-row className="flex min-w-0 items-center self-stretch gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border">
-              {state.order.map((t) => {
-              const shown = t === data.selected;
-              const title = tabLabel(data, t, titles);
-              const agent = findAgent(data, t);
-              return (
-                <TabOrderItem key={t} value={t} className={`flex h-7 max-w-[min(100%,var(--tab-max-width))] shrink-0 touch-none select-none items-center gap-2 rounded-lg px-2.5 text-[12.5px] data-grabbed:w-0.5 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:shadow-none data-grabbed:*:hidden ${shown ? "bg-chrome text-ink-100 shadow-[inset_0_0_0_1px_var(--panel-line)]" : "text-dim hover:bg-hover hover:text-muted"}`}>
-                  <Tip label={title}>
-                    <button type="button" role="tab" aria-selected={shown} onClick={() => onSelect(t)} className="flex min-w-0 items-center gap-2">
-                      {agent ? <AgentIcon kind={agent.kind} size={15} color="var(--color-muted)" /> : <Sparkle aria-hidden className="size-3.5 shrink-0" />}
-                      <span data-title className="truncate">{title}</span>
-                    </button>
-                  </Tip>
-                  {agent?.state === "working" && <StatusGlyph state="working" small />}
-                  {agent?.state === "blocked" && <StatusGlyph state="blocked" small />}
-                  {agent?.state === "done" && <span role="img" aria-label="done" data-state="done" className="size-1.5 shrink-0 rounded-full bg-done" />}
-                  {shown && (
-                    <button type="button" data-tab-close aria-label={`Close ${title}`} onClick={() => onClose(t)} className="flex text-dim hover:text-foreground">
-                      <X aria-hidden strokeWidth={1.8} className="size-2.5" />
-                    </button>
-                  )}
-                </TabOrderItem>
-              );
-            })}
-            </div>
-            <Tip label="New tab (not yet)">
-              <button type="button" aria-label="New tab" aria-disabled="true" className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-faint">
-                <Plus aria-hidden className="size-3.5" />
-              </button>
-            </Tip>
-          </>
-        )}
-      </TabOrderRoot>
+      <div className="flex min-w-0 items-center self-stretch gap-0.5 [-webkit-app-region:no-drag]">
+        <TabOrderRoot
+          ref={row}
+          value={tabs}
+          onValueChange={onReorder}
+          render={(props) => (
+            <TabsList {...props} aria-label="Tabs" data-tab-row className="flex min-w-0 items-center self-stretch gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:h-[3px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border" />
+          )}
+        >
+          {({ order }) => order.map((t) => {
+            const shown = t === data.selected;
+            const title = tabLabel(data, t, titles);
+            const agent = findAgent(data, t);
+            return (
+              <TabOrderItem key={t} value={t} className={`flex h-7 max-w-[min(100%,var(--tab-max-width))] shrink-0 touch-none select-none items-center gap-2 rounded-lg px-2.5 text-[12.5px] data-grabbed:w-0.5 data-grabbed:px-0 data-grabbed:self-stretch data-grabbed:h-auto data-grabbed:my-1 data-grabbed:bg-working data-grabbed:shadow-none data-grabbed:*:hidden ${shown ? "bg-chrome text-ink-100 shadow-[inset_0_0_0_1px_var(--panel-line)]" : "text-dim hover:bg-hover hover:text-muted"}`}>
+                <Tip label={title}>
+                  <TabsTab value={t} className="flex min-w-0 items-center gap-2">
+                    {agent ? <AgentIcon kind={agent.kind} size={15} color="var(--color-muted)" /> : <Sparkle aria-hidden className="size-3.5 shrink-0" />}
+                    <span data-title className="truncate">{title}</span>
+                  </TabsTab>
+                </Tip>
+                {agent?.state === "working" && <StatusGlyph state="working" small />}
+                {agent?.state === "blocked" && <StatusGlyph state="blocked" small />}
+                {agent?.state === "done" && <span role="img" aria-label="done" data-state="done" className="size-1.5 shrink-0 rounded-full bg-done" />}
+                {shown && (
+                  <button type="button" data-tab-close aria-label={`Close ${title}`} onClick={() => onClose(t)} className="flex text-dim hover:text-foreground">
+                    <X aria-hidden strokeWidth={1.8} className="size-2.5" />
+                  </button>
+                )}
+              </TabOrderItem>
+            );
+          })}
+        </TabOrderRoot>
+        <AddTabMenu onStart={onStart} starting={starting} />
+      </div>
       <div className="flex-1" />
-    </div>
+    </Tabs>
   );
 }
 

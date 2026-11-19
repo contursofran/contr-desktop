@@ -28,13 +28,13 @@ test("the Terminal side connects through the hc that CONTR_HC names, never the h
   });
   const page = await app.firstWindow();
   await expect(chatList(page).locator('[data-row-id="a6"]')).toBeVisible();
-  const sw = page.getByRole("group", { name: "Chat or Terminal" });
-  await sw.getByRole("button", { name: "Terminal" }).click();
+  const sw = page.getByRole("radiogroup", { name: "Chat or Terminal" });
+  await sw.getByRole("radio", { name: "Terminal" }).click();
   await expect(page.getByTestId("terminal")).toBeVisible();
   await expect.poll(() => (existsSync(log) ? readFileSync(log, "utf8").split("\n") : [])).toContain("connect --session cde-none");
   expect(existsSync(pathLog) ? readFileSync(pathLog, "utf8") : "").toBe("");
 
-  await sw.getByRole("button", { name: "Chat" }).click();
+  await sw.getByRole("radio", { name: "Chat" }).click();
   await expect(page.getByTestId("terminal")).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
   await app.close();

@@ -1,9 +1,10 @@
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { OwnerQuestion, OwnerResult, OwnerTodo } from "../../shared/api";
-import { CardText, keyMark, keyRange, KeysLine, OptionLabel, optionRow, ownField, primaryButton, useKeys } from "../chat/card/Card";
+import type { OwnerQuestion, OwnerTodo } from "../../shared/api";
+import { CardText, primaryButton } from "../chat/card/Card";
 import { ChatMarkdown } from "../chat/markdown/ChatMarkdown";
 import { splitTodo } from "../chat/owner/blocks";
+import { OwnerQuestionAnswers, useOwnerRun } from "../chat/owner/OwnerQuestionAnswers";
 import { RefChip } from "../chat/refs/RefChip";
 import { StatusGlyph } from "../ui/StatusGlyph";
 
@@ -29,86 +30,30 @@ function OpenRow({ label, item, glyph, id, sub, children }: { label: string; ite
   );
 }
 
-/** Runs an owner action: a failed run keeps the item with the tool's message; a saved-not-reached note goes up. */
-function useRun(onSaved: (n: string) => void) {
-  const [off, setOff] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const go = async (call: () => Promise<OwnerResult>) => {
-    if (off) return;
-    setOff(true);
-    const r = await call();
-    if (!r.ok) {
-      setError(r.note);
-      setOff(false);
-    } else if (r.note) onSaved(r.note);
-  };
-  return { off, error, go };
-}
-
 const ErrorLine = ({ text }: { text: string | null }) => (text ? <p role="alert" className="px-3 pt-1 text-xs text-error">{text}</p> : null);
 
-/**
- * An open question. The recommended answer (else the first) is picked while no own answer is typed: Enter and
- * "Send answer" send it. A press or a digit sends that answer at once.
- */
 export function OpenQuestion({ q, sub, onSaved }: { q: OwnerQuestion; sub: string; onSaved: (n: string) => void }) {
-  const { off, error, go } = useRun(onSaved);
-  const [other, setOther] = useState("");
-  const otherRef = useRef<HTMLInputElement>(null);
-  const picked = other.trim() ? -1 : Math.max(0, q.options.findIndex((o) => o.recommended));
-  const answer = other.trim() || q.options[picked]?.label || "";
-  const send = (a: string) => a && void go(() => window.contr.ownerAnswer(q.id, a));
-  useKeys((k) => {
-    const n = Number(k);
-    if (n >= 1 && n <= q.options.length) send(q.options[n - 1]!.label);
-    else if (n === q.options.length + 1) otherRef.current?.focus();
-    else if (k === "Enter") send(answer);
-  });
   return (
     <OpenRow label="Owner question" item={q.id} glyph="blocked" id={q.id} sub={sub}>
       <CardText>{q.question}</CardText>
-      <div className="mt-1.5 flex flex-col">
-        {q.options.map((o, i) => (
-          <button key={o.label} type="button" disabled={off} aria-pressed={i === picked} onClick={() => send(o.label)} className={`${optionRow} ${i === picked ? "bg-hover" : ""}`}>
-            <span className={keyMark}>{i + 1}</span>
-            <span className="flex flex-col">
-              <OptionLabel label={o.label} recommended={o.recommended} />
-              {o.impact && <span className="mt-0.5 text-xs leading-[17px] text-dim">{o.impact}</span>}
-            </span>
-          </button>
-        ))}
-      </div>
-      {q.refs.length > 0 && (
-        <p className="flex flex-wrap items-center gap-2 px-3 pt-1.5 pb-0.5 text-xs text-dim">
-          <span>Refs</span>
-          {q.refs.map((r) => {
-            const n = /^#(\d+)$/.exec(r)?.[1];
-            return n ? <RefChip key={r} number={Number(n)}>{r}</RefChip> : <span key={r} className="font-mono text-[11px] text-muted">{r}</span>;
-          })}
-        </p>
-      )}
-      <ErrorLine text={error} />
-      <div className="flex items-center gap-3 pt-1.5">
-        <input
-          ref={otherRef}
-          aria-label="Own answer"
-          placeholder="Or type an answer"
-          disabled={off}
-          value={other}
-          onChange={(e) => setOther(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(answer); } }}
-          className={ownField}
-        />
-        <KeysLine text={`${keyRange(q.options.length)} pick  ⏎ send`} />
-        <button type="button" disabled={off || !answer} onClick={() => send(answer)} className={primaryButton}>Send answer</button>
-      </div>
+      <OwnerQuestionAnswers q={q} onSaved={onSaved} errorColor="text-error">
+        {q.refs.length > 0 && (
+          <p className="flex flex-wrap items-center gap-2 px-3 pt-1.5 pb-0.5 text-xs text-dim">
+            <span>Refs</span>
+            {q.refs.map((r) => {
+              const n = /^#(\d+)$/.exec(r)?.[1];
+              return n ? <RefChip key={r} number={Number(n)}>{r}</RefChip> : <span key={r} className="font-mono text-[11px] text-muted">{r}</span>;
+            })}
+          </p>
+        )}
+      </OwnerQuestionAnswers>
     </OpenRow>
   );
 }
 
 /** An open to-do: its text, each command with a Copy button, then Done. */
 export function OpenTodo({ t, sub, onSaved }: { t: OwnerTodo; sub: string; onSaved: (n: string) => void }) {
-  const { off, error, go } = useRun(onSaved);
+  const { off, error, go } = useOwnerRun(onSaved);
   const [copied, setCopied] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);

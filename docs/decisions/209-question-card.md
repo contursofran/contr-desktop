@@ -5,8 +5,8 @@
 - The card has the reply box's fill and line (`--side` as `bg-chrome`, `--input-line`) and no shadow,
   so it is part of the window (owner, 2026-11-17).
 - The head has the red status glyph: the card needs the owner. Red is used only for that.
-- Pick-any shows check boxes in place of the key numbers. The button's `aria-pressed` gives the state;
-  the box is hidden from screen readers.
+- Pick-any shows check boxes in place of the key numbers. Since #256, UI SDK gives each option
+  its checkbox role and checked state.
 - The head of an agent's card names the shown agent (name in mono, title) and the card's age, from the app's own
   data, then the source's text (#231 undoes "only the source's text" for the head).
 - The card shows only text that the source gives: "recommended" only where the source marks it, no

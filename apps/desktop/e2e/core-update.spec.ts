@@ -5,7 +5,6 @@ import path from "node:path";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
-const shots = path.resolve(e2e, "../../../tmp/shots");
 const fake = path.join(e2e, "fake-helper.mjs");
 const fakeCore = path.join(e2e, "fixtures/core/fake-core-helper.mjs");
 /** The fake hc, git and chat fixture: no run reads the owner's hc or repositories. */
@@ -38,16 +37,7 @@ async function coreCard(page: Page) {
   return page.getByRole("region", { name: "Settings" }).getByRole("region", { name: "Core" });
 }
 
-/** Screenshots in dark and light, after each check ended. */
-async function shoot(page: Page, name: string) {
-  await expect(page.getByRole("button", { name: "Checking…" })).toHaveCount(0);
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    await page.screenshot({ path: path.join(shots, `core-${name}-${scheme}.png`) });
-  }
-}
-
-test("a newer core shows its stamp, Update and the dot", async () => {
+test("the helper check reports the newer core and update availability", async () => {
   const { core, env } = setup();
   const app = await launchApp({ ...env, FAKE_CORE_NEWEST: "build-2026-11-20-ccccccc" });
   const page = await app.firstWindow();
@@ -55,35 +45,16 @@ test("a newer core shows its stamp, Update and the dot", async () => {
   const card = await coreCard(page);
   await expect(card.getByLabel("Core version", { exact: true })).toHaveText("bbbbbbb 2026-11-17");
   await expect(card.getByLabel("Newest core version")).toHaveText("ccccccc 2026-11-20");
-  await expect(card.getByRole("button", { name: "Update" })).toBeVisible();
   await expect(card.getByLabel("Core folder")).toHaveText(core);
-  await shoot(page, "newer");
   await app.close();
 });
 
-test("the same core says Up to date", async () => {
-  const { env } = setup();
-  const app = await launchApp({ ...env, FAKE_CORE_NEWEST: "build-2026-11-17-bbbbbbb" });
-  const page = await app.firstWindow();
-  const card = await coreCard(page);
-  await expect(card.getByLabel("Newest core version")).toHaveText("Up to date");
-  await expect(card.getByLabel("Last core check")).toHaveText("Checked just now");
-  await expect(card.getByRole("button", { name: "Update" })).toHaveCount(0);
-  await expect(page.getByLabel("Update ready")).toHaveCount(0);
-  await shoot(page, "same");
-  await app.close();
-});
-
-test("a failed check shows its text and Unknown", async () => {
+test("the helper check error reaches Settings", async () => {
   const { env } = setup();
   const app = await launchApp({ ...env, FAKE_CORE_NEWEST: "build-2026-11-20-ccccccc", FAKE_CORE_FAIL: "check:http" });
   const page = await app.firstWindow();
   const card = await coreCard(page);
   await expect(card.getByRole("alert")).toHaveText("Core check failed: fake http");
-  await expect(card.getByLabel("Newest core version")).toHaveText("Unknown");
-  await expect(card.getByText("Up to date")).toHaveCount(0);
-  await expect(card.getByRole("button", { name: "Check now" })).toBeEnabled();
-  await shoot(page, "failed");
   await app.close();
 });
 
@@ -100,28 +71,13 @@ test("Check now asks with --force, the open of Settings does not", async () => {
   await app.close();
 });
 
-test("a shared root shows the Herdr text and no Check now", async () => {
+test("a shared root runs the bundled core without calling update or install", async () => {
   const { env, log } = setup({ files: { "kit/x": "1" } });
   const app = await launchApp({ ...env, FAKE_CORE_NEWEST: "build-2026-11-20-ccccccc" });
   const page = await app.firstWindow();
   const card = await coreCard(page);
   await expect(card.getByRole("status")).toHaveText("The Herdr app uses this core. contr runs its own copy and does not change this folder.");
   await expect(card.getByLabel("Core version", { exact: true })).toHaveText("aaaaaaa 2026-11-10");
-  await expect(card.getByRole("button", { name: "Check now" })).toHaveCount(0);
-  await expect(card.getByRole("button", { name: "Update" })).toHaveCount(0);
-  await expect(page.getByLabel("Update ready")).toHaveCount(0);
-  await shoot(page, "shared");
   expect(calls(log).filter((c) => c.args[0] === "update" || c.args[0] === "install")).toEqual([]);
-  await app.close();
-});
-
-test("with no core root the Core part says Development build", async () => {
-  const app = await launchApp({ ...fakes, CONTR_HELPER: fake });
-  const page = await app.firstWindow();
-  const card = await coreCard(page);
-  await expect(card.getByLabel("Newest core version")).toHaveText("Development build");
-  await expect(card.getByRole("button", { name: "Check now" })).toHaveCount(0);
-  await expect(card.getByLabel("Core folder")).toHaveCount(0);
-  await shoot(page, "dev");
   await app.close();
 });

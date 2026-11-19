@@ -64,7 +64,7 @@ export function buildProjects({ hc, orch, titles, folders, projectOf }: ListInpu
   const terms = parseList<HcTerminal>(hc, "terminals").filter((t) => isLiveAgent(t) || parents.has(t.address as string));
   const named = new Map<string, OrchAgent>();
   for (const a of parseList<OrchAgent>(orch)) if (str(a.address)) named.set(a.address as string, a);
-  const agents = new Map<string, SidebarAgent & { parent: string | null; cwd: string; agent: boolean }>();
+  const agents = new Map<string, SidebarAgent & { parent: string | null; agent: boolean; cwd: string }>();
   for (const t of terms) {
     const address = t.address as string;
     const o = named.get(address);
@@ -94,8 +94,8 @@ export function buildProjects({ hc, orch, titles, folders, projectOf }: ListInpu
       if (!cwds.has(p)) cwds.set(p, a.cwd);
     }
   }
-  const clean = (a: SidebarAgent & { parent?: unknown; cwd?: unknown; agent?: unknown }): SidebarAgent => ({
-    terminal: a.terminal, title: a.title, name: a.name, state: a.state, kind: a.kind, issue: a.issue, workers: a.workers.map(clean),
+  const clean = (a: SidebarAgent): SidebarAgent => ({
+    terminal: a.terminal, cwd: a.cwd, title: a.title, name: a.name, state: a.state, kind: a.kind, issue: a.issue, workers: a.workers.map(clean),
   });
   return [...projects].map(([name, list]) => ({ name, agents: list.map(clean), cwd: cwds.get(name) ?? "", branch: null, ahead: 0, behind: 0, favicon: null }));
 }
@@ -131,11 +131,12 @@ export async function run(program: string, args: string[], cwd?: string): Promis
   return (await runRead(program, args, cwd)).out;
 }
 
-/** Runs a program read-only (10 s at most) and gives its stdout and why it failed: stderr, else the error message. `error` is null when it exited 0. */
+/** Runs a program (10 s at most) and gives its stdout and why it failed: stderr, else the error message. `error` is null when it exited 0. */
 export function runRead(program: string, args: string[], cwd?: string): Promise<{ out: string; error: string | null }> {
   return new Promise((resolve) => {
-    execFile(program, args, { cwd, timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (e, stdout, stderr) =>
+    const child = execFile(program, args, { cwd, timeout: 10_000, maxBuffer: 8 * 1024 * 1024 }, (e, stdout, stderr) =>
       resolve({ out: String(stdout ?? ""), error: e ? (e.killed ? "no answer in 10 s" : String(stderr ?? "").trim() || e.message) : null }),
     );
+    child.stdin?.on("error", () => undefined);
   });
 }

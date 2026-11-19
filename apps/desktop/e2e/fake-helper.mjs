@@ -11,6 +11,10 @@
 // `done` with FAKE_HELPER_ANSWER_RESULT (default `sent`).
 // `model`, `status` and `commands` give fixed lines for the reply box; FAKE_HELPER_MODEL=none gives no model;
 // FAKE_HELPER_CONTEXT=<percent> sets the context (default 37), with `warn` at 80 or more.
+// FAKE_HELPER_SPEED=<text> adds a measured speed tag.
+// FAKE_HELPER_TIERS=fast,ultrafast gives Opus these choices. FAKE_HELPER_TIER sets the observed tier.
+// FAKE_HELPER_TIER_ERROR=<code> makes the switch fail. The observed tier stays as it was, as it can
+// in Claude Code. Write the new observed tier to FAKE_HELPER_TIER_ACK to simulate a new answer.
 // `usage` gives Claude and Codex plans that reset some hours and days from now.
 // FAKE_HELPER_CALL_LOG=<file>: each call appends its arguments as one JSON list.
 // FAKE_HELPER_ERROR=<code> makes every command answer with that error.
@@ -41,6 +45,10 @@ if (process.env.FAKE_HELPER_CALL_LOG) appendFileSync(process.env.FAKE_HELPER_CAL
 const arg = (name) => {
   const i = rest.indexOf(`--${name}`);
   return i >= 0 ? rest[i + 1] : undefined;
+};
+const observedTier = () => {
+  const ack = process.env.FAKE_HELPER_TIER_ACK;
+  return ack && existsSync(ack) ? readFileSync(ack, "utf8") : process.env.FAKE_HELPER_TIER ?? null;
 };
 if (process.env.FAKE_CORE_LOG) appendFileSync(process.env.FAKE_CORE_LOG, `${JSON.stringify({ args: process.argv.slice(2), home: process.env.CONTR_HOME ?? null })}\n`);
 if (cmd === "install") {
@@ -117,10 +125,11 @@ if (failing) {
   const now = Math.floor(Date.now() / 1000);
   const h = (n) => now + n * 3600 + 600;
   // FAKE_HELPER_USAGE=stale: Claude read 2 days ago with each window past its reset; Codex with its own kinds.
+  // Keep both read ages ten minutes past the unit boundary.
   const plans = process.env.FAKE_HELPER_USAGE === "stale"
     ? [
-        { plan: "claude", read_at: now - 2 * 86_400, windows: [{ kind: "five_hour", used_percent: 12, resets_at: h(-40) }, { kind: "seven_day", used_percent: 17, resets_at: h(-1) }] },
-        { plan: "codex", read_at: now - 2 * 3600, windows: [{ kind: "primary", used_percent: 8, resets_at: h(3) }, { kind: "secondary", used_percent: 33.2, resets_at: h(100) }] },
+        { plan: "claude", read_at: now - 2 * 86_400 - 600, windows: [{ kind: "five_hour", used_percent: 12, resets_at: h(-40) }, { kind: "seven_day", used_percent: 17, resets_at: h(-1) }] },
+        { plan: "codex", read_at: now - 2 * 3600 - 600, windows: [{ kind: "primary", used_percent: 8, resets_at: h(3) }, { kind: "secondary", used_percent: 33.2, resets_at: h(100) }] },
       ]
     : [
         { plan: "claude", read_at: now, windows: [{ kind: "five_hour", used_percent: 38.4, resets_at: h(2) }, { kind: "seven_day", used_percent: 64.2, resets_at: h(96) }] },
@@ -147,17 +156,27 @@ if (failing) {
   end(true);
 } else if (cmd === "model") {
   const none = process.env.FAKE_HELPER_MODEL === "none";
-  out({ type: "model", agent: "claude", model: none ? null : (worker?.model ?? "claude-opus-5-5"), effort: none ? null : (worker?.effort ?? "medium") });
+  out({ type: "model", agent: "claude", model: none ? null : (worker?.model ?? "claude-opus-5-5"), effort: none ? null : (worker?.effort ?? "medium"), tier: none ? null : observedTier() });
   end(true);
 } else if (cmd === "status") {
   const percent = worker?.context ?? Number(process.env.FAKE_HELPER_CONTEXT ?? 37);
-  out({ type: "status", agent: "claude", source: "statusline", tags: [{ kind: "context", percent, text: `ctx ${percent}%`, warn: percent >= 80 }] });
+  const tags = [{ kind: "context", percent, text: `ctx ${percent}%`, warn: percent >= 80 }];
+  if (process.env.FAKE_HELPER_SPEED) tags.push({ kind: "speed", text: process.env.FAKE_HELPER_SPEED, warn: false });
+  const tier = observedTier();
+  if (tier === "fast" || tier === "ultrafast") tags.push({ kind: "tier", text: tier, warn: false });
+  out({ type: "status", agent: "claude", source: "statusline", tags });
   end(true);
 } else if (cmd === "commands") {
   const models = [{ value: "claude-opus-5-5", label: "Opus 5.5" }, { value: "claude-sonnet-5", label: "Sonnet 5" }];
+  if (process.env.FAKE_HELPER_TIERS) models[0].tiers = process.env.FAKE_HELPER_TIERS.split(",");
   const efforts = ["low", "medium", "high"];
   out({ type: "commands", agent: "claude", commands: [{ name: "model", args: models }, { name: "effort", args: efforts }] });
   end(true);
+} else if (cmd === "tier") {
+  const code = process.env.FAKE_HELPER_TIER_ERROR;
+  if (code) out({ type: "error", code, message: "This agent cannot switch speed tiers." });
+  else out({ type: "done", result: arg("tier") === observedTier() ? "unchanged" : "sent" });
+  end(!code);
 } else if (cmd === "send") {
   appendFileSync(process.env.FAKE_HELPER_SEND_LOG, `${JSON.stringify({ terminal: arg("terminal"), text: arg("text") })}\n`);
   out({ type: "done" });

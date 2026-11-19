@@ -4,6 +4,28 @@ contr-desktop is contr as an Electron + TypeScript app. It shows coding
 agents as chats, answers their prompts with cards, keeps one inbox for the
 owner, and shows each orchestrator with its workers.
 
+## Orchestration
+
+When the owner asks you to orchestrate work, use the [contr orchestration
+playbook](https://github.com/contursofran/contr-core/blob/main/kit/commands/orchestrate.md).
+Check that `HC_TERMINAL_ID` identifies the current coordinator. It can be
+set when `HERDR_ENV` is unset. Herdr-core uses `HC_SOCKET` or `HC_SESSION`
+to select the session, with the default session when both are unset.
+
+1. Read the flow with `herdr-contr-orch agents flow`. If the CLI is absent
+   from `PATH`, look in the installed contr app's `Contents/Resources/bin/`.
+2. Start workers with the contr MCP `spawn` tool or
+   `herdr-contr-orch agents spawn`. Keep the current terminal as their
+   parent.
+3. Check the result with the contr MCP `list` tool or
+   `herdr-contr-orch agents ls --json`. Each live worker's `parent` must
+   match `HC_TERMINAL_ID`. Use the contr tools to send work and get reports.
+
+If the coordinator or the contr tools are unavailable, report the blocker
+before you assign work. Codex subagents have no hc terminals and cannot
+appear in contr's sidebar. Use them for this workflow only if the owner
+explicitly requests them.
+
 ## Where it comes from (owner, 2026-11-16)
 
 - Three apps came before it: a Rust GPUI app, contr (Go + MyGo), and
@@ -58,6 +80,7 @@ parts; when the design has no answer, ask.
   `pnpm test` (unit) and `pnpm e2e` (Playwright on the Electron app, with
   the fake helper). `pnpm dev` runs the app with hot reload. The e2e
   screenshots go to `tmp/shots/`.
+- `pnpm test:browser` runs renderer tests in headless Chromium.
 - To run, drive and look at the app, use the `verify` skill
   (`.claude/skills/verify/SKILL.md`), not a new launch script;
   `docs/feature-map.md` lists each feature with its keys, selector,
@@ -96,10 +119,12 @@ parts; when the design has no answer, ask.
 
 ## Safety
 
-- The owner's Herdr app and hc core are live. Never start, stop, restart or
-  send input to the owner's `herdr-app` or hc core. Tests use a fake helper
-  and a fake hc; an e2e test that needs a real hc starts its own with a
-  scratch `HC_SESSION` and stops it after.
+- The owner's Herdr app and hc core are live. Never start, stop or restart
+  them. For orchestration requested by the owner, use the contr tools to
+  manage only the current coordinator's workers. Never send input to the
+  owner's other live terminals.
+- Tests use a fake helper and fake hc. An e2e test that needs real hc starts
+  its own with a scratch `HC_SESSION` and stops it after.
 - The e2e launcher (`apps/desktop/e2e/launch-env.ts`) gives each run a fake
   hc, helper, orchestration tool, git and gh by default. A program switch
   must name a file in the repository or the temp folder; only its

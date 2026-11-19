@@ -44,7 +44,7 @@ export const tabOrder = definePrimitive({
     };
   },
   slots: (slot) => ({
-    root: slot({ attrs: () => ({ role: "tablist" }), state: (state) => ({ order: state.moving?.order ?? state.value }) }),
+    root: slot({ state: (state) => ({ order: state.moving?.order ?? state.value }) }),
     item: slot<{ value: string }>({
       props: { value: "string" },
       attrs: (state, part) => ({ "data-grabbed": state.moving?.pointer && state.moving.keys.includes(part.key) ? "" : undefined }),

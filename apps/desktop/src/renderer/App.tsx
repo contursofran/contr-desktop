@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } from "@ui-sdk/react/segmented-control";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Card, cardShows } from "./chat/card/Card";
 import { OwnerCards, useAllOwnerItems, useOwnerItems } from "./chat/owner/OwnerCards";
 import { Inbox } from "./inbox/Inbox";
@@ -8,19 +9,22 @@ import { ChatList, ChatLoading } from "./chat/list/ChatList";
 import { Empty } from "./chat/Empty";
 import { HelperError } from "./chat/HelperError";
 import { ORCHESTRATE_COMMAND, StatusLine, orchestratingText, showsOrchestrate } from "./chat/rows/StatusLine";
+import type { DigestRead } from "./chat/blocks/digestRead";
 import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
+import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
 import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
-import type { Sidebar as SidebarData } from "../shared/api";
+import type { Sidebar as SidebarData, TerminalKind } from "../shared/api";
 
 const NO_ISSUES: number[] = [];
 
 /** The sidebar, the top bar and the selected agent's chat. A switch mounts the chat again: feed, title, reply box and terminal follow. */
 export function App() {
+  const [digestReads] = useState(() => new Map<string, Map<string, DigestRead>>());
   const [sidebar, setSidebar] = useState<SidebarData>({ projects: [], selected: "" });
   useEffect(() => {
     void window.contr.sidebar().then(setSidebar);
@@ -83,11 +87,17 @@ export function App() {
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
-  const select = (terminal: string) => {
+  const select = useCallback((terminal: string) => {
     setInbox(false);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
-  };
+  }, []);
+  const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
+  const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
+    if (kind === "shell") setSide("terminal");
+    select(terminalId);
+  }, [select]);
+  const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
   const close = (terminal: string) => {
     const next = nextAfterClose(tabs, terminal);
     setTabs((t) => t.filter((x) => x !== terminal));
@@ -100,9 +110,10 @@ export function App() {
     <div className="flex h-screen bg-canvas text-foreground">
       {!hidden && <Sidebar data={view} onSelect={select} inbox={owner.questions.length + owner.todos.length + blocked.length} inboxShown={inbox && !settings} onInbox={() => { setInbox(true); setSettings(false); }} settingsShown={settings} onSettings={() => setSettings(true)} onHide={() => setHidden(true)} />}
       <main className="relative flex min-w-0 flex-1 flex-col bg-canvas">
-        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        <TopBar data={view} tabs={tabs} titles={titles} onSelect={select} onClose={close} onReorder={setTabs} onStart={start} starting={starting} onShowSidebar={hidden ? () => setHidden(false) : undefined} />
+        {startError && <p role="alert" aria-label="New terminal error" className="mx-3 my-2 text-xs text-error [overflow-wrap:anywhere]">Cannot start a terminal. {startError}</p>}
         {!inbox && !settings && sidebar.selected && <Switch side={side} onSide={setSide} />}
-        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} />}
+        {settings ? <SettingsView /> : inbox ? <Inbox items={owner} blocked={blocked} name={name} onOpen={select} /> : !sidebar.selected ? sidebar.projects.length === 0 && <Empty hcError={sidebar.hcError} /> : <Chat key={sidebar.selected} terminal={sidebar.selected} title={tabLabel(sidebar, sidebar.selected, titles)} side={side} digestReads={digestReads} />}
       </main>
     </div>
   );
@@ -110,26 +121,40 @@ export function App() {
 
 /** The Chat / Terminal switch at the top right of the work area, under the tab bar (docs/design/redesign/chat-screen.html). */
 function Switch({ side, onSide }: { side: Side; onSide: (s: Side) => void }): ReactNode {
-  const tab = (s: Side, label: string) => (
-    <button
-      type="button"
-      aria-pressed={side === s}
-      onClick={() => onSide(s)}
-      className={`rounded-md px-2.5 py-[3px] text-[11.5px] leading-[18px] ${side === s ? "bg-selected text-ink-100 shadow-[var(--shadow-selected)]" : "text-dim hover:text-muted"}`}
+  const item = (s: Side, label: string) => (
+    <SegmentedControlItem
+      value={s}
+      className="relative rounded-md px-2.5 py-[3px] text-[11.5px] leading-[18px] text-dim outline-none hover:text-muted focus-visible:ring-1 focus-visible:ring-foreground data-checked:text-ink-100 data-checked:hover:text-ink-100"
     >
       {label}
-    </button>
+    </SegmentedControlItem>
   );
   return (
-    <div role="group" aria-label="Chat or Terminal" className="absolute top-[52px] right-3.5 z-10 flex gap-0.5 rounded-lg bg-canvas p-0.5 shadow-[inset_0_0_0_1px_var(--panel-line)]">
-      {tab("chat", "Chat")}
-      {tab("terminal", "Terminal")}
-    </div>
+    <SegmentedControl<Side>
+      aria-label="Chat or Terminal"
+      value={side}
+      onValueChange={(v) => v && onSide(v)}
+      className="absolute top-[52px] right-3.5 isolate z-10 flex gap-0.5 rounded-lg bg-canvas p-0.5 shadow-[inset_0_0_0_1px_var(--panel-line)]"
+    >
+      <SegmentedControlIndicator className="absolute -z-10 top-(--segmented-control-indicator-top) left-(--segmented-control-indicator-left) h-(--segmented-control-indicator-height) w-(--segmented-control-indicator-width) rounded-md bg-selected shadow-[var(--shadow-selected)]" />
+      {item("chat", "Chat")}
+      {item("terminal", "Terminal")}
+    </SegmentedControl>
   );
 }
 
 /** `title` is the tab's title (`tabLabel`): the reply box names the agent as the tab and the sidebar do, never by its hc name. */
-function Chat({ terminal, title, side }: { terminal: string; title: string; side: Side }) {
+function Chat({ terminal, title, side, digestReads }: {
+  terminal: string;
+  title: string;
+  side: Side;
+  digestReads: Map<string, Map<string, DigestRead>>;
+}) {
+  const saveDigest = useCallback((id: string, read: DigestRead) => {
+    const saved = digestReads.get(terminal) ?? new Map<string, DigestRead>();
+    saved.set(id, read);
+    digestReads.set(terminal, saved);
+  }, [digestReads, terminal]);
   const [feed, setFeed] = useState(emptyFeed);
   // Retry listens again: main stops the old feed and starts a new one.
   const [attempt, setAttempt] = useState(0);
@@ -172,7 +197,7 @@ function Chat({ terminal, title, side }: { terminal: string; title: string; side
       </div>
       {/* The chat list keeps at least 120 px: the cards block gives way first. */}
       {/* The loader covers the empty list until the first answer: the list mounts as before, with no rows. */}
-      <div className="relative flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} />}{!feed.error && !feed.loaded && <ChatLoading />}</div>
+      <div className="relative flex min-h-[120px] flex-1 flex-col">{feed.error ? <HelperError error={feed.error} onRetry={retry} /> : <ChatList rows={feed.rows} savedDigests={digestReads.get(terminal)} saveDigest={saveDigest} />}{!feed.error && !feed.loaded && <ChatLoading />}</div>
     </>
   );
 }

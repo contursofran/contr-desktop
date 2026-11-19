@@ -1,9 +1,11 @@
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { OwnerItems, OwnerQuestion, OwnerResult, OwnerTodo } from "../../../shared/api";
-import { CardHead, CardText, cardBox, keyMark, OptionDetail, keyRange, KeysLine, OptionLabel, optionRow, ownField, primaryButton, useKeys } from "../card/Card";
+import type { OwnerItems, OwnerQuestion, OwnerTodo } from "../../../shared/api";
+import { CardHead, CardText, cardBox } from "../card/Card";
 import { ChatMarkdown } from "../markdown/ChatMarkdown";
 import { splitTodo, todoCommands } from "./blocks";
+import { OwnerQuestionAnswers, useOwnerRun } from "./OwnerQuestionAnswers";
 
 /** "saved, coordinator not reached" shows alone this long after the item leaves. */
 const SAVED_NOTE_MS = 15_000;
@@ -64,71 +66,20 @@ export function Note({ text }: { text: string }) {
   return <p role="status" className={`${box} text-xs text-muted`}>{text}</p>;
 }
 
-/** Runs an owner action: a failed run keeps the card with the tool's message; a saved-not-reached note goes up. */
-function useRun(onSaved: (n: string) => void) {
-  const [off, setOff] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const go = async (call: () => Promise<OwnerResult>) => {
-    if (off) return;
-    setOff(true);
-    const r = await call();
-    if (!r.ok) {
-      setError(r.note);
-      setOff(false);
-    } else if (r.note) onSaved(r.note);
-  };
-  return { off, error, go };
-}
-
-/** `keys` false: the digit and Enter keys do not answer and no key badge shows (the Inbox shows many cards at once). */
-export function Question({ q, rest, onSaved, keys = true }: { q: OwnerQuestion; rest: number; onSaved: (n: string) => void; keys?: boolean }) {
-  const { off, error, go } = useRun(onSaved);
-  const [other, setOther] = useState("");
-  const otherRef = useRef<HTMLInputElement>(null);
-  const send = (answer: string) => answer.trim() && void go(() => window.contr.ownerAnswer(q.id, answer.trim()));
-  useKeys((k) => {
-    const n = Number(k);
-    if (n >= 1 && n <= q.options.length) send(q.options[n - 1]!.label);
-    else if (n === q.options.length + 1) otherRef.current?.focus();
-    else if (k === "Enter") send(other);
-  }, keys);
+function Question({ q, rest, onSaved, keys }: { q: OwnerQuestion; rest: number; onSaved: (n: string) => void; keys: boolean }) {
   const head = [q.title, q.from && `from ${q.from}`].filter(Boolean).join(" · ");
   return (
     <section aria-label="Owner question" className={cardBox}>
       <CardHead><span className="font-mono text-[11px]">{q.id}</span> · The coordinator asks{head && ` · ${head}`}{more(rest)}</CardHead>
       <CardText>{q.question}</CardText>
-      <div className="mt-1.5 flex flex-col">
-        {q.options.map((o, i) => (
-          <button key={o.label} type="button" disabled={off} onClick={() => send(o.label)} className={optionRow}>
-            {keys && <span className={keyMark}>{i + 1}</span>}
-            <span className="flex flex-col">
-              <OptionLabel label={o.label} recommended={o.recommended} />
-              {o.impact && <OptionDetail text={o.impact} />}
-            </span>
-          </button>
-        ))}
-      </div>
-      {q.refs.length > 0 && (
-        <p className="flex flex-wrap items-baseline gap-x-2 px-3 pt-1.5 pb-0.5 text-xs text-dim">
-          <span>Refs</span>
-          {q.refs.map((r) => <span key={r} className="font-mono text-[11px] text-muted">{r}</span>)}
-        </p>
-      )}
-      {error && <p role="alert" className="px-3 pt-1 text-xs text-blocked">{error}</p>}
-      <div className="flex items-center gap-3 pt-1.5">
-        <input
-          ref={otherRef}
-          aria-label="Own answer"
-          placeholder="Or type an answer"
-          disabled={off}
-          value={other}
-          onChange={(e) => setOther(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); send(other); } }}
-          className={ownField}
-        />
-        {keys && <KeysLine text={`${keyRange(q.options.length)} pick  ⏎ send`} />}
-        <button type="button" disabled={off || !other.trim()} onClick={() => send(other)} className={primaryButton}>Send answer</button>
-      </div>
+      <OwnerQuestionAnswers q={q} onSaved={onSaved} keys={keys} errorColor="text-blocked">
+        {q.refs.length > 0 && (
+          <p className="flex flex-wrap items-baseline gap-x-2 px-3 pt-1.5 pb-0.5 text-xs text-dim">
+            <span>Refs</span>
+            {q.refs.map((r) => <span key={r} className="font-mono text-[11px] text-muted">{r}</span>)}
+          </p>
+        )}
+      </OwnerQuestionAnswers>
     </section>
   );
 }
@@ -169,7 +120,7 @@ function TodoBody({ t }: { t: OwnerTodo }) {
 
 /** The Inbox's to-do card: the whole text and its commands. */
 export function Todo({ t, rest, onSaved }: { t: OwnerTodo; rest: number; onSaved: (n: string) => void }) {
-  const { off, error, go } = useRun(onSaved);
+  const { off, error, go } = useOwnerRun(onSaved);
   return (
     <section aria-label="Owner to-do" className={box}>
       <p className="text-xs text-muted">{t.id} · {t.know ? "To know" : "To do"}{more(rest)}</p>
@@ -191,25 +142,25 @@ const rowButton = "flex h-7 shrink-0 items-center rounded-lg px-3 text-[12.5px] 
  * who sent it and the number of commands, then Show and Done. Show opens the whole text with its copy rows in place.
  */
 export function TodoRow({ t, onSaved }: { t: OwnerTodo; onSaved: (n: string) => void }) {
-  const { off, error, go } = useRun(onSaved);
+  const { off, error, go } = useOwnerRun(onSaved);
   const [open, setOpen] = useState(false);
   const blocks = splitTodo(t.text);
   const first = blocks.find((b) => b.kind === "text");
   const commands = todoCommands(blocks);
   const meta = [t.know ? "To know" : "To do", t.from && `from ${t.from}`, commands > 0 && `${commands} ${commands === 1 ? "command" : "commands"}`].filter(Boolean).join(" · ");
   return (
-    <section aria-label="Owner to-do" className="mx-auto mb-2 flex w-full max-w-read flex-col gap-2 rounded-xl border border-border bg-chrome py-2 pr-2 pl-3.5">
+    <Collapsible open={open} onOpenChange={setOpen} render={<section aria-label="Owner to-do" className="mx-auto mb-2 flex w-full max-w-read flex-col gap-2 rounded-xl border border-border bg-chrome py-2 pr-2 pl-3.5" />}>
       <div className="flex min-w-0 items-center gap-3">
         <span className="shrink-0 font-mono text-[11px] text-dim">{t.id}</span>
         <div className="min-w-0 flex-1 [&_.chat-markdown]:truncate [&_.chat-markdown]:text-[13.5px] [&_.chat-markdown]:leading-[21px] [&_.chat-markdown]:text-ink-90 [&_.chat-markdown_p]:m-0 [&_.chat-markdown_p]:inline">
           {first && first.kind === "text" && <ChatMarkdown text={first.text} />}
         </div>
         <span className="shrink-0 text-[11.5px] whitespace-nowrap text-dim">{meta}</span>
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className={rowButton}>{open ? "Hide" : "Show"}</button>
+        <CollapsibleTrigger className={rowButton}>{open ? "Hide" : "Show"}</CollapsibleTrigger>
         <button type="button" disabled={off} onClick={() => void go(() => window.contr.ownerDone(t.id))} className={rowButton}>Done</button>
       </div>
-      {open && <TodoBody t={t} />}
+      <CollapsiblePanel><TodoBody t={t} /></CollapsiblePanel>
       {error && <p role="alert" className="text-xs text-blocked">{error}</p>}
-    </section>
+    </Collapsible>
   );
 }

@@ -1,6 +1,7 @@
 import { Plus, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { HealthReport, UsageRow } from "../../shared/api";
+import type { HealthReport } from "../../shared/api";
+import { subscribeUsage, type UsageSnapshot } from "../state/usage";
 import { Tip } from "../ui/Tip";
 import { usageTip } from "./usageTip";
 
@@ -10,7 +11,7 @@ import { usageTip } from "./usageTip";
  * then Settings and the add machine button. Settings opens the Settings view and has a dot (`accent`) when an update of the app or the core is ready; + does nothing yet.
  */
 export function Foot({ onSettings, settingsShown }: { onSettings: () => void; settingsShown: boolean }) {
-  const [rows, setRows] = useState<UsageRow[]>([]);
+  const [{ rows, now }, setUsage] = useState<UsageSnapshot>(() => ({ rows: [], now: Date.now() }));
   const [appReady, setAppReady] = useState(false);
   const [coreReady, setCoreReady] = useState(false);
   const [healthFailed, setHealthFailed] = useState(false);
@@ -28,14 +29,13 @@ export function Foot({ onSettings, settingsShown }: { onSettings: () => void; se
     void window.contr.health().then(mark);
     return window.contr.onHealth(mark);
   }, []);
-  useEffect(() => {
-    void window.contr.usage().then(setRows);
-    return window.contr.onUsage(setRows);
-  }, []);
+  useEffect(() => subscribeUsage(window.contr, setUsage), []);
   // "Read 2h ago" draws again each 30 s, as the sidebar's ages do.
-  const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    const id = setInterval(() => {
+      const now = Date.now();
+      setUsage((usage) => ({ ...usage, now }));
+    }, 30_000);
     return () => clearInterval(id);
   }, []);
   return (

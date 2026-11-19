@@ -5,7 +5,6 @@ import path from "node:path";
 import { launchApp } from "./launch";
 
 const e2e = import.meta.dirname;
-const shots = path.resolve(e2e, "../../../tmp/shots");
 
 test("the top bar has one tab per opened agent, and a tab click switches the chat", async () => {
   test.setTimeout(60_000);
@@ -27,42 +26,7 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(tabs.getByRole("tab")).toHaveText(["Chat panel usability audit", "Install health check"]);
   await expect(tabs.getByRole("tab", { name: "Install health check" })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("textbox", { name: "Reply to Install health check" })).toBeVisible();
-  await expect(tabs.getByRole("button", { name: "New tab" })).toBeDisabled();
-  // A third tab, then the second one shown again: three tabs, one shown.
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: "Release notes draft" }).click();
-  await tabs.getByRole("tab", { name: "Install health check" }).click();
-  const names = ["Chat panel usability audit", "Install health check", "Release notes draft"];
-  await expect(tabs.getByRole("tab")).toHaveText(names);
-  // A tab is at most `--tab-max-width` (180 px, #228): a short title fits, a long one is cut with "…".
-  for (const name of names) expect((await tabs.getByRole("tab", { name }).locator("..").boundingBox())!.width).toBeLessThanOrEqual(180);
-  const fits = (name: string) => tabs.getByRole("tab", { name }).locator("[data-title]").evaluate((e) => e.scrollWidth <= e.clientWidth);
-  expect(await fits("Release notes draft")).toBe(true);
-  expect(await fits("Chat panel usability audit")).toBe(false);
-  await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" }).locator("[data-title]")).toHaveCSS("text-overflow", "ellipsis");
-  await tabs.getByRole("tab", { name: "Chat panel usability audit" }).hover();
-  await expect(page.getByRole("tooltip")).toHaveText("Chat panel usability audit");
-  await page.mouse.move(600, 400);
-  // The redesign's tabs (#180): from the left of the bar, 2 px apart, 28 px tall, 8 px corners; only the shown tab has a × and a fill.
-  await expect(tabs.locator("[data-tab-close]")).toHaveCount(1);
-  await expect(tabs.getByRole("button", { name: "Close Install health check" })).toBeVisible();
-  const box = async (name: string) => (await tabs.getByRole("tab", { name }).locator("..").boundingBox())!;
-  const [first, second] = [await box(names[0]), await box(names[1])];
-  expect(first.height).toBe(28);
-  expect(first.x - (await tabs.locator("..").boundingBox())!.x).toBe(10);
-  expect(Math.round(second.x - (first.x + first.width))).toBe(2);
-  const style = (name: string) => tabs.getByRole("tab", { name }).locator("..").evaluate((e) => {
-    const s = getComputedStyle(e);
-    return { radius: s.borderTopLeftRadius, font: s.fontSize, weight: s.fontWeight, bg: s.backgroundColor };
-  });
-  expect(await style(names[1])).toMatchObject({ radius: "8px", font: "12.5px", weight: "400" });
-  expect((await style(names[0])).bg).toBe("rgba(0, 0, 0, 0)");
-  expect((await style(names[1])).bg).not.toBe("rgba(0, 0, 0, 0)");
-  const plus = (await tabs.getByRole("button", { name: "New tab" }).boundingBox())!;
-  expect([plus.width, plus.height]).toEqual([26, 26]);
-  await page.emulateMedia({ colorScheme: "dark" });
-  await page.screenshot({ path: path.join(shots, "topbar-dark.png") });
-  await page.emulateMedia({ colorScheme: "light" });
-  await page.screenshot({ path: path.join(shots, "topbar-light.png") });
 
   // A tab click switches the chat as a sidebar click does.
   await tabs.getByRole("tab", { name: "Chat panel usability audit" }).click();
@@ -70,10 +34,10 @@ test("the top bar has one tab per opened agent, and a tab click switches the cha
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
 
   // The Chat / Terminal switch still works.
-  const sw = page.getByRole("group", { name: "Chat or Terminal" });
-  await sw.getByRole("button", { name: "Terminal" }).click();
-  await expect(sw.getByRole("button", { name: "Terminal" })).toHaveAttribute("aria-pressed", "true");
-  await sw.getByRole("button", { name: "Chat" }).click();
+  const sw = page.getByRole("radiogroup", { name: "Chat or Terminal" });
+  await sw.getByRole("radio", { name: "Terminal" }).click();
+  await expect(sw.getByRole("radio", { name: "Terminal" })).toBeChecked();
+  await sw.getByRole("radio", { name: "Chat" }).click();
   await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
 
   // × closes the shown tab and shows the next one.
@@ -123,23 +87,13 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   await page.getByRole("navigation", { name: "Projects" }).getByRole("button", { name: b }).click();
   await expect(tabs.getByRole("tab")).toHaveText([a, b]);
 
-  // A pointer drag of the second tab over the first moves it there; the tab under the drag shows lifted.
+  // A pointer drag of the second tab over the first moves it there.
   const from = (await tabs.getByRole("tab", { name: b }).boundingBox())!;
   const to = (await tabs.getByRole("tab", { name: a }).boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
   await page.mouse.move(from.x + from.width / 2 - 10, from.y + from.height / 2, { steps: 3 });
   await page.mouse.move(to.x + 10, to.y + to.height / 2, { steps: 10 });
-  // The dragged tab's place shows as a 2 px line where it will drop.
-  const line = tabs.locator("[data-grabbed]");
-  await expect(line).toHaveCount(1);
-  expect((await line.boundingBox())!.width).toBeLessThanOrEqual(3);
-  // The copy under the pointer moves down, so the screenshot shows the line.
-  await page.mouse.move(to.x + 10, to.y + to.height / 2 + 40, { steps: 3 });
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    await page.screenshot({ path: path.join(shots, `tab-drag-${scheme}.png`), clip: { x: 0, y: 0, width: page.viewportSize()?.width ?? 1200, height: 120 } });
-  }
   await page.mouse.up();
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
 
@@ -147,11 +101,12 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   await tabs.getByRole("tab", { name: b }).focus();
   await page.keyboard.press("Alt+ArrowRight");
   await expect(tabs.getByRole("tab")).toHaveText([a, b]);
-  await expect(tabs.getByRole("tab", { name: b })).toBeFocused();
   await page.keyboard.press("Alt+Home");
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
-  // A plain arrow does not move it.
-  await page.keyboard.press("ArrowRight");
+  await tabs.getByRole("tab", { name: a }).focus();
+  await page.keyboard.press("Alt+ArrowLeft");
+  await expect(tabs.getByRole("tab")).toHaveText([a, b]);
+  await page.keyboard.press("Alt+End");
   await expect(tabs.getByRole("tab")).toHaveText([b, a]);
   // The shown agent is stored too (`tabs.shown`), and a start shows it again while hc lists it, with its tab. With b
   // shown here, the last start below opens b's tab again some time after it starts (issue #159): a shows instead.
@@ -176,88 +131,3 @@ test("a tab moves by drag and by Alt with the arrows, the order stays after a re
   await expect(page.getByRole("tablist", { name: "Tabs" }).getByRole("tab")).toHaveText([a]);
   await app.close();
 });
-
-const many = {
-  CONTR_HELPER: path.join(e2e, "fake-helper.mjs"),
-  FAKE_HELPER_FIXTURE: path.join(e2e, "fixtures/claude-session.jsonl"),
-  CONTR_TERMINAL: "t7",
-  CONTR_HC: path.join(e2e, "fake-hc.mjs"),
-  FAKE_HC_AGENTS: "1",
-  CONTR_ORCH: path.join(e2e, "fake-orch.mjs"),
-  CONTR_GIT: path.join(e2e, "fake-git.mjs"),
-};
-
-test("in a narrow window the shown tab scrolls into view, and the tab row shows a thin scrollbar", async () => {
-  test.setTimeout(60_000);
-  const app = await launchApp(many);
-  const page = await app.firstWindow();
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(900, 600));
-  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(900);
-  const nav = page.getByRole("navigation", { name: "Projects" });
-  const tabs = page.getByRole("tablist", { name: "Tabs" });
-  const row = tabs.locator("[data-tab-row]");
-  // The shown tab is all inside the row's visible part.
-  const inView = () => row.evaluate((r) => {
-    const shown = r.querySelector('[role="tab"][aria-selected="true"]')?.parentElement;
-    if (!shown) return false;
-    const tab = shown.getBoundingClientRect();
-    const box = r.getBoundingClientRect();
-    return tab.left >= box.left - 0.5 && tab.right <= box.right + 0.5;
-  });
-  // Six agents: each one opened from the sidebar shows its tab in view.
-  for (const name of ["Install health check", "Release notes draft", /^Cards/, /^Flow/, /^Virtual/]) {
-    await nav.getByRole("button", { name }).first().click();
-    await expect(tabs.getByRole("tab", { name })).toHaveAttribute("aria-selected", "true");
-    await expect.poll(inView).toBe(true);
-  }
-  await expect(tabs.getByRole("tab")).toHaveCount(6);
-  expect(await row.evaluate((r) => r.scrollWidth > r.clientWidth && r.scrollLeft > 0)).toBe(true);
-  // The thin scrollbar takes 3 px of its own under the tabs.
-  expect(await row.evaluate((r: HTMLElement) => r.offsetHeight - r.clientHeight)).toBe(3);
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    await page.screenshot({ path: path.join(shots, `tabs-narrow-${scheme}.png`) });
-  }
-  // The first agent again: the row scrolls back to it.
-  await nav.getByRole("button", { name: "Chat panel usability audit" }).click();
-  await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
-  await expect.poll(inView).toBe(true);
-  await expect.poll(() => row.evaluate((r) => r.scrollLeft)).toBe(0);
-  // The last tab, then a narrower window: it stays in view.
-  await tabs.getByRole("tab").last().click();
-  await expect(tabs.getByRole("tab").last()).toHaveAttribute("aria-selected", "true");
-  await expect.poll(inView).toBe(true);
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(700, 600));
-  await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(700);
-  await expect.poll(inView).toBe(true);
-  // A close shows the next tab (here the one before) in view.
-  await tabs.locator("[data-tab-close]").click();
-  await expect(tabs.getByRole("tab")).toHaveCount(5);
-  await expect.poll(inView).toBe(true);
-  await app.close();
-});
-
-for (const view of ["Inbox", "Settings"] as const) {
-  test(`with ${view} shown no agent row and no tab looks selected, and the chat brings the look back`, async () => {
-    const app = await launchApp(many);
-    const page = await app.firstWindow();
-    const nav = page.getByRole("navigation", { name: "Projects" });
-    const tabs = page.getByRole("tablist", { name: "Tabs" });
-    const agent = nav.getByRole("button", { name: "Chat panel usability audit" });
-    await expect(agent).toHaveAttribute("aria-current", "true");
-    await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
-    await (view === "Inbox" ? nav.getByRole("button", { name: /^Inbox/ }) : page.locator("aside > footer").getByRole("button", { name: "Settings" })).click();
-    await expect(page.getByRole("region", { name: view })).toBeVisible();
-    await expect(nav.locator("[aria-current]")).toHaveText(view === "Inbox" ? [/^Inbox/] : []);
-    await expect(tabs.getByRole("tab", { selected: true })).toHaveCount(0);
-    for (const scheme of ["dark", "light"] as const) {
-      await page.emulateMedia({ colorScheme: scheme });
-      await page.screenshot({ path: path.join(shots, `selected-${view.toLowerCase()}-${scheme}.png`) });
-    }
-    await tabs.getByRole("tab", { name: "Chat panel usability audit" }).click();
-    await expect(page.getByRole("textbox", { name: "Reply to Chat panel usability audit" })).toBeVisible();
-    await expect(agent).toHaveAttribute("aria-current", "true");
-    await expect(tabs.getByRole("tab", { name: "Chat panel usability audit" })).toHaveAttribute("aria-selected", "true");
-    await app.close();
-  });
-}

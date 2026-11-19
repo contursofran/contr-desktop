@@ -6,7 +6,7 @@
 // It reads the releases and the commits with the GitHub API (gh api), so the job needs no git history.
 // With --json <file> it also writes release.json, the release asset that the app's update check reads
 // (docs/reference/releases.md): this release, its asset names (the files in --assets <folder>) and the change log of
-// the newest RELEASE_COUNT releases.
+// the newest RELEASE_COUNT releases. Pass the ZIP's hash with --sha256 when it is in the assets folder.
 //
 //   node scripts/release-notes.mjs --version 0.1.30 --sha <sha> [--tag <this tag>] [--repo owner/name] [--json <file> --assets <folder>]
 //   node scripts/release-notes.mjs --dry-run     # CI on a pull request: version 0.0.0, sha $SHA or $GITHUB_SHA
@@ -75,14 +75,14 @@ export function changesOf(body) {
  * The content of release.json. `releases` is the API's list; with this release first, it keeps the newest
  * published ones by `published_at` that have a version and are not `tag`, as the app's `parseChangeLog` does.
  */
-export function releaseFile({ version, tag, sha, date, assets, changes }, releases) {
+export function releaseFile({ version, tag, sha, date, assets, sha256, changes }, releases) {
   const time = (r) => Date.parse(r.published_at ?? "") || 0;
   const older = releases
     .filter((r) => r && r.draft !== true && r.tag_name !== tag && versionOf(r) !== null)
     .sort((a, b) => time(b) - time(a))
     .slice(0, RELEASE_COUNT - 1)
     .map((r) => ({ version: versionOf(r), tag: String(r.tag_name ?? ""), date: String(r.published_at ?? "").slice(0, 10), changes: changesOf(String(r.body ?? "")) }));
-  return { schema: 1, version, tag, sha, date, assets, releases: [{ version, tag, date: date.slice(0, 10), changes }, ...older] };
+  return { schema: 1, version, tag, sha, date, assets, ...(sha256 ? { sha256 } : {}), releases: [{ version, tag, date: date.slice(0, 10), changes }, ...older] };
 }
 
 function arg(argv, name) {
@@ -98,9 +98,13 @@ export function release(argv, env, api, now = new Date(), assets = []) {
   const version = arg(argv, "--version") ?? (dry ? "0.0.0" : undefined);
   if (!sha || !version) throw new Error("usage: release-notes.mjs --version <x.y.z> --sha <sha> [--repo owner/name] | --dry-run");
   const tag = arg(argv, "--tag") ?? (dry ? "build-dry-run" : undefined);
+  const sha256 = arg(argv, "--sha256");
+  if (assets.includes("contr-mac-universal.zip") && !/^[a-f0-9]{64}$/.test(sha256 ?? "")) {
+    throw new Error("Pass the ZIP's SHA-256 as 64 lowercase hex digits with --sha256.");
+  }
   const releases = api(`repos/${repo}/releases?per_page=100`);
   const changes = changesFor(api, repo, sha, tag, releases);
-  return { notes: notesText(version, sha, changes), file: releaseFile({ version, tag: tag ?? "", sha, date: now.toISOString(), assets, changes }, releases) };
+  return { notes: notesText(version, sha, changes), file: releaseFile({ version, tag: tag ?? "", sha, date: now.toISOString(), assets, sha256, changes }, releases) };
 }
 
 /** The notes text (stdout). */
