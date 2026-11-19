@@ -66,7 +66,7 @@ When the code changes a feature, update its row in the same PR.
 | Chat row gap | Reads adjacent rows | — | `list "Chat"` | There is a 12 px gap between rows | `Column.browser.test.tsx` |
 | Follow the end | Gets new rows | — | `list "Chat"` | The chat follows new rows at the end, and stays put when scrolled up | `Scroll.browser.test.tsx` |
 | Jump to the end | Scrolls up, then clicks ↓ | Click; Tab from the reply box | `button "Jump to the end"` | The button shows away from the end, marks new rows, and goes back to the end | `Jump.browser.test.tsx` |
-| Loading | Opens a chat before the first feed answer | `FAKE_HELPER_SLOW_FEED=3000` | `status "Reading the chat"` | The loader and "Reading the chat…" | `reply-send` |
+| Loading | Opens a chat before the first feed answer | Hold the first feed event | `status "Reading the chat"` | The loader and "Reading the chat…" | `ReplySend.browser.test.tsx` |
 | Helper error | Opens a chat when the helper fails | `FAKE_HELPER_ERROR=<code>` | `alert "Helper error"`, `button "Retry"` | Plain words, the error, the helper path with Copy, Retry; the reply box is off | `States.browser.test.tsx`, `SmallTexts.browser.test.tsx`, `states`, `app`, `small-texts` |
 | No agent | Starts with no agent | `CONTR_TERMINAL= FAKE_HC_AGENTS=` | `status "No agent"` | "No agents yet": the main area says how an agent shows | `States.browser.test.tsx` |
 | hc not reachable | Starts when hc cannot run | `FAKE_HC_DOWN=<a file that exists>` | `alert "hc error"`, `button "Retry"` | "hc is not reachable" with the error; Retry reads again | `states`, `TerminalError.browser.test.tsx`, `terminal-error` |
@@ -79,7 +79,7 @@ When the code changes a feature, update its row in the same PR.
 | Question card | Picks an answer | Keys 1, 2, …; arrows in the radio group; Space on check boxes; Enter | `region "Question" > radiogroup > radio` or `group > checkbox`, `button "Next"`, `button "Send"` | The pick goes; a one-choice question starts with its first answer picked (hover fill), so Enter sends it; multi-select takes picks, and Next is off until there is a pick or own text | `cards` |
 | One question card | Looks at a permission, a question or a pick-any question | `FAKE_HELPER_CARD` | `region "Approval"`, `region "Question"`, `region "Owner question"` | The reply box's fill and line (`--side`, `--input-line`), no shadow; a red glyph, then the shown agent's name and title and the card's age in the head; a one-choice answer's detail on a line under its label; check boxes for pick-any; "Or type an answer" and the keys line | `Cards.browser.test.tsx`, `owner` (Electron) |
 | Own answer | Types an own answer | Type, Enter | `textbox "Own answer"` | A number typed there is text, not a pick | `cards`, `keys` |
-| Card keys | Presses a number | 1, 2, … | — | With focus in the reply box a 1 stays text; with focus on the page it answers | `keys`, `focus` |
+| Card keys | Presses a number | 1, 2, … | — | With focus in the reply box a 1 stays text; with focus on the page it answers | `keys`, `Focus.browser.test.tsx` |
 | Stacked cards | Has an agent card and owner items | `FAKE_HELPER_CARD`, `FAKE_ORCH_OWNER`, `size=640x480` | `region "Approval"`, `region "Owner question"`, `region "Owner to-do"` | The cards scroll inside; the reply box stays in the window; key 1 answers only the agent's card | `stacked-cards` |
 | Owner to-do in the chat | Looks at a coordinator's to-do | `FAKE_ORCH_OWNER` | `region "Owner to-do"`, `button "Show"`, `button "Done"` | One row: id, first paragraph on one line, "To do · from b-15 · 3 commands", Show and Done. Show opens the text with its copy rows in place; Done closes the item | `owner` |
 | Card width | Looks at a card in a small window | `size=900x600` | `region "Question"` | The card keeps at least 16 px of side space | `Cards.browser.test.tsx` |
@@ -88,21 +88,21 @@ When the code changes a feature, update its row in the same PR.
 
 | Feature | The owner does | Path or keys | Selector | Expected | Spec |
 |---|---|---|---|---|---|
-| Send | Types and sends | Type, Enter; or click | `textbox "Reply to Chat panel usability audit"`, `button "Send"` | The text goes (`send.log`) and the box clears | `app`, `reply-send` |
-| Send during a slow send | Types or presses Enter while a send runs | `FAKE_HELPER_SLOW_SEND=2000` | `textbox /^Reply to/` | New text stays; a second Enter queues the next message; both go in order | `reply-send` |
-| Failed send | Sends when the helper fails | `FAKE_HELPER_SEND_ERROR=<code>` | `form "Reply"` | "Not sent" shows in ink-100 and the text stays | `app`, `reply-send`, `status-reply-mock` |
-| Attach an image | Clicks + and picks a file, or pastes | Click; Cmd+V | `button "Attach image"`, `list "Attachments"` | A picture 56 px high or a chip; its path goes with the text | `attach`, `app` |
-| Remove an attachment | Clicks × on it | Click, Enter or Space | `button "Remove shot.png"` | Only that one leaves | `attach` |
-| Status line | Looks above the reply box | — | label "Status" | The working glyph ⠋, "Hashing…" in 12 px and "35s · ↓ 1.2k tokens" in 11 px mono; on the right "Orchestrating · 3 workers"; a narrow window cuts the detail | `reply`, `orchestrate`, `status-reply-mock` |
-| Orchestrate | Clicks Orchestrate on an agent with no workers | Click | `button "Orchestrate"` | `/contr:orchestrate` is in the reply box, not sent | `orchestrate` |
-| Model and effort | Opens the model menu | Click; arrows, Enter, Escape | `button "Model"`, `menu "Model" > menuitemradio "Sonnet 5"` | The button has the agent icon (the Claude pet), model and effort; the menu sends `/model` and `/effort`; focus comes back to the button | `reply` |
-| Speed tier | Opens the menu for a model with speed choices | `FAKE_HELPER_TIERS=fast,ultrafast FAKE_HELPER_TIER=fast` | `menu "Model" > menuitemradio "Ultrafast"` | Speed follows Effort. The accelerated tier shows after effort. A choice calls `tier` and shows until the helper confirms it or 15 seconds pass | `reply` |
-| Output speed | Looks at the reply foot | `FAKE_HELPER_SPEED="58 tok/s"` | `form "Reply"` > text "58 tok/s" | The output speed shows after context when the helper has a measurement | `reply` |
-| Context and branch | Looks at the right of the foot | — | label "Context 37%", label "Branch" | The ring with 37% in mono and its tooltip; the branch `main` in mono | `reply`, `Settings.browser.test.tsx`, `SmallTexts.browser.test.tsx` |
-| Context at 80% | Looks at the right of the foot | `FAKE_HELPER_CONTEXT=80` | label "Context 80%" | The ring and 80% use ink-100 in dark and light | `status-reply-mock` |
-| Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `reply` |
-| Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `reply` |
-| Focus | Opens a chat or comes back to the window | — | `textbox /^Reply to/` | The box takes the keyboard, but not from a chat selection, an open menu or a card that owns the keys | `focus` |
+| Send | Types and sends | Type, Enter; or click | `textbox "Reply to Chat panel usability audit"`, `button "Send"` | The text goes (`send.log`) and the box clears | `app`, `ReplySend.browser.test.tsx` |
+| Send during a slow send | Types or presses Enter while a send runs | Hold the send result | `textbox /^Reply to/` | New text stays; a second Enter queues the next message; both go in order | `ReplySend.browser.test.tsx` |
+| Failed send | Sends when the helper fails | `FAKE_HELPER_SEND_ERROR=<code>` | `form "Reply"` | "Not sent" shows in ink-100 and the text stays | `app`, `Reply.browser.test.tsx`, `ReplySend.browser.test.tsx`, `StatusReply.browser.test.tsx` |
+| Attach an image | Clicks + and picks a file, or pastes | Click; Cmd+V | `button "Attach image"`, `list "Attachments"` | A picture 56 px high or a chip; its path goes with the text | `Attach.browser.test.tsx`, `attach`, `app` |
+| Remove an attachment | Clicks × on it | Click, Enter or Space | `button "Remove shot.png"` | Only that one leaves | `Attach.browser.test.tsx` |
+| Status line | Looks above the reply box | — | label "Status" | The working glyph ⠋, "Hashing…" in 12 px and "35s · ↓ 1.2k tokens" in 11 px mono; on the right "Orchestrating · 3 workers"; a narrow window cuts the detail | `Reply.browser.test.tsx`, `Orchestrate.browser.test.tsx`, `StatusReply.browser.test.tsx`, `orchestrate` |
+| Orchestrate | Clicks Orchestrate on an agent with no workers | Click | `button "Orchestrate"` | `/contr:orchestrate` is in the reply box, not sent | `Orchestrate.browser.test.tsx` |
+| Model and effort | Opens the model menu | Click; arrows, Enter, Escape | `button "Model"`, `menu "Model" > menuitemradio "Sonnet 5"` | The button has the agent icon (the Claude pet), model and effort; the menu sends `/model` and `/effort`; focus comes back to the button | `Reply.browser.test.tsx`, `reply` |
+| Speed tier | Opens the menu for a model with speed choices | `FAKE_HELPER_TIERS=fast,ultrafast FAKE_HELPER_TIER=fast` | `menu "Model" > menuitemradio "Ultrafast"` | Speed follows Effort. The accelerated tier shows after effort. A choice calls `tier` and shows until the helper confirms it or 15 seconds pass | `Reply.browser.test.tsx`, `reply` |
+| Output speed | Looks at the reply foot | `replyInfo.speed = "58 tok/s"` | `form "Reply"` > text "58 tok/s" | The output speed shows after context when the helper has a measurement | `Reply.browser.test.tsx` |
+| Context and branch | Looks at the right of the foot | — | label "Context 37%", label "Branch" | The ring with 37% in mono and its tooltip; the branch `main` in mono | `Reply.browser.test.tsx`, `StatusReply.browser.test.tsx`, `Settings.browser.test.tsx`, `SmallTexts.browser.test.tsx` |
+| Context at 80% | Looks at the right of the foot | `replyInfo.context.percent = 80` | label "Context 80%" | The ring and 80% use ink-100 in dark and light | `StatusReply.browser.test.tsx` |
+| Drafts | Types, then switches agent, Inbox or Settings | — | `textbox /^Reply to/` | The draft stays for each agent; a send clears it | `Reply.browser.test.tsx` |
+| Grow | Types many lines | — | `textbox /^Reply to/` | The box grows up to 40% of the window, then scrolls; shrinks after a send | `Reply.browser.test.tsx` |
+| Focus | Opens a chat or comes back to the window | — | `textbox /^Reply to/` | The box takes the keyboard, but not from a chat selection, an open menu or a card that owns the keys | `Focus.browser.test.tsx` |
 | Tab order | Presses Tab | Tab | — | Top bar, card, reply box, then ↓ and the chat rows | `keys`, `Jump.browser.test.tsx` |
 
 ## Terminal
