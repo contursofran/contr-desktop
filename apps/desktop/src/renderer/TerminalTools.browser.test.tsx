@@ -8,7 +8,7 @@ const modifier = navigator.platform.startsWith("Mac") ? "Meta" : "Control";
 const url = "https://example.com/build";
 const oscUrl = "https://example.com/report";
 
-async function openTerminal(output: (cols: number) => string) {
+async function openTerminal(output: (cols: number) => string, readyText = "Build") {
   let write: Parameters<TerminalApi["onData"]>[0];
   const input = vi.fn();
   await renderApp(transcript, null, {
@@ -25,7 +25,7 @@ async function openTerminal(output: (cols: number) => string) {
   });
   await page.getByRole("radio", { name: "Terminal" }).click();
   const host = page.getByTestId("terminal");
-  await expect.poll(() => host.query()?.querySelector(".xterm-rows")?.textContent).toContain("Build");
+  await expect.poll(() => host.query()?.querySelector(".xterm-rows")?.textContent).toContain(readyText);
   const textarea = css(".xterm-helper-textarea", host);
   return { host, textarea, field: page.elementLocator(textarea), input };
 }
@@ -81,7 +81,7 @@ test("copies a selection and sends each bracketed paste once", async () => {
 // apps/emdash-desktop/src/core/features/terminals/browser/pty/terminal-search.ts
 // at 9e2942b8281b17703c0e66845080a556ae262677. Run it through SearchAddon in the real terminal.
 test("finds wrapped output, moves through matches and returns focus on Escape", async () => {
-  const { host, field, input } = await openTerminal((cols) =>
+  const { field, input } = await openTerminal((cols) =>
     `Build ready\r\nport active\r\nport closed\r\n\r\n${" ".repeat(cols - 2)}port idle`);
   await userEvent.keyboard(`{${modifier}>}f{/${modifier}}`);
   const find = page.getByRole("textbox", { name: "Find in terminal" });
@@ -99,16 +99,35 @@ test("finds wrapped output, moves through matches and returns focus on Escape", 
   await expect.element(count).toHaveTextContent("1 of 3");
   expect(input).not.toHaveBeenCalled();
 
+  await find.fill("absent");
+  await expect.element(count).toHaveTextContent("0");
+  await userEvent.keyboard("{Escape}");
+  await expect.element(find).not.toBeInTheDocument();
+  await expect.element(field).toHaveFocus();
+});
+
+test("shows search highlights for dev server output in both themes", async () => {
+  const output = [
+    "~/code/contr-desktop main $ pnpm dev",
+    "$ pnpm --filter desktop dev",
+    "$ node scripts/dev.mjs",
+    "",
+    "  VITE v8.3.8  ready in 183 ms",
+    "",
+    "  ➜  Local:   http://localhost:5173/",
+    "  ➜  Network: use --host to expose",
+    "[electron] Loading renderer from http://localhost:5173/",
+    "[electron] Renderer ready on port 5173",
+  ].join("\r\n");
+  const { host } = await openTerminal(() => output, "Renderer ready on port 5173");
+  await userEvent.keyboard(`{${modifier}>}f{/${modifier}}`);
+  await page.getByRole("textbox", { name: "Find in terminal" }).fill("5173");
+  await expect.element(page.getByLabelText("Match count")).toHaveTextContent("1 of 3");
+
   for (const [scheme, color] of [["dark", "rgb(233, 233, 234)"], ["light", "rgb(30, 30, 30)"]] as const) {
     await commands.colorScheme(scheme);
     await expect.poll(() => Array.from(host.element().querySelectorAll(".xterm-decoration"))
       .map((el) => getComputedStyle(el).outlineColor)).toContain(color);
     await shot(`terminal-find-${scheme}`);
   }
-
-  await find.fill("absent");
-  await expect.element(count).toHaveTextContent("0");
-  await userEvent.keyboard("{Escape}");
-  await expect.element(find).not.toBeInTheDocument();
-  await expect.element(field).toHaveFocus();
 });
