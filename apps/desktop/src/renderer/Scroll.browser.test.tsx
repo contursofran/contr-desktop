@@ -1,8 +1,6 @@
 import { expect, test } from "vitest";
 import { page } from "vitest/browser";
-import transcript from "../../e2e/fixtures/claude-session.jsonl?raw";
 import { chatList, chatRow, chatSettled, findRow, renderFeed, rowInViewport, shoot } from "../../test/274-chat";
-import { renderApp } from "../../test/renderApp";
 import type { FeedRow } from "../shared/api";
 
 /** Rows of different heights: short user rows, Markdown with a table, and tool chips. */
@@ -61,14 +59,18 @@ test("the chat follows new rows at the end and stays put when scrolled up", asyn
 }, 60_000);
 
 test("chatRow finds a row while the list still pulls itself to its end", async () => {
-  await renderApp(transcript);
+  await renderFeed(rows, 40);
   const list = await chatList().findElement();
-  await expect.element(chatList().getByRole("listitem").first()).toBeVisible();
+  await rowInViewport("r39");
+  await chatSettled(list);
+  expect(findRow("r0", list)).toBeNull();
   // As Legend List does at start, a scroll away from the end goes back to the end on the next frame.
-  const end = performance.now() + 3000;
+  let pulls = 3;
   list.addEventListener("scroll", () => {
-    if (performance.now() < end) requestAnimationFrame(() => list.scrollTo({ top: list.scrollHeight }));
+    if (pulls === 0 || list.scrollTop >= list.scrollHeight - list.clientHeight - 1) return;
+    pulls--;
+    requestAnimationFrame(() => list.scrollTo({ top: list.scrollHeight }));
   });
-  // sep-1 is the first row. It is in the DOM only near the top.
-  await expect.element(await chatRow("sep-1")).toHaveTextContent("14:05");
+  await expect.element(await chatRow("r0")).toHaveTextContent("Question 0");
+  expect(pulls).toBe(0);
 }, 60_000);

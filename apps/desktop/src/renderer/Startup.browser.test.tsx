@@ -25,11 +25,11 @@ test("the transcript opens at the end and renders messages, tools and working st
 
   await rowInViewport("a6");
   await expect.element(page.getByRole("button", { name: /Running a command/ }).getByRole("status")).toBeVisible();
-  await text(await row("u1")).toContain("The login form loses the email");
+  await text(await row("u1")).toContain("After a rejected sign-in, the login form clears the email");
   await expect.element((await row("a1-t1")).getByRole("button")).toHaveTextContent("▶Searched 2 patterns, read 1 file");
   await text(await row("a3")).toContain("Opened PR #14");
-  await expect.element(await row("f-a3")).toHaveTextContent("14:06 · Worked 1m 0s · 6 tools");
-  await expect.element(await row("u2")).toHaveTextContent("↳ t2 docs-worker: Done: docs for the login form are updated in #15.");
+  await expect.element(await row("f-a3")).toHaveTextContent("14:06 · Worked 1m 0s · 7 tools");
+  await expect.element(await row("u2")).toHaveTextContent("↳ t2 docs-worker: I pushed the sign-in guide changes to draft PR #15. The updated steps cover retrying after a rejected password.");
   await text(await row("u4")).toContain("2 pictures");
   await text(page.getByLabelText("Status", { exact: true })).toContain("Hashing…35s · ↓ 1.2k tokens");
   const tools = await chatRow("a2-t1");
@@ -90,7 +90,7 @@ test("assistant Markdown shows code, tables, checkboxes and copy feedback", asyn
   onTestFinished(() => clipboard.mockRestore());
   await renderApp(transcript);
   const answer = await row("a5");
-  await expect.element(answer.getByRole("heading", { name: "Remember-me test" })).toBeVisible();
+  await expect.element(answer.getByRole("heading", { name: "Sign-in retry coverage" })).toBeVisible();
   const content = answer.element();
   expect(content.querySelectorAll("table tbody tr")).toHaveLength(3);
   expect(content.querySelector("td code")?.textContent).toBe("src/auth/LoginForm.tsx");
