@@ -63,7 +63,11 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
 
   const queue = row.getByRole("list", { name: "Merge order" });
   // #190: a rail; the step number is at the right, and the note is under the label. The PR chips carry gh's checks.
-  await expect(queue.locator("> li")).toHaveText([/^#70 Parse the blocks1$/, /^#31✓ 6\/6 Status boardwaits for #702$/, /^#41.*4\/6 Queue blockwaits for #31✓ 6\/63$/]);
+  await expect(queue.locator("> li")).toHaveText([/^#70 Parse the blocksmerged \d{2}:\d{2}1$/, /^#31✓ 6\/6 Status boardwaits for #702$/, /^#41.*4\/6 Queue blockwaits for #31✓ 6\/6, and for your answer D73$/]);
+  const mergedAt = "2026-11-18T14:00:00Z";
+  const mergeTime = await page.evaluate((at) => new Date(at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }), mergedAt);
+  await expect(queue.locator(`time[datetime="${mergedAt}"]`)).toHaveText(mergeTime);
+  await expect(queue.getByLabel("Question D7, Queue block or row, open")).toHaveText("D7");
   await expect(queue.locator('> li > div > div:first-child [data-ref-state="merged"]')).toHaveCount(1);
   // Done, now, next from gh: #70 merged, #31 open, #41 draft. The #70 in the note is a chip too.
   await expect.poll(() => queue.locator("> li").evaluateAll((li) => li.map((l) => l.getAttribute("data-step")))).toEqual(["done", "now", "next"]);
@@ -89,6 +93,8 @@ test("contr-status draws a board and contr-queue a queue; a bad block stays code
     await board.screenshot({ path: path.join(shots, `board-${scheme}.png`) });
     await same.evaluate((el) => el.scrollIntoView({ block: "center" }));
     await same.screenshot({ path: path.join(shots, `board-same-${scheme}.png`) });
+    await queue.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await queue.screenshot({ path: path.join(shots, `queue-${scheme}.png`) });
   }
   await app.close();
 });

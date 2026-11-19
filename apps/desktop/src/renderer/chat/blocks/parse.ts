@@ -5,11 +5,12 @@ export interface StatusLine {
   text: string;
 }
 
-/** One `contr-queue` step: `#<n> <label>`, with ` -- <note>` for a dependency. */
+/** One `contr-queue` step: `#<n> <label>`, with an optional ` -- <note>` and ` | owner: <id>`. */
 export interface QueueStep {
   number: number;
   label: string;
   note: string | null;
+  ownerId?: string;
 }
 
 function lines(code: string): string[] {
@@ -32,9 +33,15 @@ export function parseStatus(code: string): StatusLine[] | null {
 export function parseQueue(code: string): QueueStep[] | null {
   const out: QueueStep[] = [];
   for (const line of lines(code)) {
-    const m = /^#(\d+)\s+(.+?)(?:\s+--\s+(.+))?$/.exec(line);
+    const [body, ownerId, extra] = line.split(/\s+\|\s+owner:\s*/);
+    const m = /^#(\d+)\s+(.+?)(?:\s+--\s+(.+))?$/.exec(body!);
     if (!m) return null;
-    out.push({ number: Number(m[1]), label: m[2]!, note: m[3] ?? null });
+    const step: QueueStep = { number: Number(m[1]), label: m[2]!, note: m[3] ?? null };
+    if (ownerId !== undefined) {
+      if (extra !== undefined || !step.note || !/^[DT]\d+$/.test(ownerId)) return null;
+      step.ownerId = ownerId;
+    }
+    out.push(step);
   }
   return out.length > 0 ? out : null;
 }

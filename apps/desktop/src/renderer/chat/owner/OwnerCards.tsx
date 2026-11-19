@@ -1,6 +1,6 @@
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@ui-sdk/react/collapsible";
 import { CheckIcon, CopyIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { createContext, useEffect, useRef, useState } from "react";
 import type { OwnerItems, OwnerQuestion, OwnerTodo } from "../../../shared/api";
 import { CardHead, CardText, cardBox } from "../card/Card";
 import { ChatMarkdown } from "../markdown/ChatMarkdown";
@@ -16,6 +16,9 @@ const box = "mx-auto mb-2 w-full max-w-read rounded-lg border border-border bg-r
 const button = "flex items-center gap-2 rounded-md border border-border px-3 py-1 hover:bg-hover disabled:opacity-50";
 const primary = `${button} bg-foreground text-canvas hover:bg-foreground`;
 const more = (n: number) => (n > 0 ? ` · ${n} more after this` : "");
+
+/** The open owner items for the chat that draws a block. */
+export const ChatOwnerItems = createContext<OwnerItems>({ questions: [], todos: [] });
 
 /** All open owner items of every coordinator, from `owner open --json`. */
 export function useAllOwnerItems(): OwnerItems {

@@ -1,4 +1,4 @@
-<!-- Copied from herdr-contr kit/skills/chat-writing/SKILL.md at bf3b8d5, for reference. herdr-contr stays the source; update this copy only on purpose. -->
+<!-- Based on herdr-contr kit/skills/chat-writing/SKILL.md at bf3b8d5, with desktop updates. The source skill is now in contr-core. -->
 
 ---
 name: chat-writing
@@ -91,11 +91,15 @@ When nothing changed since your last board, write `contr-status same` on the fen
 b-649 | #649 | Rows and badge
 ```
 
-For a merge order, a `contr-queue` block, one line `#<n> <label>` for each step in order, with ` -- <note>` for a dependency:
+For a merge order, write a `contr-queue` block with one `#<n> <label>` line for each step.
+Add ` -- <note>` for a dependency. When the note names an owner item, end the line with
+` | owner: D7` for a question or ` | owner: T3` for a to-do. Contr shows the item as a chip
+while it is open in this chat.
 
 ```contr-queue
 #656 Rows and badge
 #665 Fewer lines -- waits for #656
+#670 Queue block -- waits for your answer | owner: D7
 ```
 
 When the owner comes back and asks where things are, an empty `contr-digest` block. contr fills "Since you left": the PRs merged since the owner's message before the last one, the workers busy now, the items that wait for the owner (in red), and the open PRs with a failed check. A block with text shows as code.

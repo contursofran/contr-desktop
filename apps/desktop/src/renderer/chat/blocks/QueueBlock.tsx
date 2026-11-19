@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { RefState } from "../../../shared/api";
+import { ChatOwnerItems } from "../owner/OwnerCards";
+import { OwnerChip } from "../refs/OwnerChip";
 import { RefChip } from "../refs/RefChip";
 import { useRefState } from "../refs/useRef";
 import type { QueueStep } from "./parse";
@@ -23,14 +25,28 @@ function Note({ text }: { text: string }): ReactNode {
 }
 
 function Row({ step, index, state, report }: { step: QueueStep; index: number; state: Step; report: (i: number, done: boolean) => void }) {
-  const done = isDone(useRefState(step.number));
+  const ref = useRefState(step.number);
+  const done = isDone(ref);
+  const mergedAt = ref?.state === "merged" ? ref.mergedAt : undefined;
+  const items = useContext(ChatOwnerItems);
+  const item = [...items.questions, ...items.todos].find((i) => i.id === step.ownerId);
   useEffect(() => report(index, done), [report, index, done]);
   return (
     <li data-step={state} style={{ marginInline: 0, marginTop: 0 }} className="relative m-0 grid grid-cols-[16px_1fr_auto] items-start gap-3 pb-3 before:absolute before:top-[18px] before:bottom-0 before:left-[7.5px] before:border-l before:border-ink-26 last:pb-0 last:before:hidden">
       <span aria-hidden className={`mt-1.5 ml-[3px] size-[9px] rounded-full ${DOT[state]}`} />
       <div className="min-w-0">
         <div className="truncate"><RefChip number={step.number}>#{step.number}</RefChip> {step.label}</div>
-        {step.note && <div className="text-[12px] text-dim"><Note text={step.note} /></div>}
+        {mergedAt && (
+          <div className="text-[12px] text-dim">
+            merged <time dateTime={mergedAt}>{new Date(mergedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</time>
+          </div>
+        )}
+        {step.note && (
+          <div dir="auto" className="text-[12px] text-dim">
+            <Note text={step.note} />
+            {step.ownerId && <> {item ? <OwnerChip item={item} open showTitle={false} /> : step.ownerId}</>}
+          </div>
+        )}
       </div>
       <span className="pt-0.5 font-mono text-[11px] text-dim">{index + 1}</span>
     </li>

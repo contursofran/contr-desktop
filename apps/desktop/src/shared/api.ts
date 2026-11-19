@@ -244,7 +244,7 @@ export interface CheckCounts {
 
 /** A PR or an issue of the agent's repository, as gh says now. A PR with no checks has no `checks`. */
 export type RefState =
-  | { kind: "pr"; state: "open" | "draft" | "merged" | "closed"; url: string; checks?: CheckCounts }
+  | { kind: "pr"; state: "open" | "draft" | "merged" | "closed"; url: string; checks?: CheckCounts; mergedAt?: string }
   | { kind: "issue"; state: "open" | "closed" | "not-planned"; url: string };
 
 /** The Terminal side: the agent's hc terminal. */
