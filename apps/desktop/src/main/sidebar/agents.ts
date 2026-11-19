@@ -64,7 +64,7 @@ export function buildProjects({ hc, orch, titles, folders, projectOf }: ListInpu
   const terms = parseList<HcTerminal>(hc, "terminals").filter((t) => isLiveAgent(t) || parents.has(t.address as string));
   const named = new Map<string, OrchAgent>();
   for (const a of parseList<OrchAgent>(orch)) if (str(a.address)) named.set(a.address as string, a);
-  const agents = new Map<string, SidebarAgent & { parent: string | null; agent: boolean }>();
+  const agents = new Map<string, SidebarAgent & { parent: string | null; agent: boolean; cwd: string }>();
   for (const t of terms) {
     const address = t.address as string;
     const o = named.get(address);

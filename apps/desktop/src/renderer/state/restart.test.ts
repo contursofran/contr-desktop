@@ -6,7 +6,7 @@ const store = (entries: Record<string, string> = {}) => {
   const m = new Map(Object.entries(entries));
   return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v) };
 };
-const agent = (terminal: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, cwd: "", title: terminal, name: null, kind: null, issue: null, state: "idle" as const, workers });
+const agent = (terminal: string, workers: Sidebar["projects"][0]["agents"] = []) => ({ terminal, title: terminal, name: null, kind: null, issue: null, state: "idle" as const, workers });
 const project = (agents: Sidebar["projects"][0]["agents"]) => ({ name: "p", cwd: "", branch: null, ahead: 0, behind: 0, favicon: null, agents });
 const data = (selected = ""): Sidebar => ({ selected, projects: [project([]), project([agent("t7", [agent("t8")]), agent("t12")])] });
 

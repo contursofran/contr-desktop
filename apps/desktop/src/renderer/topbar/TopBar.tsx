@@ -1,8 +1,8 @@
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@ui-sdk/react/menu";
 import { Tabs, TabsList, TabsTab } from "@ui-sdk/react/tabs";
-import { PanelLeft, Plus, Sparkle, X } from "lucide-react";
+import { PanelLeft, Sparkle, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { Sidebar, SidebarAgent, TerminalKind } from "../../shared/api";
+import { AddTabMenu } from "./AddTabMenu";
 import { TabOrderItem, TabOrderRoot } from "./tab-order-parts";
 import { Tip } from "../ui/Tip";
 import { AgentIcon } from "../ui/AgentIcon";
@@ -143,44 +143,10 @@ export function TopBar({ data, tabs, titles, onSelect, onClose, onReorder, onSta
             );
           })}
         </TabOrderRoot>
-        <NewTabMenu onStart={onStart} starting={starting} />
+        <AddTabMenu onStart={onStart} starting={starting} />
       </div>
       <div className="flex-1" />
     </Tabs>
-  );
-}
-
-const PROGRAMS = [["claude", "Claude Code"], ["codex", "Codex"], ["shell", "Shell"]] as const;
-
-function NewTabMenu({ onStart, starting }: { onStart: (kind: TerminalKind) => void; starting: boolean }) {
-  const first = useRef<HTMLDivElement>(null);
-  return (
-    <Menu onOpenChangeComplete={(open) => open && first.current?.focus()}>
-      <Tip label="New tab">
-        <MenuTrigger
-          aria-label="New tab"
-          shortcut="mod+t"
-          disabled={starting}
-          focusableWhenDisabled
-          className="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-dim hover:bg-hover hover:text-muted focus-visible:ring-1 focus-visible:ring-foreground"
-        >
-          <Plus aria-hidden className="size-3.5" />
-        </MenuTrigger>
-      </Tip>
-      <MenuContent aria-label="New tab" side="bottom" align="start" sideOffset={4} className="m-0 min-w-32 rounded-xl border border-float-line bg-raised p-1 text-foreground shadow-[var(--shadow-float)] [-webkit-app-region:no-drag]">
-        {PROGRAMS.map(([kind, label], i) => (
-          <MenuItem
-            key={kind}
-            ref={i === 0 ? first : undefined}
-            value={kind}
-            onSelect={() => onStart(kind)}
-            className="flex h-8 cursor-default items-center whitespace-nowrap rounded-md px-2 text-[13px] outline-none data-highlighted:bg-hover focus:bg-hover"
-          >
-            {label}
-          </MenuItem>
-        ))}
-      </MenuContent>
-    </Menu>
   );
 }
 

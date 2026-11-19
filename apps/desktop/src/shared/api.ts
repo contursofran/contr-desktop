@@ -135,8 +135,8 @@ export type TabTitle = { title: string } | { gone: true } | { error: string };
 /** An agent row. An orchestrator has workers (hc `parent`). `name` is the worker's name, else hc's name. */
 export interface SidebarAgent {
   terminal: string;
-  /** The agent's session folder, or "" when hc gives none. */
-  cwd: string;
+  /** The agent's session folder, when available. */
+  cwd?: string;
   title: string;
   name: string | null;
   state: WorkerState;
@@ -255,7 +255,7 @@ export type TerminalStart = { terminal: string } | { error: string };
 /** The Terminal side: the agent's hc terminal. */
 export interface TerminalApi {
   /** Starts a terminal in hc, with no parent. null uses the home folder. */
-  start(kind: TerminalKind, cwd: string | null): Promise<TerminalStart>;
+  start?(kind: TerminalKind, cwd: string | null): Promise<TerminalStart>;
   /** Attaches at this size. Returns the terminal, or an error to show. */
   attach(cols: number, rows: number): Promise<{ terminal?: string; error?: string }>;
   /** Keys and paste, as the terminal's bytes. */

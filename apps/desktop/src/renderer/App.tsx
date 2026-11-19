@@ -14,6 +14,7 @@ import { useBoard } from "./chat/blocks/useBoard";
 import { ReplyBox, type Draft } from "./chat/reply/ReplyBox";
 import { applyFeed, emptyFeed } from "./feed/apply";
 import { TerminalView } from "./terminal/TerminalView";
+import { useAgentSessionLauncher } from "./terminal/useAgentSessionLauncher";
 import { Sidebar, readHidden, saveHidden } from "./sidebar/Sidebar";
 import { TopBar, findAgent, nextAfterClose, openTab, readTabs, saveTabs, tabLabel } from "./topbar/TopBar";
 import { readShown, readSide, saveShown, saveSide, startAgent, type Side } from "./state/restart";
@@ -86,31 +87,17 @@ export function App() {
   const owner = useAllOwnerItems();
   const blocked = blockedAgents(sidebar.projects);
   const name = (coordinator: string) => findAgent(sidebar, coordinator)?.title || coordinator;
-  const select = (terminal: string) => {
+  const select = useCallback((terminal: string) => {
     setInbox(false);
     setSettings(false);
     void window.contr.select(terminal).then((selected) => setSidebar((s) => ({ ...s, selected })));
-  };
-  const [starting, setStarting] = useState(false);
-  const [startError, setStartError] = useState<string>();
-  const start = async (kind: TerminalKind) => {
-    if (starting) return;
-    setStarting(true);
-    setStartError(undefined);
-    try {
-      const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
-      const result = await window.contr.terminal.start(kind, cwd);
-      if ("error" in result) setStartError(result.error);
-      else {
-        if (kind === "shell") setSide("terminal");
-        select(result.terminal);
-      }
-    } catch (error) {
-      setStartError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setStarting(false);
-    }
-  };
+  }, []);
+  const cwd = findAgent(view, view.selected)?.cwd || view.projects[0]?.cwd || null;
+  const onStarted = useCallback((terminalId: string, kind: TerminalKind) => {
+    if (kind === "shell") setSide("terminal");
+    select(terminalId);
+  }, [select]);
+  const { start, starting, startError } = useAgentSessionLauncher(cwd, onStarted);
   const close = (terminal: string) => {
     const next = nextAfterClose(tabs, terminal);
     setTabs((t) => t.filter((x) => x !== terminal));

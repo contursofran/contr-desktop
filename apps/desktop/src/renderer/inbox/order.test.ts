@@ -33,7 +33,7 @@ describe("closed rows", () => {
 });
 
 describe("blockedAgents", () => {
-  const a = (terminal: string, state: WorkerState, workers: SidebarAgent[] = []): SidebarAgent => ({ terminal, cwd: "", title: terminal, name: null, state, kind: null, issue: null, workers });
+  const a = (terminal: string, state: WorkerState, workers: SidebarAgent[] = []): SidebarAgent => ({ terminal, title: terminal, name: null, state, kind: null, issue: null, workers });
   const project = (agents: SidebarAgent[]) => ({ name: "p", agents, cwd: "/p", branch: null, ahead: 0, behind: 0, favicon: null });
   it("lists blocked agents and workers in sidebar order", () => {
     const list = blockedAgents([project([a("t1", "blocked", [a("t2", "working"), a("t3", "blocked")]), a("t4", "done")]), project([a("t5", "blocked")])]);
