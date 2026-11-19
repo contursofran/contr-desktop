@@ -39,8 +39,10 @@ test("PR and issue numbers show their state, check marks, selection and links", 
   expect(all.slice(0, 3).map((chip) => chip.getAttribute("aria-label"))).toEqual([
     "PR #12, Merged, 6 of 6 checks passed", "PR #14, Open, 1 of 6 checks failed", "PR #15, Draft, checks running, 4 of 6 passed",
   ]);
-  expect(getComputedStyle(mark(0)).color).toBe("rgba(255, 255, 255, 0.45)");
-  expect(getComputedStyle(mark(1)).color).toBe("rgb(244, 244, 245)");
+  const ink = (n: number) => getComputedStyle(all[n]).color;
+  const markInk = (n: number) => getComputedStyle(mark(n)).color;
+  expect([markInk(0), markInk(2)]).toEqual([ink(3), ink(3)]);
+  expect(markInk(1)).toBe("rgb(244, 244, 245)");
   expect(row.querySelector(`li [data-ref-state] ${label}`)?.textContent).toBe("#21");
   expect(row.querySelector(`td [data-ref-state] ${label}`)?.textContent).toBe("#14");
   expect(row.querySelector("code[data-inline-code]")?.textContent).toBe("#12");
@@ -49,7 +51,6 @@ test("PR and issue numbers show their state, check marks, selection and links", 
   await expect.element(page.elementLocator(row).getByText(/#99 is not known/)).toBeVisible();
 
   const color = (n: number) => getComputedStyle(all[n].querySelector("svg")!).color;
-  const ink = (n: number) => getComputedStyle(all[n]).color;
   expect([0, 1, 3, 6].map(color)).toEqual(["rgb(171, 125, 248)", "rgb(63, 185, 80)", "rgb(145, 152, 161)", "rgb(145, 152, 161)"]);
   expect([0, 1, 3, 6].map(ink)).toEqual(["rgb(244, 244, 245)", "rgb(244, 244, 245)", "rgba(255, 255, 255, 0.5)", "rgba(255, 255, 255, 0.5)"]);
   expect(getComputedStyle(all[0]).boxShadow).toContain("color(srgb 0.670588 0.490196 0.972549 / 0.38) 0px 0px 0px 1px inset");
@@ -71,6 +72,8 @@ test("PR and issue numbers show their state, check marks, selection and links", 
   await commands.colorScheme("light");
   await expect.poll(() => color(0)).toBe("rgb(130, 80, 223)");
   expect([ink(0), ink(3)]).toEqual(["rgb(20, 20, 20)", "rgba(0, 0, 0, 0.584)"]);
+  expect([markInk(0), markInk(2)]).toEqual([ink(3), ink(3)]);
+  expect(markInk(1)).toBe(ink(0));
   await view.screenshot({ path: `${browserShots}/chips-light.png` });
   expect((await chatRow("u1")).querySelectorAll("[data-ref-state]")).toHaveLength(0);
 });
