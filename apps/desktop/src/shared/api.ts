@@ -99,6 +99,8 @@ export interface ContrApi {
   ownerDone(id: string): Promise<OwnerResult>;
   /** The Settings view's data. */
   settings(): Promise<Settings>;
+  /** Checks the active global Codex file for the standard contr orchestration rule. */
+  checkCodexHealth(): Promise<CodexHealth>;
   /** Saves the theme choice and shows it at once. */
   setTheme(theme: ThemeChoice): Promise<ThemeChoice>;
   /** The update state now. */
@@ -336,6 +338,12 @@ export interface Settings {
 
 export const SETTINGS_CHANNEL = "contr:settings";
 export const THEME_CHANNEL = "contr:theme";
+export const CODEX_HEALTH_CHANNEL = "contr:codex-health";
+
+export interface CodexHealth {
+  file: string;
+  status: "present" | "missing" | "unreadable";
+}
 
 /** The Update section in Settings and the dot on the foot's Settings button. */
 export interface UpdateState {

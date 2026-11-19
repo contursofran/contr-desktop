@@ -2,6 +2,7 @@ import { SegmentedControl, SegmentedControlIndicator, SegmentedControlItem } fro
 import { useEffect, useState, type ReactNode } from "react";
 import type { CoreState, Settings, ThemeChoice, UpdateState } from "../../shared/api";
 import { ChangeLog } from "./ChangeLog";
+import { HealthCheck } from "./HealthCheck";
 import { buttonClass, Group, PathValue, Row, Value } from "./rows";
 import { updateView, type UpdateView } from "./updateView";
 
@@ -51,6 +52,7 @@ export function SettingsView() {
             <PathValue label="Helper path" path={data?.helper ?? ""} />
           </Row>
         </Group>
+        <HealthCheck />
       </div>
     </section>
   );

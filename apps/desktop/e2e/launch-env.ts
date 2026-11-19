@@ -57,7 +57,10 @@ export function checkProgram(name: string, value: string): void {
 export function launchEnv(env: Record<string, string> = {}, shell: NodeJS.ProcessEnv = process.env, options: LaunchOptions = {}): Record<string, string> {
   const base: Record<string, string> = {};
   for (const [k, v] of Object.entries(shell)) if (v !== undefined) base[k] = v;
-  for (const k of [...Object.keys(FAKES), "CONTR_CORE_HOME", "CONTR_CORE_BUNDLE", "CONTR_HC_SESSION"]) delete base[k];
+  for (const k of [...Object.keys(FAKES), "CONTR_CORE_HOME", "CONTR_CORE_BUNDLE", "CONTR_HC_SESSION", "CODEX_HOME"]) delete base[k];
+
+  const codex = env.CODEX_HOME;
+  if (codex !== undefined && !inside(path.resolve(codex), path.resolve(os.tmpdir()))) throw new Error(`CODEX_HOME must be in ${os.tmpdir()}: ${codex}`);
 
   const core = env.CONTR_CORE_HOME;
   if (core !== undefined && !inside(path.resolve(core), path.resolve(os.tmpdir()))) throw new Error(`CONTR_CORE_HOME must be in ${os.tmpdir()}: ${core}`);
