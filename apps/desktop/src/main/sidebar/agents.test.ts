@@ -17,7 +17,7 @@ const orch = JSON.stringify([{ name: "b-2", address: "t2", parent: "t1", live: t
 
 describe("buildProjects", () => {
   it("groups live agents by project and puts workers under their parent", () => {
-    const out = buildProjects({ hc, orch, titles: new Map([["t1", "Audit"]]), projectOf: (c) => c.split("/")[2] });
+    const out = buildProjects({ hc, orch, titles: new Map([["t1", "Audit"]]), projectOf: (c) => ({ key: c.split("/")[2], name: c.split("/")[2] }) });
     expect(out).toEqual([
       {
         name: "app",
@@ -39,7 +39,7 @@ describe("buildProjects", () => {
       { address: "t1", name: codexCoordinatorName("demo"), state: "live" },
       { address: "t2", parent: "t1", state: "live", status: "working", agent: "codex" },
     ] });
-    const input = { hc, orch: "[]", codex: [chat], titles: new Map(), projectOf: () => "app" };
+    const input = { hc, orch: "[]", codex: [chat], titles: new Map(), projectOf: () => ({ key: "/w/app", name: "app" }) };
     const workers = () => buildProjects(input)[0].agents[0].workers.map((w) => w.terminal);
     expect(workers()).toEqual(["t2"]);
     expect(workers()).toEqual(["t2"]);
@@ -47,23 +47,34 @@ describe("buildProjects", () => {
   });
 
   it("gives no projects when hc fails", () => {
-    expect(buildProjects({ hc: "oops", orch: "", titles: new Map(), projectOf: () => "x" })).toEqual([]);
+    expect(buildProjects({ hc: "oops", orch: "", titles: new Map(), projectOf: () => ({ key: "x", name: "x" }) })).toEqual([]);
+  });
+
+  it("keeps saved folders and groups their worktrees by Git directory", () => {
+    const live = JSON.stringify({ terminals: [{ address: "t1", cwd: "/w/worktree", state: "live", status: "idle" }] });
+    const projects = buildProjects({
+      hc: live, orch: "[]", titles: new Map(), savedFolders: ["/w/app", "/other/app"],
+      projectOf: (cwd) => projectFromCommonDir(cwd, cwd === "/w/worktree" ? "/w/app/.git" : ".git"),
+    });
+    expect(projects.map((p) => [p.name, p.cwd, p.agents.map((a) => a.terminal)])).toEqual([
+      ["app", "/w/app", ["t1"]], ["app", "/other/app", []],
+    ]);
   });
 });
 
 describe("projectFromCommonDir", () => {
   it("names a checkout, a worktree under its checkout, and a folder with no git", () => {
-    expect(projectFromCommonDir("/w/app", ".git")).toBe("app");
-    expect(projectFromCommonDir("/w/app-wt/x", "/w/app/.git")).toBe("app");
-    expect(projectFromCommonDir("/w/bare", "/w/bare.git")).toBe("bare");
-    expect(projectFromCommonDir("/w/plain", null)).toBe("plain");
+    expect(projectFromCommonDir("/w/app", ".git")).toMatchObject({ name: "app" });
+    expect(projectFromCommonDir("/w/app-wt/x", "/w/app/.git")).toMatchObject({ name: "app" });
+    expect(projectFromCommonDir("/w/bare", "/w/bare.git")).toMatchObject({ name: "bare" });
+    expect(projectFromCommonDir("/w/plain", null)).toMatchObject({ name: "plain" });
   });
 });
 
 describe("buildProjects workers", () => {
   it("shows a stopped worker (tool live false) as an agent of its own, not under its parent", () => {
     const stopped = JSON.stringify([{ name: "b-2", address: "t2", parent: "t1", live: false }]);
-    const out = buildProjects({ hc, orch: stopped, titles: new Map(), projectOf: (c) => c.split("/")[2] });
+    const out = buildProjects({ hc, orch: stopped, titles: new Map(), projectOf: (c) => ({ key: c.split("/")[2], name: c.split("/")[2] }) });
     expect(out.flatMap((p) => p.agents.map((a) => [a.terminal, a.workers.length]))).toEqual([["t1", 0], ["t2", 1], ["t4", 0]]);
   });
 });

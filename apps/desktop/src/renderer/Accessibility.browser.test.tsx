@@ -53,11 +53,12 @@ test("task checkboxes have names and a running tool has no live region", async (
 
 test("inert controls stay out of the tab order and tabs name their panels", async () => {
   await renderApp(transcript, null, selectable(sidebar).overrides);
-  for (const name of ["Search", "Add machine", "Add project"]) {
+  for (const name of ["Search", "Add machine"]) {
     const button = page.getByRole("button", { name, exact: true });
     await expect.element(button).toBeDisabled();
     await expect.element(button).toHaveAttribute("tabindex", "-1");
   }
+  await expect.element(page.getByRole("button", { name: "Add project" })).toBeEnabled();
   await expect.element(page.getByRole("button", { name: "Collapse contr-desktop" })).toBeVisible();
   const title = "Chat panel usability audit";
   const tabs = page.getByRole("tablist", { name: "Tabs" });

@@ -31,6 +31,7 @@ export function contrFake(rows: FeedRow[], card: Card | null, overrides: Partial
       if (card) listener({ type: "card", card });
       return () => {};
     },
+    addProject: async () => ({ canceled: true }),
     sidebar: async () => sidebar,
     onSidebar: unsubscribe,
     select: async (selected) => selected,

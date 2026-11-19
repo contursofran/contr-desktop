@@ -3,7 +3,7 @@
 import { ErrorNote } from "../ui/ErrorNote";
 
 /** The main area with no agent shown: how an agent appears here, or why the list is empty when `hc ls` failed, with Retry (main reads the list again). */
-export function Empty({ hcError }: { hcError?: string }) {
+export function Empty({ hcError, project }: { hcError?: string; project?: string }) {
   if (hcError)
     return (
       <div className="flex min-h-0 flex-1 items-center px-4">
@@ -12,8 +12,8 @@ export function Empty({ hcError }: { hcError?: string }) {
     );
   return (
     <div role="note" aria-label="No agent" className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 px-8 text-center">
-      <p className="text-[13.5px] text-foreground">No agents yet</p>
-      <p className="text-[12.5px] text-muted">An agent that runs in an hc terminal shows here.</p>
+      <p dir="auto" className="text-[13.5px] text-foreground [overflow-wrap:anywhere]">{project ? `No agents in ${project}` : "No agents yet"}</p>
+      <p className="text-[12.5px] text-muted">{project ? "Use New tab to start an agent in this folder." : "An agent that runs in an hc terminal shows here."}</p>
     </div>
   );
 }
