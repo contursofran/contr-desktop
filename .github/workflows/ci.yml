@@ -1,13 +1,12 @@
 name: CI
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_call:
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  CI:
+  checks:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,9 +29,38 @@ jobs:
       - run: pnpm test
       - run: pnpm --filter desktop exec playwright install chromium --only-shell
       - run: pnpm test:browser
-      - run: pnpm e2e
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshots
+          name: screenshots-browser
           path: tmp/shots/
+
+  electron:
+    name: Electron ${{ matrix.shard }}/2
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm e2e --shard=${{ matrix.shard }}/2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-electron-${{ matrix.shard }}
+          path: tmp/shots/
+
+  CI:
+    needs: [checks, electron]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all checks and both Electron shards
+        run: test "${{ needs.checks.result }}" = success && test "${{ needs.electron.result }}" = success
