@@ -50,7 +50,7 @@ test("tab navigation and close stay in the shown agent’s project", async () =>
   await page.locator(".xterm-helper-textarea").focus();
   await page.keyboard.press("Control+Tab");
   await expect(tabs.getByRole("tab", { selected: true })).toHaveText("Release notes draft");
-  await expect(page.getByRole("textbox", { name: "Reply to Release notes draft" })).toBeVisible();
+  await expect(page.locator(".xterm-rows").getByText(/fake terminal t11/)).toBeVisible();
   await page.keyboard.press("Control+Shift+Tab");
   await expect(sw.getByRole("radio", { name: "Terminal" })).toBeChecked();
   await sw.getByRole("radio", { name: "Chat" }).click();

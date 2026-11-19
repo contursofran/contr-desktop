@@ -40,11 +40,14 @@ The target is herdr-contr as the owner uses it on 2026-11-16:
 2. **Top bar**: Herdr's normal tab bar (its `tabs` mod). One tab per agent
    or terminal, from the left, 3 px apart, with a 1 px `border` line under
    the bar. A tab is 29 px tall, 7 px corners, 10 px side padding, 12.8 px
-   text: its icon (14 px), its title (at most 170 px) and, on the shown tab
-   only, a × (12 px, `dim`). The shown tab has the `raised` fill and a
+   text. It has a program icon (14 px), its title, an activity mark and,
+   on the shown tab, a × (12 px, `dim`). The whole tab is at most 180 px
+   wide. The shown tab has the `raised` fill and a
    `border` edge; the others have no fill and `muted` text; hover is
    `hover`. The tab row scrolls sideways when it is full; after it, a + for
-   a new tab (26 px square, 6 px corners). On the right: Files and Changes.
+   a new tab (26 px square, 6 px corners). The launcher shows Terminal,
+   then Claude Code and Codex under Start an agent. Close ends the hc
+   terminal of the shown tab. A native Codex chat closes its tab.
 3. **Chat or Terminal**: a two-way switch at the top right of the work area.
 4. **Chat**: a reading column, centered.
    - The owner's message: a right-aligned bubble, `raised` background.

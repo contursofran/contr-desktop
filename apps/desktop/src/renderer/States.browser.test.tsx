@@ -72,7 +72,7 @@ test("with more tabs than fit, the scrollbar is below the tabs", async () => {
   const scrollbar = Number.parseFloat(getComputedStyle(row, "::-webkit-scrollbar").height);
   expect(scrollbar).toBeGreaterThan(0);
   expect(box.bottom - scrollbar - tab.bottom).toBeGreaterThanOrEqual(2);
-  expect(tab.height).toBe(28);
+  expect(tab.height).toBe(29);
   expect(bar.height).toBe(40);
   await shoot("tabs-scrollbar-narrow");
 });

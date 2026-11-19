@@ -11,6 +11,7 @@ function terminalFake() {
   let end: Parameters<TerminalApi["onEnd"]>[0] | undefined;
   const attach = vi.fn<TerminalApi["attach"]>();
   const api: TerminalApi = {
+    close: async () => ({ ok: true }),
     attach,
     input() {},
     resize() {},

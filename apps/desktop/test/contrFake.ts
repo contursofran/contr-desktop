@@ -86,7 +86,7 @@ export function contrFake(rows: FeedRow[], card: Card | null, overrides: Partial
     checkCore: unsupported,
     updateCore: unsupported,
     onOpenSettings: unsubscribe,
-    terminal: { attach: unsupported, input: unsupported, resize: unsupported, onData: unsubscribe, onEnd: unsubscribe },
+    terminal: { close: async () => ({ ok: true }), attach: unsupported, input: unsupported, resize: unsupported, onData: unsubscribe, onEnd: unsubscribe },
     prCard: async () => null,
     ...overrides,
   };

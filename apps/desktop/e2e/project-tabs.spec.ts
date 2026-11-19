@@ -18,7 +18,8 @@ test("project tabs follow the sidebar, keep separate orders and closures, and li
       ["t15", "Project handoff", "/work/contr-desktop"],
       ["t12", "Install health check", "/work/herdr-contr"],
       ["t14", "Runner diagnostics", "/work/herdr-contr"],
-    ].map(([address, title, cwd]) => ({ address, title, cwd, agent: "claude-code", state: "live", status: "idle" })),
+      ["t8", "Worker check", "/work/contr-desktop", "t7"],
+    ].map(([address, title, cwd, parent]) => ({ address, title, cwd, parent, agent: "claude-code", state: "live", status: "idle" })),
   }));
   const env = { CONTR_TERMINAL: "t7", FAKE_HC_LIST: list };
   const [a, b, c, d] = ["Chat panel usability audit", "Release notes draft", "Install health check", "Runner diagnostics"];
@@ -34,6 +35,8 @@ test("project tabs follow the sidebar, keep separate orders and closures, and li
     const shown = tabs.getByRole("tab", { selected: true });
     await sidebar.getByRole("button", { name: a }).click();
     await expect(tabs.getByRole("tab")).toHaveText([a, b, handoff]);
+    await sidebar.getByRole("button", { name: "Worker check" }).click();
+    await expect(tabs.getByRole("tab")).toHaveText([a, b, handoff, "Worker check"]);
     await tabs.getByRole("tab", { name: a }).press("Alt+ArrowRight");
     await expect(tabs.getByRole("tab")).toHaveText([b, a, handoff]);
 

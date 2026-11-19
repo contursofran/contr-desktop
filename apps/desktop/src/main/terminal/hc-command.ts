@@ -1,6 +1,12 @@
 import { createInterface } from "node:readline";
 import { appChildren } from "../children";
 
+export class HcRequestError extends Error {
+  constructor(message: string, readonly kind?: string) {
+    super(message);
+  }
+}
+
 /** Sends one control request to the app's hc session. */
 export function hcCommand<T>(method: string, params: Record<string, unknown>): Promise<T> {
   const session = process.env.CONTR_HC_SESSION;
@@ -9,10 +15,10 @@ export function hcCommand<T>(method: string, params: Record<string, unknown>): P
     const child = appChildren.execFile(process.env.CONTR_HC ?? "hc", args, { encoding: "utf8", timeout: 10_000 }, (error, out, stderr) => {
       try {
         if (error) throw new Error(error.killed ? "no answer in 10 s" : stderr.trim() || error.message);
-        let reply: { result?: T; error?: { message?: string } };
+        let reply: { result?: T; error?: { message?: string; data?: { kind?: string } } };
         try { reply = JSON.parse(out); }
         catch { throw new Error("hc gave no JSON"); }
-        if (reply?.error) throw new Error(reply.error.message || "hc refused the request");
+        if (reply?.error) throw new HcRequestError(reply.error.message || "hc refused the request", reply.error.data?.kind);
         if (reply?.result === undefined) throw new Error("hc gave no result");
         resolve(reply.result);
       } catch (error) {
